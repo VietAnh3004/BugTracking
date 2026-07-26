@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Mỗi service chạy độc lập và chỉ khi thư mục của nó thay đổi: sửa frontend không phải
+  # chờ Maven build, và ngược lại.
+  core-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+      - name: Kiểm tra format
+        run: mvn -B spotless:check
+      - name: Build và test
+        run: mvn -B verify
+
+  agent-service:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Cài dependency
+        run: pip install -e ".[dev]"
+      - name: Lint
+        run: ruff check src tests
+      - name: Kiểm tra format
+        run: ruff format --check src tests
+      - name: Kiểm tra kiểu
+        run: mypy src
+      - name: Test
+        # Test không gọi LLM thật: vừa tốn tiền vừa khiến kết quả không lặp lại được.
+        run: pytest
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Kiểm tra format
+        run: npm run format:check
+      - name: Build (bao gồm kiểm tra kiểu)
+        run: npm run build
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Quét secret bị commit nhầm
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

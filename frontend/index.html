@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Evidence-Based Program Analysis</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!--
+      Nạp trước ứng dụng để window.__APP_CONFIG__ đã sẵn sàng khi module đầu tiên chạy.
+      Không thêm type="module" ở đây: script module bị hoãn, sẽ chạy sau bundle.
+    -->
+    <script src="/config.js"></script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

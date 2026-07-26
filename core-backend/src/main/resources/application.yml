@@ -1,0 +1,79 @@
+# Không có giá trị thật nào trong file này — tất cả đến từ biến môi trường.
+# Biến không có giá trị mặc định là biến bắt buộc: thiếu thì ứng dụng không khởi động được,
+# thay vì chạy rồi lỗi mơ hồ lúc đang phục vụ request.
+#
+# Xem .env.example để biết danh sách biến đầy đủ.
+
+spring:
+  application:
+    name: core-backend
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Schema chỉ thay đổi qua Flyway. 'validate' để Hibernate báo lỗi ngay khi
+      # entity và schema lệch nhau, thay vì tự ý sửa cấu trúc bảng.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+
+  servlet:
+    multipart:
+      max-file-size: ${MAX_UPLOAD_SIZE:100MB}
+      max-request-size: ${MAX_UPLOAD_SIZE:100MB}
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /api/v1/openapi
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  cors:
+    allowed-origins: ${CORS_ORIGINS}
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:PT12H}
+  storage:
+    endpoint: ${STORAGE_ENDPOINT}
+    access-key: ${STORAGE_ACCESS_KEY}
+    secret-key: ${STORAGE_SECRET_KEY}
+    bucket: ${STORAGE_BUCKET}
+  agent:
+    base-url: ${AGENT_SERVICE_URL}
+    # Agent gọi LLM nhiều vòng nên một lượt suy luận có thể kéo dài hàng chục giây.
+    timeout: ${AGENT_TIMEOUT:PT120S}
+
+logging:
+  level:
+    vn.hust.datn.evidence: ${LOG_LEVEL:INFO}

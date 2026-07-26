@@ -1,0 +1,64 @@
+# ---------- Secrets & local config ----------
+.env
+.env.*
+!.env.example
+*.local
+secrets/
+
+# ---------- Java / Maven ----------
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/timing.properties
+dependency-reduced-pom.xml
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# ---------- Node / Frontend ----------
+node_modules/
+frontend/dist/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*
+
+# ---------- IDE ----------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.iml
+*.swp
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- Analysis / experiment artifacts ----------
+# Raw tool output is regenerable; ground truth labels are NOT (see case-study/ground-truth).
+*.sarif
+surefire-reports/
+jacoco.exec
+experiments/runs/
+experiments/**/*.csv
+!experiments/**/results-final.csv
+spike/**/target/
+
+# Bản đề cương được theo dõi ở docs/. Bản ở thư mục gốc là bản Word đang mở, bỏ qua.
+/De_cuong_*.docx
+~$*.docx
+
+# ---------- Storage ----------
+infra/data/
+uploads/
