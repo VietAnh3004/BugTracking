@@ -65,7 +65,8 @@ Hai quyết định kiến trúc đáng chú ý:
 
 ## Chạy local
 
-Yêu cầu: Docker, JDK 21+, Node 20+, Python 3.12+.
+Yêu cầu: Docker, **JDK 21** (không phải bản mới hơn — SpotBugs và Spotless vỡ trên JDK 25, xem
+[ADR 0003](docs/adr/0003-chuan-hoa-jdk-21.md)), Node 20+, Python 3.12+.
 
 ```bash
 cp infra/.env.example infra/.env      # điền giá trị thật

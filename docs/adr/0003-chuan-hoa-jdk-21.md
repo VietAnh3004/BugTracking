@@ -39,3 +39,11 @@ Store rỗng, và sai sót chỉ lộ ra khi đã chạy thực nghiệm.
 - Cần cài JDK 21 trước khi làm tiếp tuần 2.
 - Adapter phân tích tĩnh phải **báo lỗi rõ ràng khi analyzer trả về 0 cảnh báo trên một
   repository được kỳ vọng có cảnh báo**, thay vì lặng lẽ ghi một `analysis_run` rỗng.
+
+## Cập nhật (26/07/2026)
+
+Đã cài JDK 21.0.12 (`C:\Program Files\Java\jdk-21.0.12`). Chạy lại `mvn spotbugs:spotbugs` trên
+dự án spike: **thành công**, tìm ra `DM_CONVERT_CASE` tại `UserRepository.java:29` — đúng dòng
+mà stack trace và JaCoCo cũng chỉ tới. Chi tiết: [spike tuần 1](../spike-tuan-1.md).
+
+Xác nhận quyết định là đúng: chuyển sang JDK 21 giải quyết triệt để, không cần vá thêm.

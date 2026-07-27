@@ -16,10 +16,11 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Import tuyệt đối: `@/features/warnings/...` thay vì `../../../features/...` */
-    "baseUrl": ".",
+    /* Import tuyệt đối: `@/features/warnings/...` thay vì `../../../features/...`.
+       Không cần baseUrl: với moduleResolution "bundler", paths tự resolve tương đối
+       theo vị trí file tsconfig này (baseUrl đã bị deprecate, sẽ gỡ ở TS 7.0). */
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
 
     /* Kiểu dữ liệu API được sinh từ OpenAPI spec của backend; strict giữ cho hai bên

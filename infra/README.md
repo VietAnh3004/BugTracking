@@ -21,39 +21,36 @@ docker compose exec postgres psql -U evidence -d evidence_agent -c "\dx"
 docker compose ps
 ```
 
-## Vấn đề đã gặp: không kéo được image lớn
+Đã xác nhận (26/07/2026): `vector` và `pg_trgm` bật đúng, và `core-backend` khởi động thành
+công với Flyway tạo bảng `project` + `repository_snapshot` trên chính Postgres này.
 
-**Ngày 26/07/2026.** `docker pull pgvector/pgvector:pg16` và `postgres:16-alpine` liên tục đứt
-giữa chừng:
+## Nếu không kéo được image lớn từ Docker Hub
 
+Gặp phải ngày 26/07/2026: `docker pull pgvector/pgvector:pg16` và `postgres:16-alpine` liên tục
+đứt giữa chừng (`httpReadSeeker: failed open: ... EOF`) dù image nhỏ như `hello-world` vẫn tải
+được — tức là kết nối tới CDN gốc của Docker Hub không giữ được cho layer lớn, không phải lỗi
+cấu hình compose hay đăng nhập registry.
+
+**Cách đã dùng và hiệu quả**: kéo qua mirror công khai của Google, sau đó gắn lại tên gốc để
+`docker-compose.yml` không cần sửa gì:
+
+```bash
+docker pull mirror.gcr.io/pgvector/pgvector:pg16
+docker pull mirror.gcr.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+
+docker tag mirror.gcr.io/pgvector/pgvector:pg16 pgvector/pgvector:pg16
+docker tag mirror.gcr.io/minio/minio:RELEASE.2025-04-22T22-12-26Z minio/minio:RELEASE.2025-04-22T22-12-26Z
 ```
-failed to copy: httpReadSeeker: failed open: failed to do request:
-Get "https://production.cloudfront.docker.com/...": EOF
-```
 
-Đã thử 40 lần, tất cả đều hỏng. Chẩn đoán: `docker pull hello-world` (vài KB) thành công, còn
-image hàng trăm MB thì hỏng — kết nối không giữ được cho layer lớn, không phải lỗi cấu hình
-compose hay đăng nhập registry.
+`mirror.gcr.io` là cache đọc-qua (read-through) của Google cho toàn bộ Docker Hub công khai, bao
+gồm cả image không thuộc namespace `library` (như `pgvector/pgvector`). Chỉ cần tải một lần —
+sau đó image nằm trong cache Docker cục bộ và mọi lần `docker compose up` sau đều không cần
+mạng nữa.
 
-Cách xử lý theo thứ tự nên thử:
+Nếu cách này cũng không ổn (mirror bị chặn ở mạng của bạn), thử theo thứ tự:
 
-1. **Tăng số lần Docker tự thử lại từng layer.** Docker Desktop → Settings → Docker Engine, thêm
-   vào JSON rồi Apply & Restart:
-   ```json
-   { "max-download-attempts": 10 }
-   ```
-   Docker sẽ tự nối lại từng layer hỏng thay vì bỏ cả lượt pull.
-
-2. **Dùng registry mirror gần hơn.** Cũng trong Docker Engine JSON:
-   ```json
-   { "registry-mirrors": ["https://<mirror-cua-ban>"] }
-   ```
-
-3. **Kéo image vào lúc mạng ổn định hơn**, hoặc qua mạng khác. Image chỉ cần tải một lần, sau
-   đó nằm trong cache cục bộ.
-
-4. **Nếu vẫn không được**: chạy PostgreSQL cài trực tiếp trên máy và tự cài extension pgvector.
-   Đây là phương án cuối vì làm mất tính "dựng lại được trong 30 phút" của dự án.
-
-Cho tới khi kéo được image, phần hạ tầng chưa được kiểm chứng end-to-end — cụ thể là
-`CREATE EXTENSION vector` và việc Flyway chạy migration V1.
+1. Tăng số lần Docker tự thử lại từng layer: Docker Desktop → Settings → Docker Engine, thêm
+   `{ "max-download-attempts": 10 }` rồi Apply & Restart.
+2. Đổi sang mạng khác hoặc giờ mạng ổn định hơn — image chỉ cần tải một lần.
+3. Phương án cuối: cài PostgreSQL trực tiếp trên máy và tự cài extension pgvector. Chấp nhận
+   đánh đổi mất tính "dựng lại được trong 30 phút" của dự án.

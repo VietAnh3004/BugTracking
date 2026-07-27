@@ -42,22 +42,42 @@ JaCoCo chỉ đo mã production.
 được test phủ hay không chính là cơ sở để nói "cảnh báo này nằm ở đoạn mã đã được kiểm thử và
 không test nào hỏng".
 
-### Chưa kiểm chứng được
+### Cập nhật sau khi cài JDK 21
 
-**SpotBugs không chạy trên JDK 25** (`Error scanning java/lang/Object`, kết quả 0 cảnh báo — cả
-bản 4.8.6 lẫn 4.9.3). Chân `STATIC_WARNING` của spike vì vậy còn bỏ ngỏ.
+SpotBugs chạy sạch trên JDK 21 (`mvn spotbugs:spotbugs`, xem
+[ADR 0003](adr/0003-chuan-hoa-jdk-21.md)) và tìm ra 1 cảnh báo:
 
-Đây không phải vấn đề của thiết kế mà của môi trường; xử lý ở [ADR 0003](adr/0003-chuan-hoa-jdk-21.md):
-chuẩn hoá JDK 21 và chạy analyzer trong container.
+```
+DM_CONVERT_CASE  pri=3  UserRepository.java:29-29
+  Use of non-localized String.toUpperCase() or String.toLowerCase()
+```
 
-**Semgrep chưa thử**: hỗ trợ Windows kém vì core là binary OCaml. Sẽ chạy qua container, đúng
-như thiết kế đã định.
+**Cả ba nguồn bằng chứng giờ trỏ về cùng dòng 29:**
+
+| Nguồn | Vị trí | Nội dung |
+|---|---|---|
+| `STATIC_WARNING` (SpotBugs) | `UserRepository.java:29` | `DM_CONVERT_CASE` |
+| `STACK_TRACE` (Surefire) | `UserRepository.java:29` | NPE tại `toLowerCase()` |
+| `COVERAGE_INFORMATION` (JaCoCo) | `UserRepository.java:29` | `COVERED` |
+
+Đáng chú ý: SpotBugs không báo `NP_NULL_ON_SOME_PATH` cho lỗi NPE thật ở dòng này — công cụ phân
+tích tĩnh và bằng chứng runtime (stack trace) phát hiện **hai vấn đề khác nhau** ở cùng một vị
+trí. Đây là minh hoạ trực tiếp cho lý do đề tài cần kết hợp nhiều loại bằng chứng thay vì chỉ
+dựa vào một nguồn: SpotBugs một mình sẽ bỏ sót lỗi NPE, nhưng bằng chứng kiểm thử tại đúng vị
+trí đó lại cho thấy code này đã crash trên thực tế.
+
+**Kết luận đầy đủ**: liên kết ba chiều `STATIC_WARNING ↔ CODE_CONTEXT ↔ TEST_RESULT/STACK_TRACE/
+COVERAGE_INFORMATION` theo `file:line` là khả thi trên toàn bộ pipeline, không chỉ một phần.
+
+**Semgrep chưa thử** — hỗ trợ Windows kém vì core là binary OCaml; sẽ chạy qua container đúng
+như thiết kế đã định, việc này để tuần 2.
 
 ## Việc cần làm tiếp
 
-1. Cài JDK 21, chạy lại `mvn spotbugs:spotbugs` và bổ sung kết quả vào mục "chưa kiểm chứng".
-2. Chạy Semgrep qua Docker trên cùng dự án spike, kiểm tra `file:line` trong SARIF có khớp với
-   vị trí JaCoCo và stack trace hay không.
-3. Điểm cần chú ý khi hiện thực adapter: analyzer trả về **0 cảnh báo** phải bị coi là đáng ngờ
-   và báo lỗi, không được lặng lẽ ghi một `analysis_run` rỗng — spike này là ví dụ đúng cho tình
-   huống đó.
+1. Chạy Semgrep qua Docker trên cùng dự án spike ở tuần 2, kiểm tra `file:line` trong SARIF có
+   khớp với vị trí JaCoCo và stack trace hay không — làm nốt phần còn thiếu duy nhất.
+2. Điểm cần chú ý khi hiện thực adapter: analyzer trả về **0 cảnh báo** phải bị coi là đáng ngờ
+   và báo lỗi, không được lặng lẽ ghi một `analysis_run` rỗng — lần chạy trên JDK 25 (0 cảnh
+   báo do môi trường hỏng chứ không phải code sạch) là ví dụ thật cho đúng tình huống này.
+3. Ghi nhận phát hiện "SpotBugs bỏ sót NPE mà stack trace bắt được" vào phần motivation của
+   chương 2 báo cáo — đây là bằng chứng thực nghiệm sớm nhất cho luận điểm trung tâm của đề tài.
