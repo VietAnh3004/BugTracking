@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>vn.hust.datn.casestudy</groupId>
+    <artifactId>vulnshop</artifactId>
+    <version>0.1.0</version>
+    <name>vulnshop</name>
+    <description>Case study co gieo loi de danh gia nen tang phan tich dua tren bang chung</description>
+
+    <!--
+        DAY LA MA NGUON GIEO LOI CO CHU DICH - KHONG DUNG TRONG THUC TE.
+
+        Ung dung nay la doi tuong phan tich cua do an, khong phai mot phan cua san pham.
+        No chua ca loi that lan doan ma sinh canh bao nhung khong phai loi (false positive),
+        duoc ghi day du trong SEEDED.md.
+
+        Dung JdbcTemplate thay vi JPA co chu dich: JPA sinh cau lenh tu dong se che mat loi
+        SQL injection, ma do la loai canh bao tieu bieu nhat can co trong case study.
+    -->
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
+        <!-- H2 in-memory: case study tu chua, chay test khong can Docker. -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!--
+                        Test hong la DU LIEU DAU VAO cua do an (nguon FAILED_TEST va STACK_TRACE),
+                        khong phai ly do dung build. Neu de mac dinh, `mvn verify` se dung lai
+                        truoc khi JaCoCo kip sinh bao cao do phu.
+                    -->
+                    <testFailureIgnore>true</testFailureIgnore>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.9.3.0</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Low</threshold>
+                    <xmlOutput>true</xmlOutput>
+                    <sarifOutput>true</sarifOutput>
+                    <!--
+                        find-sec-bugs bo sung rule bao mat cho SpotBugs (SQL injection, path
+                        traversal, weak crypto) - phan ma SpotBugs loi khong phu.
+
+                        LUU Y: phai khai bao o day, KHONG phai o the <dependencies> cua plugin.
+                        Dat o <dependencies> chi dua jar vao classpath ma SpotBugs khong nap;
+                        da thu va ket qua la 0 plugin duoc nap, mat toan bo canh bao bao mat
+                        ma van "chay thanh cong". Dung kieu hong im lang can canh giac.
+                    -->
+                    <plugins>
+                        <plugin>
+                            <groupId>com.h3xstream.findsecbugs</groupId>
+                            <artifactId>findsecbugs-plugin</artifactId>
+                            <version>1.13.0</version>
+                        </plugin>
+                    </plugins>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

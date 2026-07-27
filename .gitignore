@@ -55,6 +55,12 @@ experiments/**/*.csv
 !experiments/**/results-final.csv
 spike/**/target/
 
+# NGOẠI LỆ: artifact mẫu trong docs/samples/ phải được commit.
+# Chúng vừa là căn cứ thiết kế Unified Evidence Model, vừa là fixture cho unit test của parser —
+# test bằng dữ liệu thật thay vì XML tự bịa (vốn luôn sạch hơn thực tế).
+!docs/samples/
+!docs/samples/**
+
 # Bản đề cương được theo dõi ở docs/. Bản ở thư mục gốc là bản Word đang mở, bỏ qua.
 /De_cuong_*.docx
 ~$*.docx
