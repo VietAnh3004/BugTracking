@@ -93,6 +93,12 @@ container), không phải lúc build — nên một image dùng được cho m�
 
 ## Tài liệu
 
-- [docs/architecture.md](docs/architecture.md) — kiến trúc chi tiết
-- [docs/evidence-model.md](docs/evidence-model.md) — Unified Evidence Model
+- [docs/ke-hoach-20-tuan.md](docs/ke-hoach-20-tuan.md) — **kế hoạch đầy đủ + trạng thái tiến độ**
 - [docs/adr/](docs/adr/) — các quyết định kiến trúc và lý do
+- [docs/spike-tuan-1.md](docs/spike-tuan-1.md) — xác thực rủi ro: 3 nguồn bằng chứng khớp `file:line`
+- [docs/related-work.md](docs/related-work.md) — khung khảo sát tài liệu cho chương 2
+- [case-study/vulnshop/SEEDED.md](case-study/vulnshop/SEEDED.md) — danh mục lỗi gieo có chủ đích
+- [docs/samples/](docs/samples/) — artifact thật của analyzer
+- [CLAUDE.md](CLAUDE.md) — quy ước, lệnh hay dùng, cạm bẫy môi trường
+
+*Chưa có:* `docs/evidence-model.md` và ERD — sản phẩm của tuần 3.
