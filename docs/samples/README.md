@@ -25,21 +25,27 @@ Hai công dụng, cả hai đều quan trọng:
 | `vulnshop/surefire-reports/TEST-*.xml` | Maven Surefire | `TEST_RESULT`, `FAILED_TEST`, `STACK_TRACE` |
 | `vulnshop/jacoco.xml` | JaCoCo 0.8.12 | `COVERAGE_INFORMATION` |
 
-Số liệu: **SpotBugs 28 · Semgrep 5 · 33 test (5 hỏng) · độ phủ 82/171 dòng**.
+Số liệu kỳ vọng nằm trong [`case-study/vulnshop/expected-analysis.json`](../../case-study/vulnshop/expected-analysis.json)
+— nguồn sự thật duy nhất, CI đối chiếu tự động.
 
-Xem nhanh: `python case-study/summarize.py vulnshop`
+```bash
+python case-study/summarize.py vulnshop            # xem số liệu
+python case-study/summarize.py vulnshop --check    # đối chiếu
+```
 
 ## Khi chạy lại
 
 ```bash
-export JAVA_HOME="C:\Program Files\Java\jdk-21.0.12"
-./case-study/run-analysis.sh vulnshop
+./case-study/run-analysis.sh vulnshop --check
 ```
+
+Script tự chạy `mvn clean test` — **`clean` là bắt buộc**, không phải tuỳ chọn: class file cũ
+còn sót trong `target/` từ lần chạy trước có thể làm JaCoCo đếm sai số dòng được phủ (đã gặp
+thật — 82/171 tụt thành 83/173 chỉ vì chạy lại mà không dọn).
 
 Các file sẽ hiện ra là "đã sửa" trong `git status` **kể cả khi kết quả không đổi** — SpotBugs ghi
 `analysisTimestamp`, Surefire ghi thời gian chạy từng test. Đây là nhiễu, không phải thay đổi
 thực chất.
 
-Cách phân biệt: chạy `summarize.py` và so với các con số ở trên. Nếu khớp thì
-`git checkout -- docs/samples/` để bỏ thay đổi. Nếu **không khớp** thì có gì đó đã đổi thật —
-kiểm tra phiên bản JDK và bộ rule Semgrep trước khi commit đè.
+Cách phân biệt: `--check` xanh thì `git checkout -- docs/samples/` để bỏ thay đổi. Nếu `--check`
+đỏ thì có gì đó đã đổi thật — script sẽ gợi ý nguyên nhân thường gặp.

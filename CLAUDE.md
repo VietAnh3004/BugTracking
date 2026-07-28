@@ -57,17 +57,18 @@ infra/           docker-compose (Postgres+pgvector, MinIO)
 Đã mất thời gian gỡ, đừng vấp lại:
 
 **JDK 21 bắt buộc.** JDK mới hơn làm SpotBugs trả về **0 cảnh báo mà vẫn báo thành công** — kiểu
-hỏng im lặng nguy hiểm nhất. Trong Git Bash phải export mỗi phiên:
-```bash
-export JAVA_HOME="C:\Program Files\Java\jdk-21.0.12"
-export PATH="$JAVA_HOME/bin:$PATH"
-```
+hỏng im lặng nguy hiểm nhất.
 
-**Python trong Git Bash**: gõ `python` sẽ trúng App Execution Alias của Windows và hỏng. Dùng
-đường dẫn đầy đủ:
-```bash
-"/c/Users/Admin/AppData/Local/Programs/Python/Python314/python.exe" script.py
-```
+`JAVA_HOME` đã được đặt vĩnh viễn ở mức hệ thống (`C:\Program Files\Java\jdk-21.0.12`) và Git Bash
+thừa kế đúng — `java -version` và `mvn -v` chạy được ngay, **không cần export gì**.
+
+**Đừng export lại `JAVA_HOME` trong Git Bash.** Giá trị dạng Windows chứa dấu `:` mà Git Bash lại
+dùng `:` làm dấu phân tách PATH, nên `export PATH="$JAVA_HOME/bin:$PATH"` sẽ làm hỏng PATH và
+Maven chết với lỗi `ClassNotFoundException: ...plexus.classworlds.launcher.Launcher`.
+
+**Python trong Git Bash**: dùng `python` (Python 3.14.4). **`python3` thì hỏng** — nó trúng App
+Execution Alias của Windows và báo "Python was not found". Script nào viết `python3` sẽ chết trên
+máy này.
 
 **Kéo Docker image**: CDN gốc của Docker Hub hay đứt giữa chừng với image lớn (đã thử 40 lần
 đều hỏng). Kéo qua mirror rồi gắn lại tên:
@@ -99,16 +100,20 @@ cd frontend && npm run lint && npm run format:check && npm run build
 
 # Case study: chạy cả 4 analyzer rồi thu artifact
 ./case-study/run-analysis.sh vulnshop
-"/c/Users/Admin/AppData/Local/Programs/Python/Python314/python.exe" case-study/summarize.py vulnshop
+python case-study/summarize.py vulnshop            # xem thống kê
+python case-study/summarize.py vulnshop --check    # đối chiếu expected-analysis.json
 ```
 
 ## Con số kỳ vọng của vulnshop
 
-**SpotBugs 28 · Semgrep 5 · 33 test (5 hỏng có chủ đích) · độ phủ 82/171 dòng**
+Nguồn sự thật duy nhất: [case-study/vulnshop/expected-analysis.json](case-study/vulnshop/expected-analysis.json).
+CI đối chiếu tự động qua `run-analysis.sh vulnshop --check`.
 
-Lệch khỏi đây nghĩa là môi trường đã đổi — kiểm tra JDK và bộ rule Semgrep **trước khi** kết luận
-gì khác. Năm test hỏng là dữ liệu đầu vào của đồ án (nguồn `FAILED_TEST` + `STACK_TRACE`), không
-phải lỗi cần sửa.
+**Năm test hỏng là dữ liệu đầu vào của đồ án** (nguồn `FAILED_TEST` + `STACK_TRACE`), không phải
+lỗi cần sửa. Đừng "sửa" chúng.
+
+Lệch số liệu thì `summarize.py` gợi ý nguyên nhân thường gặp. Sửa `expected-analysis.json` chỉ khi
+đã hiểu **vì sao** số đổi, và ghi lý do vào commit message.
 
 Chạy lại analyzer làm `docs/samples/` hiện ra "đã sửa" trong git kể cả khi kết quả không đổi
 (timestamp). Nếu `summarize.py` khớp số thì `git checkout -- docs/samples/`.

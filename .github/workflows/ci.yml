@@ -72,6 +72,28 @@ jobs:
       - name: Build (bao gồm kiểm tra kiểu)
         run: npm run build
 
+  # Case study là dữ liệu thực nghiệm, không phải mã sản phẩm — nhưng nó vẫn cần được canh.
+  #
+  # Chạy `mvn verify` một mình KHÔNG đủ: pom đặt testFailureIgnore=true (5 test hỏng là nguồn
+  # FAILED_TEST và STACK_TRACE cho đồ án, không phải lỗi), nên vulnshop hỏng thế nào build cũng
+  # xanh. Phải đối chiếu số liệu với expected-analysis.json mới phát hiện được hỏng hóc.
+  case-study:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Chạy 4 analyzer và đối chiếu số liệu
+        # Script tự lo khác biệt Windows/Linux khi mount Docker. Semgrep dùng rule đã vendor
+        # trong repo và chạy với --network=none nên kết quả không phụ thuộc registry.
+        run: ./case-study/run-analysis.sh vulnshop --check
+
   secrets:
     runs-on: ubuntu-latest
     steps:

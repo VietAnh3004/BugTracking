@@ -161,8 +161,8 @@ gieo có thực tế hay không.
 ```bash
 export JAVA_HOME="C:\Program Files\Java\jdk-21.0.12"   # bắt buộc JDK 21, xem ADR 0003
 
-mvn test                  # 33 test, 5 hỏng có chủ đích; sinh Surefire XML + jacoco.xml
-mvn spotbugs:spotbugs     # 28 cảnh báo
+mvn test                  # sinh Surefire XML + jacoco.xml; một số test hỏng là có chủ đích
+mvn spotbugs:spotbugs     # sinh spotbugsXml.xml
 
 docker run --rm --network=none -v "/duong/dan/case-study:/work" semgrep/semgrep \
   semgrep scan --config=/work/semgrep-rules/p-java.yaml \
@@ -170,7 +170,14 @@ docker run --rm --network=none -v "/duong/dan/case-study:/work" semgrep/semgrep 
 # 5 cảnh báo
 ```
 
+Hoặc chạy cả bốn công cụ bằng một lệnh, kèm đối chiếu số liệu:
+
+```bash
+./case-study/run-analysis.sh vulnshop --check
+```
+
 Artifact đã chạy được lưu tại [`docs/samples/vulnshop/`](../../docs/samples/vulnshop/).
 
-Con số kỳ vọng: **33 test (5 hỏng) · SpotBugs 28 · Semgrep 5**. Lệch khỏi các số này nghĩa là môi
-trường đã đổi — kiểm tra phiên bản JDK và bộ rule Semgrep trước khi kết luận gì khác.
+Con số kỳ vọng nằm trong [`expected-analysis.json`](expected-analysis.json) — nguồn sự thật duy
+nhất, CI đối chiếu tự động. Lệch khỏi đó nghĩa là môi trường đã đổi; `summarize.py` sẽ gợi ý
+nguyên nhân thường gặp.

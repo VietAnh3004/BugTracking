@@ -7,16 +7,21 @@
 Ứng dụng bán hàng tối giản với bốn nhóm chức năng theo đề cương mục 5.3: đăng nhập, xử lý input,
 truy vấn cơ sở dữ liệu, tải tệp lên.
 
-## Con số hiện tại
+## Con số kỳ vọng
 
-| Nguồn | Kết quả |
-|---|---|
-| Test | 33 test, **5 hỏng có chủ đích** |
-| SpotBugs + find-sec-bugs | 28 cảnh báo |
-| Semgrep (`p/java` đã vendor) | 5 cảnh báo |
-| Độ phủ | 82/171 dòng (48%), 8 file **không được phủ có chủ đích** |
+Nằm trong [`expected-analysis.json`](expected-analysis.json) — **nguồn sự thật duy nhất** cho số
+test, số cảnh báo của từng công cụ và độ phủ. CI đối chiếu tự động mỗi lần push.
 
-Lệch khỏi các con số này nghĩa là môi trường đã đổi — kiểm tra JDK và bộ rule Semgrep trước.
+Cố ý không chép lại con số ra đây: chép ra nhiều chỗ thì sớm muộn cũng lệch nhau, và lúc đó
+không biết chỗ nào đúng.
+
+```bash
+python ../summarize.py vulnshop            # xem số liệu hiện tại
+python ../summarize.py vulnshop --check    # đối chiếu, lệch thì exit 1
+```
+
+Lệch nghĩa là môi trường đã đổi — `summarize.py` gợi ý nguyên nhân thường gặp (JDK sai phiên bản,
+find-sec-bugs không nạp, bộ rule Semgrep bị cập nhật).
 
 ## Vì sao dùng JdbcTemplate chứ không dùng JPA
 

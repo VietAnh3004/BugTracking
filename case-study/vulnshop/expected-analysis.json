@@ -1,0 +1,35 @@
+{
+  "_comment": [
+    "Con so ky vong khi chay pipeline phan tich tren vulnshop.",
+    "",
+    "Day la NGUON SU THAT DUY NHAT - SEEDED.md, README va CLAUDE.md deu tro ve day thay vi",
+    "chep cung so, de ba noi khong lech nhau.",
+    "",
+    "CI doi chieu bang: python case-study/summarize.py vulnshop --check",
+    "",
+    "Vi sao can doi chieu chu khong chi 'build xanh': pom co testFailureIgnore=true (5 test hong",
+    "la du lieu dau vao cua do an, khong phai loi), nen vulnshop hong the nao build cung xanh.",
+    "Chi co so sanh so lieu moi phat hien duoc hong hoc.",
+    "",
+    "Sua file nay chi khi da hieu VI SAO so lieu doi, va ghi ly do vao commit message."
+  ],
+
+  "tests": {
+    "total": 33,
+    "failed": 5
+  },
+
+  "spotbugs": {
+    "findings": 28,
+    "plugins": 1
+  },
+
+  "semgrep": {
+    "findings": 5
+  },
+
+  "coverage": {
+    "covered_lines": 82,
+    "total_lines": 171
+  }
+}
