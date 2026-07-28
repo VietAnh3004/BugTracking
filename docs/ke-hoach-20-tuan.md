@@ -16,14 +16,16 @@
 | Giai đoạn | Trạng thái |
 |---|---|
 | **Tuần 1** — skeleton, CI, hạ tầng, spike | ✅ Xong |
-| **Tuần 2** — vulnshop + artifact thật + khung khảo sát | ✅ Xong (còn 1 thiếu sót bên dưới) |
+| **Tuần 2** — vulnshop + artifact thật + khung khảo sát | ✅ Xong |
 | **Tuần 3** — Unified Evidence Model | ⬜ Chưa bắt đầu ← **việc tiếp theo** |
 | **Tuần 4** — API contract + OpenAPI | ⬜ Chưa bắt đầu |
 
-### Thiếu sót của tuần 2, đang chờ xử lý
+### Việc còn dở của tuần 2 (không chặn tuần 3)
 
-1. **Danh sách tài liệu chưa có tên bài cụ thể.** `docs/related-work.md` mới có 5 chủ đề + từ
-   khoá tìm kiếm. Chưa liệt kê ~25 bài thật vì cần tìm kiếm để xác minh, tránh citation bịa.
+- **Danh sách tài liệu mới tìm được 16/25 bài**, đã xác minh link thật (mục 8 của
+  `docs/related-work.md`), nhưng **chưa đọc và chưa điền template** (bài toán, phương pháp, số
+  liệu, khoảng trống). Đây là việc của người dùng, không phải việc code. Còn thiếu ~9 bài, chủ
+  yếu ở chủ đề 1 (baseline ML xếp hạng cảnh báo) và mở rộng cho chủ đề 3–5.
 
 Đã xử lý xong:
 

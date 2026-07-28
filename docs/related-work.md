@@ -13,14 +13,19 @@ khi bảo vệ. Đọc mà không điền cột đó thì coi như chưa đọc 
 
 ## Trạng thái
 
-| Chủ đề | Mục tiêu | Đã đọc |
-|---|---|---|
-| 1. Static analysis và false positive | 6 | 0 |
-| 2. LLM cho phân tích mã nguồn | 6 | 0 |
-| 3. AI Agent trong kỹ nghệ phần mềm | 5 | 0 |
-| 4. RAG và agentic retrieval | 4 | 0 |
-| 5. Evidence grounding, traceability, human-in-the-loop | 4 | 0 |
-| **Tổng** | **25** | **0** |
+| Chủ đề | Mục tiêu | Đã tìm thấy (chưa đọc) | Đã đọc |
+|---|---|---|---|
+| 1. Static analysis và false positive | 6 | 3 | 0 |
+| 2. LLM cho phân tích mã nguồn | 6 | 4 | 0 |
+| 3. AI Agent trong kỹ nghệ phần mềm | 5 | 3 | 0 |
+| 4. RAG và agentic retrieval | 4 | 3 | 0 |
+| 5. Evidence grounding, traceability, human-in-the-loop | 4 | 3 | 0 |
+| **Tổng** | **25** | **16** | **0** |
+
+**16 tài liệu đã tìm và xác minh tồn tại thật** (link/DOI kiểm tra được qua tìm kiếm), liệt kê ở
+mục 8. Còn thiếu ~9 bài để đủ mục tiêu — chủ yếu ở chủ đề 1 (baseline ML xếp hạng cảnh báo trước
+LLM) và các bài mở rộng cho chủ đề 3–5. Việc **đọc và điền template** (bài toán, phương pháp, số
+liệu, khoảng trống) vẫn là việc của bạn — xem lưu ý ở cuối mục 8.
 
 ---
 
@@ -159,6 +164,158 @@ Hai lưu ý khi ghi:
 
 ---
 
-## 8. Các tài liệu đã đọc
+## 8. Tài liệu đã tìm thấy
 
-*(chưa có — thêm dần theo template ở mục 7)*
+**Cách đọc mục này**: mỗi bài dưới đây đã được xác minh tồn tại thật qua tìm kiếm (có link
+truy cập được), nhưng **chưa đọc và chưa điền template**. Trường "Vì sao liên quan" là tóm tắt
+từ kết quả tìm kiếm, không thay thế việc đọc — dùng nó để quyết định thứ tự đọc, không dùng để
+trích dẫn thẳng vào báo cáo. Khi đọc xong, thay khối này bằng khối đầy đủ theo template ở mục 7.
+
+Thứ tự ưu tiên đọc: nhóm ⭐ trước — đó là các bài nền tảng hoặc gần đề tài nhất.
+
+### Chủ đề 1 — Static analysis và false positive
+
+**[1-A] ⭐ Why don't software developers use static analysis tools to find bugs?**
+Johnson, Song, Murphy-Hill, Bowdidge — ICSE 2013.
+Vì sao liên quan: bài kinh điển nhất về rào cản tiếp nhận công cụ phân tích tĩnh — phỏng vấn
+20 lập trình viên, chỉ ra false positive và cách trình bày cảnh báo là rào cản chính.
+Link: https://cs.gmu.edu/~johnsonb/docs/icse2013.pdf
+
+**[1-B] Tricorder: Building a Program Analysis Ecosystem**
+Sadowski, van Gogh, Jaspan, Söderberg, Winter — ICSE 2015 (Google).
+Vì sao liên quan: hệ thống phân tích tĩnh công nghiệp thật, tích hợp vào code review; có nút
+"NOT USEFUL" để đo tỉ lệ false positive liên tục — mô hình tham khảo cho việc đo actionability.
+Link: https://research.google.com/pubs/archive/43322.pdf
+
+**[1-C] Mitigating False Positive Static Analysis Warnings: Progress, Challenges, and Opportunities**
+IEEE Transactions on Software Engineering, 2023.
+Vì sao liên quan: khảo sát tổng quan (survey) các hướng giảm false positive — dùng làm khung
+liệt kê baseline trước-LLM.
+Link: https://liu906.github.io/papers/Mitigating_False_Positive_Static_Analysis_Warnings_Progress_Challenges_and_Opportunities.pdf
+
+*Còn thiếu ~3 bài: một bài học máy xếp hạng cảnh báo cụ thể (ví dụ dòng nghiên cứu Z-Ranking/
+Tian et al.), thống kê tỉ lệ FP thực tế của SpotBugs/Semgrep cụ thể, và định nghĩa "actionable
+alert" gốc.*
+
+### Chủ đề 2 — LLM cho phân tích mã nguồn
+
+**[2-A] ⭐ Large Language Models for Software Engineering: Survey and Open Problems**
+Fan, Gokkaya, Harman, Lyubarskiy, Sengupta, Yoo, Zhang — ICSE-FoSE 2023.
+Vì sao liên quan: khảo sát tổng quan LLM4SE, dùng làm khung mở đầu phần 2.4. Nêu rõ nhu cầu kỹ
+thuật "hybrid" (SE truyền thống + LLM) để lọc hallucination — liên hệ trực tiếp luận điểm đồ án.
+Link: https://arxiv.org/abs/2310.03533
+
+**[2-B] ⭐⭐ Using LLMs to Adjudicate Static-Analysis Alerts**
+Kang, Lieber và cộng sự — CMU (Software Engineering Institute).
+Vì sao liên quan: **công trình gần đề tài nhất tìm được** — dùng LLM phân xử cảnh báo phân tích
+tĩnh true/false positive. Cần đọc kỹ nhất và so sánh trực diện: họ có dùng bằng chứng kiểm thử
+không, có cơ chế hậu kiểm trích dẫn độc lập không.
+Link: https://www.andrew.cmu.edu/user/wklieber/LLMs-to-Adjudicate-Static-Analysis-Alerts.pdf
+
+**[2-C] Effectiveness of ChatGPT for Static Analysis: How Far Are We?**
+ACM International Conference on AI-Powered Software (AIware) 2024.
+Vì sao liên quan: đánh giá thực nghiệm ChatGPT trên phát hiện lỗi tĩnh (Null Dereference,
+Resource Leak) và loại bỏ cảnh báo sai — có số liệu cụ thể để so sánh.
+Link: https://dl.acm.org/doi/10.1145/3664646.3664777
+
+**[2-D] Sifting the Noise: A Comparative Study of LLM Agents in Vulnerability False Positive Filtering**
+arXiv 2601.22952 (2026).
+Vì sao liên quan: so sánh nhiều LLM agent trong việc lọc false positive lỗ hổng bảo mật — có số
+liệu true/false positive rate cụ thể (ví dụ baseline Semgrep: TP 80.49%, FP 39.09%) để đối chiếu
+với kết quả thực nghiệm của chính đồ án trên vulnshop.
+Link: https://arxiv.org/pdf/2601.22952
+
+*Còn thiếu ~2 bài: một bài đo trực tiếp hiện tượng "kết luận thiếu căn cứ khi ngữ cảnh không đủ"
+(có thể tìm trong hướng hallucination-in-code-generation), và một bài về ảnh hưởng độ dài ngữ
+cảnh tới độ chính xác phân loại — có thể dùng chung với [4-C] ở chủ đề 4.*
+
+### Chủ đề 3 — AI Agent trong kỹ nghệ phần mềm
+
+**[3-A] ⭐ ReAct: Synergizing Reasoning and Acting in Language Models**
+Yao, Zhao, Yu, Du, Shafran, Narasimhan, Cao — ICLR 2023.
+Vì sao liên quan: nền tảng lý thuyết trực tiếp cho vòng lặp agent ở §3.4 đề cương — mô hình suy
+luận và hành động xen kẽ, đúng cấu trúc "gọi tool → quan sát → suy luận tiếp".
+Link: https://arxiv.org/abs/2210.03629
+
+**[3-B] SWE-bench: Can Language Models Resolve Real-World GitHub Issues?**
+Jimenez, Yang và cộng sự — Princeton, ICLR 2024.
+Vì sao liên quan: benchmark đánh giá agent trên tác vụ phần mềm thật, quy mô 2294 issue GitHub
+thật. Kết quả gốc cho thấy giới hạn thật của agent (Claude 2 chỉ giải được 1.96% issue) — dữ
+liệu cụ thể cho phần hạn chế của agent trong chương 2.
+Link: https://arxiv.org/abs/2310.06770
+
+**[3-C] Beyond the Leaderboard: A Synthesis of Tool-Use, Planning, and Reasoning Failures in Large Language Model Agents**
+arXiv 2607.05775 (2026).
+Vì sao liên quan: tổng hợp các dạng lỗi thật của agent khi dùng tool (gọi sai tham số, lặp vô
+hạn, hallucinate tên hàm) — trực tiếp liên quan tới `max_tool_iterations` và thiết kế
+CitationValidator độc lập với LLM của đồ án.
+Link: https://arxiv.org/pdf/2607.05775
+
+*Còn thiếu ~2 bài: bài gốc về function calling/tool-use (ví dụ Toolformer hoặc tài liệu chính
+thức của Anthropic/OpenAI về tool-use), và một case study agent áp dụng cụ thể cho kỹ nghệ phần
+mềm (code review agent, tự động sửa lỗi).*
+
+### Chủ đề 4 — RAG và agentic retrieval
+
+**[4-A] ⭐ Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks**
+Lewis, Perez, Piktus, Petroni, Karpukhin, Goyal, Küttler, Lewis, Yih, Rocktäschel, Riedel, Kiela
+— NeurIPS 2020.
+Vì sao liên quan: bài gốc định nghĩa RAG — nền tảng lý thuyết cho toàn bộ kiến trúc Evidence
+Retriever của đồ án.
+Link: https://proceedings.neurips.cc/paper_files/paper/2020/file/6b493230205f780e1bc26945df7481e5-Paper.pdf
+
+**[4-B] ⭐ Lost in the Middle: How Language Models Use Long Contexts**
+Liu, Lin, Hewitt, Paranjape, Bevilacqua, Petroni, Liang — TACL 2024 (arXiv 2307.03172, 2023).
+Vì sao liên quan: chứng minh thực nghiệm hiện tượng pha loãng ngữ cảnh — luận cứ trực tiếp cho
+quyết định thiết kế "lọc và xếp hạng bằng chứng theo context budget" ở §3.4 đề cương thay vì
+nhồi hết bằng chứng vào một prompt.
+Link: https://arxiv.org/abs/2307.03172
+
+**[4-C] CodeBERT: A Pre-Trained Model for Programming and Natural Languages**
+Feng, Guo, Tang, Duan, Feng, Gong, Shou, Qin, Liu, Jiang, Zhou — Findings of EMNLP 2020
+(Microsoft Research).
+Vì sao liên quan: mô hình nền tảng cho truy xuất ngữ nghĩa trên mã nguồn (embedding code↔text) —
+liên quan trực tiếp tới thiết kế `search_evidence` và bảng `evidence_embedding`.
+Link: https://arxiv.org/abs/2002.08155
+
+*Còn thiếu ~1 bài: một bài cụ thể về hybrid retrieval (kết hợp BM25 + dense) trên dữ liệu mã
+nguồn — tìm kiếm ban đầu chỉ ra được nguồn blog/công nghiệp (Pinecone, v.v.), cần tìm thêm nguồn
+học thuật (ví dụ dòng nghiên cứu về Reciprocal Rank Fusion gốc, Cormack et al. 2009).*
+
+### Chủ đề 5 — Evidence grounding, traceability, human-in-the-loop
+
+**[5-A] ⭐⭐ Enabling Large Language Models to Generate Text with Citations**
+Gao, Yen, Yu, Chen (Princeton) — EMNLP 2023. Benchmark ALCE.
+Vì sao liên quan: **liên quan trực tiếp nhất tới §3.4.2 và §5.2 đề cương** — đo độ chính xác
+trích dẫn của LLM bằng ba chiều fluency/correctness/citation quality. Số liệu cụ thể: ngay cả
+mô hình tốt nhất cũng thiếu trích dẫn hỗ trợ đầy đủ 50% thời gian trên ELI5 — điểm tham chiếu
+định lượng trực tiếp cho Unsupported Claim Rate của đồ án.
+Link: https://arxiv.org/abs/2305.14627
+
+**[5-B] ⭐ Software Traceability: Trends and Future Directions**
+Cleland-Huang — ICSE-FOSE 2014.
+Vì sao liên quan: nền lý thuyết cho Unified Evidence Model — liên kết yêu cầu↔mã↔kiểm thử, và
+nhận định traceability phải "nhúng vào quy trình phát triển chứ không phải tài liệu hậu kỳ".
+Link: http://selab.netlab.uky.edu/homepage/publications/2014-ICSE-FOSE.pdf
+
+**[5-C] A Survey of Human-in-the-loop for Machine Learning**
+Wu, Xiao, Sun, Zhang, Ma, He — Future Generation Computer Systems, 2022.
+Vì sao liên quan: phân loại các cách con người tham gia vào vòng lặp AI — dùng làm khung lý
+thuyết cho thiết kế Human Review Module (Accept/Reject/Uncertain/Insufficient Evidence).
+Link: https://arxiv.org/abs/2108.00941
+
+*Còn thiếu ~1 bài: một bài cụ thể hơn về "faithfulness evaluation" (đo mức độ câu trả lời được
+bằng chứng chống lưng) — tìm kiếm ban đầu chỉ ra được survey tổng quan
+(arxiv.org/pdf/2508.15396, "Attribution, Citation, and Quotation") nhưng chưa xác minh kỹ, cần
+đọc và kiểm tra lại trước khi đưa vào danh sách chính thức.*
+
+---
+
+**Lưu ý quan trọng khi dùng danh sách này**: các trường "Vì sao liên quan" ở trên do tìm kiếm và
+tổng hợp, **không phải do đọc toàn văn**. Trước khi trích dẫn bất kỳ bài nào vào báo cáo, phải:
+
+1. Mở link, xác nhận tiêu đề/tác giả/năm khớp với những gì ghi ở đây.
+2. Đọc ít nhất abstract + kết luận, điền đầy đủ template ở mục 7 (đặc biệt là "Hạn chế tác giả
+   tự nêu" và "Khoảng trống mà ĐATN lấp").
+3. Với các bài đánh dấu ⭐⭐ ([2-B], [5-A]) — đọc toàn văn, vì đây là công trình gần đề tài nhất
+   và nhiều khả năng bị hỏi kỹ nhất khi bảo vệ.
