@@ -16,18 +16,24 @@
 | Giai đoạn | Trạng thái |
 |---|---|
 | **Tuần 1** — skeleton, CI, hạ tầng, spike | ✅ Xong |
-| **Tuần 2** — vulnshop + artifact thật + khung khảo sát | ✅ Xong (còn 3 thiếu sót bên dưới) |
+| **Tuần 2** — vulnshop + artifact thật + khung khảo sát | ✅ Xong (còn 1 thiếu sót bên dưới) |
 | **Tuần 3** — Unified Evidence Model | ⬜ Chưa bắt đầu ← **việc tiếp theo** |
 | **Tuần 4** — API contract + OpenAPI | ⬜ Chưa bắt đầu |
 
-### Ba thiếu sót của tuần 2, đang chờ quyết định
+### Thiếu sót của tuần 2, đang chờ xử lý
 
 1. **Danh sách tài liệu chưa có tên bài cụ thể.** `docs/related-work.md` mới có 5 chủ đề + từ
    khoá tìm kiếm. Chưa liệt kê ~25 bài thật vì cần tìm kiếm để xác minh, tránh citation bịa.
-2. **CI không kiểm vulnshop.** `testFailureIgnore=true` khiến vulnshop hỏng thế nào CI cũng xanh.
-   Hướng xử lý: thêm `expected-analysis.json` + cờ `--check` cho `summarize.py`, CI so số liệu.
-3. **`.gitleaks.toml` chưa chứng minh được tác dụng.** gitleaks không bắt credential gieo kể cả
-   khi không có allowlist. Đang cân nhắc xoá (khuyến nghị) hoặc giữ + wiring tường minh trong CI.
+
+Đã xử lý xong:
+
+- ✅ **CI không kiểm vulnshop** — thêm `expected-analysis.json` + cờ `summarize.py --check` +
+  job CI `case-study`. Lúc kiểm chứng còn bắt được một lỗi thật: `run-analysis.sh` thiếu
+  `mvn clean` khiến JaCoCo đếm sai độ phủ giữa các lần chạy — đã vá.
+- ✅ **`.gitleaks.toml`** — đã xoá. Kiểm chứng lại bằng thực nghiệm: gitleaks không bắt credential
+  gieo trong vulnshop kể cả khi hoàn toàn không có file config nào, nên allowlist chưa từng có
+  tác dụng thật. CI không tham chiếu file này (job `secrets` không truyền `--config`) nên xoá
+  không ảnh hưởng gì.
 
 ### Việc đã làm khác kế hoạch gốc
 
