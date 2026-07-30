@@ -18,7 +18,8 @@ Bảo vệ dự kiến giữa tháng 12/2026.
 | File | Nội dung |
 |---|---|
 | [docs/ke-hoach-20-tuan.md](docs/ke-hoach-20-tuan.md) | **Lộ trình đầy đủ 20 tuần** + chuẩn code + thiết kế. Đọc trước tiên |
-| [docs/adr/](docs/adr/) | Ba quyết định kiến trúc lớn và lý do |
+| [docs/adr/](docs/adr/) | Bốn quyết định kiến trúc lớn và lý do |
+| [docs/evidence-model.md](docs/evidence-model.md) | Schema Unified Evidence Model. **Mục 7 ghi 5 bảng còn nợ** (`test_case`, `stack_frame`, `coverage_line`, `coverage_method`, `warning_location`) — hoãn có chủ đích sang tuần 8-9, không phải quên. Đọc trước khi đụng vào StaticAnalysisAdapter/TestEvidenceCollector |
 | [docs/spike-tuan-1.md](docs/spike-tuan-1.md) | Xác thực rủi ro: 3 nguồn bằng chứng khớp `file:line` |
 | [case-study/vulnshop/SEEDED.md](case-study/vulnshop/SEEDED.md) | Danh mục lỗi gieo có chủ đích + phát hiện ảnh hưởng thiết kế |
 
