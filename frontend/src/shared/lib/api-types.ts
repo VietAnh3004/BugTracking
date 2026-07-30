@@ -210,18 +210,18 @@ export interface components {
             context_lines?: number;
         };
         CreateProjectRequest: {
-            name?: string;
+            name: string;
             description?: string;
         };
         ProjectResponse: {
             /** Format: uuid */
-            id?: string;
-            name?: string;
+            id: string;
+            name: string;
             description?: string;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
             /** Format: date-time */
-            updatedAt?: string;
+            updatedAt: string;
         };
         Pageable: {
             /** Format: int32 */
@@ -231,13 +231,13 @@ export interface components {
             sort?: string[];
         };
         PageResponseProjectResponse: {
-            items?: components["schemas"]["ProjectResponse"][];
+            items: components["schemas"]["ProjectResponse"][];
             /** Format: int32 */
-            page?: number;
+            page: number;
             /** Format: int32 */
-            size?: number;
+            size: number;
             /** Format: int64 */
-            total?: number;
+            total: number;
         };
     };
     responses: never;

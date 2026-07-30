@@ -19,7 +19,36 @@
 | **Tuần 2** — vulnshop + artifact thật + khung khảo sát | ✅ Xong |
 | **Tuần 3** — Unified Evidence Model | ✅ Xong (xem §D2) |
 | **Tuần 4** — API contract + OpenAPI | ✅ Xong (xem §E2) |
-| **Tuần 5-7** — core backend CRUD + JWT auth + frontend routing | ⬜ Chưa bắt đầu ← **việc tiếp theo** |
+| **Tuần 5-7** — core backend CRUD + JWT auth + frontend routing | 🔄 Đang làm — xem §G |
+
+### §G — Tuần 5-7: tiến độ chi tiết (đang làm)
+
+Kế hoạch thực thi đầy đủ (18 hạng mục A→E) nằm ở
+`C:\Users\Admin\.claude\plans\ti-p-t-c-i-nh-calm-pony.md`. Tóm tắt trạng thái từng hạng mục:
+
+| # | Hạng mục | Trạng thái |
+|---|---|---|
+| A | Dọn 3 endpoint `_probe` khỏi spec OpenAPI công khai | ✅ Xong |
+| B1 | Migration V3: `app_user`, `refresh_token`, `snapshot_file`, `project.owner_id`, `repository_snapshot.{status,source_type,file_count,total_size_bytes,error_message}` | ✅ Xong |
+| B2 | Bật `required` trong spec OpenAPI (`@Schema(requiredMode=...)` trên `ProjectResponse`/`CreateProjectRequest`/`PageResponse`) | ✅ Xong |
+| B3 | Spring Security 2 filter chain (JWT Bearer + service token cho `/api/v1/tools/**`) + CORS qua filter | ⬜ Tiếp theo |
+| B4 | Đăng ký/đăng nhập/`/auth/me` | ⬜ |
+| B5 | Refresh token xoay vòng + phát hiện tái sử dụng | ⬜ |
+| B6 | Gán owner cho project + authorization + migration V4 (backfill + `SET NOT NULL` cho `project.owner_id`) | ⬜ |
+| C1-C3 | MinIO object storage + upload zip an toàn + API duyệt file/đọc theo dòng | ⬜ |
+| D1-D7 | Frontend: Tailwind v4, routing, auth, upload, source viewer | ⬜ |
+| E1-E2 | Regenerate api-types, ADR 0006/0007, kiểm chứng end-to-end | ⬜ |
+
+**Điều chỉnh quan trọng so với plan gốc** (đọc trước khi làm B6, kẻo backfill hai lần):
+`project.owner_id` được thêm ở V3 dưới dạng **nullable**, KHÔNG `NOT NULL` như plan gốc dự định —
+vì tại thời điểm viết V3 chưa có Spring Security nên `ProjectService.create()` chưa có cách nào
+biết "user hiện tại" để gán owner. Việc backfill dữ liệu cũ (tài khoản mồ côi vô hiệu hoá) +
+`ALTER COLUMN owner_id SET NOT NULL` dời sang **migration V4** ở bước B6, đúng lúc auth đã tồn
+tại và `ProjectService`/`ProjectController` bắt buộc nhận `ownerId` ở mọi lối vào. Đây là ví dụ
+cụ thể cho nguyên tắc "mỗi commit trên `main` phải xanh độc lập" — không gộp một cột NOT NULL với
+tính năng chưa tồn tại để gán giá trị cho nó.
+
+Xem `git log --oneline -10` để biết commit cụ thể đã xong; message ghi chi tiết lý do.
 
 ### Việc còn dở của tuần 2 (không chặn tuần 3)
 

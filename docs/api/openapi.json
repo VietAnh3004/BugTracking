@@ -494,7 +494,8 @@
           "description" : {
             "type" : "string"
           }
-        }
+        },
+        "required" : [ "name" ]
       },
       "ProjectResponse" : {
         "type" : "object",
@@ -517,7 +518,8 @@
             "type" : "string",
             "format" : "date-time"
           }
-        }
+        },
+        "required" : [ "createdAt", "id", "name", "updatedAt" ]
       },
       "Pageable" : {
         "type" : "object",
@@ -561,7 +563,8 @@
             "type" : "integer",
             "format" : "int64"
           }
-        }
+        },
+        "required" : [ "items", "page", "size", "total" ]
       }
     }
   }
