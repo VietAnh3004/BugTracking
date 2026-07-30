@@ -6,4 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import vn.hust.datn.evidence.domain.Project;
 
-public interface ProjectRepository extends JpaRepository<Project, UUID> {}
+public interface ProjectRepository extends JpaRepository<Project, UUID> {
+
+    boolean existsByName(String name);
+
+    java.util.Optional<Project> findByName(String name);
+}

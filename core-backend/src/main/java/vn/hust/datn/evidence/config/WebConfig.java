@@ -2,6 +2,7 @@ package vn.hust.datn.evidence.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import vn.hust.datn.evidence.config.properties.CorsProperties;
@@ -28,5 +29,10 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .exposedHeaders("Location")
                 .maxAge(3600);
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new ToolCallLoggingInterceptor()).addPathPatterns("/api/v1/tools/**");
     }
 }

@@ -18,7 +18,8 @@
 | **Tuần 1** — skeleton, CI, hạ tầng, spike | ✅ Xong |
 | **Tuần 2** — vulnshop + artifact thật + khung khảo sát | ✅ Xong |
 | **Tuần 3** — Unified Evidence Model | ✅ Xong (xem §D2) |
-| **Tuần 4** — API contract + OpenAPI | ⬜ Chưa bắt đầu ← **việc tiếp theo** |
+| **Tuần 4** — API contract + OpenAPI | ✅ Xong (xem §E2) |
+| **Tuần 5-7** — core backend CRUD + JWT auth + frontend routing | ⬜ Chưa bắt đầu ← **việc tiếp theo** |
 
 ### Việc còn dở của tuần 2 (không chặn tuần 3)
 
@@ -625,6 +626,49 @@ triệt để.
   `src/shared/lib/api-types.ts`.
 - Integration test với Testcontainers dùng `pgvector/pgvector:pg16` — image này **đã có trong
   cache local**, nên không phụ thuộc mạng nữa.
+
+### E2. Tuần 4 — đã hoàn thành (30/07/2026)
+
+Quyết định kiến trúc trước khi viết code (chốt với người dùng, ghi vào
+[ADR 0005](adr/0005-evidence-tool-api-la-rpc.md)):
+
+1. **Evidence Tool API là RPC đặt tên theo tool** (`POST /api/v1/tools/get_warning`, ...), KHÔNG
+   phải REST resource — vì naming convention của LLM (snake_case) không dung hoà được với DTO Java
+   (camelCase) mà không phá luận điểm "5 tool là ranh giới kiến trúc thật, dễ log/đo" (§1); LLM
+   cũng không phân trang được nên không dùng `page/size` kiểu UI.
+2. **`/api/v1/tools/**` dùng service token riêng**, không forward JWT người dùng — vì
+   `experiments/runner.py` (§6) chạy batch không có phiên người dùng nào để forward.
+
+Ba thứ hỏng im lặng đã sửa trước khi viết controller: `pom.xml` thiếu `lombok-mapstruct-binding`
+(MapStruct sinh mapper rỗng mà biên dịch vẫn thành công); `GlobalExceptionHandler` catch-all
+`Exception` nuốt 4xx của Spring (UUID sai định dạng trả 500 thay vì 400); `OpenApiConfig` thiếu
+`servers` (snapshot OpenAPI không bao giờ khớp giữa môi trường).
+
+Đã hiện thực:
+- 4 exception nghiệp vụ (`EvidenceNotFoundException`/`WrongRun`/`NotAWarning`/`RunNotQueryable`)
+  ánh xạ 1-1 với `ClaimCitationResolution` đã có từ ADR 0004 — getter số ít trả 404 phân loại,
+  list luôn trả mảng rỗng (không bao giờ 404), và mọi tool validate `analysis_run.status` trước
+  (409 nếu đang RUNNING/FAILED) để "rỗng vì chưa build" không lẫn với "rỗng vì đúng là rỗng".
+- `EvidenceQueryService` dùng chung cho cả tool và UI; `WarningView` qua JPQL constructor
+  projection (không MapStruct) vì `Warning.evidenceRecord` là `@OneToOne LAZY @MapsId` một chiều.
+- `ProjectController` (REST) + `EvidenceToolController` (5 tool RPC) + `ToolCallLoggingInterceptor`
+  ghi `tool_name`/`duration_ms`/`outcome`.
+- `docs/api/openapi.json` commit trong repo; `OpenApiSnapshotTest` (core-backend) đối chiếu hai
+  chiều bằng canonicalize (không so byte — springdoc không deterministic mặc định).
+- FE: `api:generate` đọc từ file commit (không cần BE chạy), `api:generate:live` cho lặp nhanh;
+  màn hình `ProjectList` gọi thật `GET /api/v1/projects`; CI job `frontend` thêm bước
+  `git diff --exit-code src/shared/lib/api-types.ts` chống drift.
+- 56 test tích hợp mới (MockMvc + Testcontainers), toàn bộ xanh.
+
+Sự cố gặp phải: `TestFixtures.warning()` gọi self-invocation `evidenceRecord(...)` mà không có
+`@Transactional` → entity bị detach giữa hai lần `saveAndFlush`, Hibernate từ chối gán vào quan hệ
+`@MapsId` ("detached entity passed to persist"). Sửa bằng `@Transactional` trên `warning()` để
+self-invocation tham gia cùng transaction thay vì tự mở transaction riêng.
+
+Hoãn có chủ đích (không phải thiếu sót): nhóm REST resource UI cho `analysis-runs`/`evidence`
+(không màn hình nào tiêu thụ tới tuần 10-11); hạ tầng test FE (`@testing-library/react`, jsdom —
+chưa có component nào đáng test); pytest đối chiếu tên tham số tool giữa Java và Python (
+`agent-service/tools/` còn rỗng, agent loop là tuần 12-13, chưa có gì để đối chiếu).
 
 ### F. Khung khảo sát tài liệu (song song, bạn tự đọc)
 

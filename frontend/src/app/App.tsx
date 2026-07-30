@@ -1,3 +1,4 @@
+import { ProjectList } from '@/features/projects/components/ProjectList';
 import { BackendStatus } from '@/features/system/components/BackendStatus';
 
 export function App() {
@@ -19,6 +20,13 @@ export function App() {
         style={{ borderTop: '1px solid #e5e7eb', marginTop: '1.5rem', paddingTop: '1.5rem' }}
       >
         <BackendStatus />
+      </section>
+
+      <section
+        style={{ borderTop: '1px solid #e5e7eb', marginTop: '1.5rem', paddingTop: '1.5rem' }}
+      >
+        <h2 style={{ fontSize: '1.125rem', marginTop: 0 }}>Dự án</h2>
+        <ProjectList />
       </section>
     </main>
   );

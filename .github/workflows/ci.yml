@@ -77,6 +77,13 @@ jobs:
         run: npm run format:check
       - name: Build (bao gồm kiểm tra kiểu)
         run: npm run build
+      - name: Đối chiếu api-types.ts với docs/api/openapi.json đã commit
+        # api:generate đọc từ file commit (không cần backend chạy). Nếu ai sửa controller mà
+        # quên chạy lại api:generate, bước này bắt được — đúng khuôn OpenApiSnapshotTest phía
+        # core-backend (đối chiếu chiều ngược lại: spec <-> code Java).
+        run: |
+          npm run api:generate
+          git diff --exit-code src/shared/lib/api-types.ts
 
   # Case study là dữ liệu thực nghiệm, không phải mã sản phẩm — nhưng nó vẫn cần được canh.
   #

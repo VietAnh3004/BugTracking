@@ -1,11 +1,15 @@
 package vn.hust.datn.evidence.config;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.tags.Tag;
 
 /**
  * Spec OpenAPI là hợp đồng giữa frontend và backend.
@@ -14,6 +18,15 @@ import io.swagger.v3.oas.models.info.License;
  * không bị phát hiện lúc biên dịch. Mọi endpoint nằm dưới {@code /api/v1}; thay đổi phá vỡ tương
  * thích phải tạo {@code v2} thay vì sửa {@code v1}, để frontend bản cũ vẫn chạy được khi backend
  * đã lên bản mới.
+ *
+ * <p><b>{@code servers} bắt buộc khai báo tường minh.</b> Không khai thì springdoc tự sinh từ
+ * request hiện tại — dưới MockMvc là {@code http://localhost}, chạy thật là {@code :8080}, deploy
+ * là domain khác — khiến snapshot test không bao giờ khớp giữa các môi trường. URL tương đối
+ * {@code "/"} đúng với mọi môi trường và hợp với kiến trúc FE/BE tách domain (FE tự ghép
+ * {@code apiBaseUrl} từ {@code window.__APP_CONFIG__}, không đọc {@code servers} của spec).
+ *
+ * <p>Tag khai tường minh (không để springdoc tự gom từ thứ tự scan controller) để output ổn định
+ * giữa các lần chạy — điều kiện cần cho snapshot test đối chiếu {@code docs/api/openapi.json}.
  */
 @Configuration
 public class OpenApiConfig {
@@ -25,6 +38,14 @@ public class OpenApiConfig {
                         .title("Evidence-Based Program Analysis API")
                         .version("v1")
                         .description("Evidence store, phân tích tĩnh, bằng chứng kiểm thử và human review.")
-                        .license(new License().name("MIT")));
+                        .license(new License().name("MIT")))
+                .servers(List.of(new Server().url("/")))
+                .tags(List.of(
+                        new Tag().name("projects").description("Quản lý dự án được phân tích."),
+                        new Tag()
+                                .name("evidence-tools")
+                                .description(
+                                        "5 evidence tool mà Agent Service gọi. RPC theo tên tool, không phải REST"
+                                                + " resource — xem ADR 0005.")));
     }
 }

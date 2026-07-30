@@ -103,6 +103,21 @@ static initializer, không bao giờ gọi `stop()` — xem `core-backend/src/te
 
 **Comment trong XML không được chứa `--`** (đã làm hỏng pom.xml một lần).
 
+**`mvn verify` báo lỗi giả sau nhiều lần `mvn test`/`spotless:apply` liên tiếp không `clean`.**
+Gặp thật: `ProjectController` báo "No qualifying bean of type ProjectMapper" dù `@Mapper` hoàn
+toàn đúng — nguyên nhân là compile tăng tiến (incremental) của Maven không sinh lại
+`ProjectMapperImpl` (annotation processor MapStruct) sau nhiều lần build liên tiếp trong cùng
+phiên. Trước khi coi một lỗi biên dịch/bean-không-tìm-thấy là lỗi thật, chạy lại với
+`mvn clean verify` — nếu xanh thì lỗi trước đó là giả, do stale `target/`.
+
+**`TestFixtures` (test helper dùng `saveAndFlush` nhiều bước liên tiếp trong cùng method):
+method nào cần entity vừa lưu vẫn "managed" ở bước sau (vd gán vào quan hệ `@MapsId`) phải đánh
+dấu `@Transactional`.** Thiếu annotation này, mỗi `saveAndFlush` tự mở/đóng transaction riêng,
+entity trả về bị detach, và Hibernate từ chối gán entity detached vào một quan hệ với lỗi
+"detached entity passed to persist". Xem
+`core-backend/src/test/java/vn/hust/datn/evidence/testsupport/TestFixtures.java` (method
+`warning()`).
+
 ## Lệnh hay dùng
 
 ```bash

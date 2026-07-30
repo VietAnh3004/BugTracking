@@ -1,0 +1,659 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "Evidence-Based Program Analysis API",
+    "description" : "Evidence store, phân tích tĩnh, bằng chứng kiểm thử và human review.",
+    "license" : {
+      "name" : "MIT"
+    },
+    "version" : "v1"
+  },
+  "servers" : [ {
+    "url" : "/"
+  } ],
+  "tags" : [ {
+    "name" : "projects",
+    "description" : "Quản lý dự án được phân tích."
+  }, {
+    "name" : "evidence-tools",
+    "description" : "5 evidence tool mà Agent Service gọi. RPC theo tên tool, không phải REST resource — xem ADR 0005."
+  } ],
+  "paths" : {
+    "/api/v1/tools/search_evidence" : {
+      "post" : {
+        "tags" : [ "evidence-tools" ],
+        "operationId" : "searchEvidence",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SearchEvidenceRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SearchEvidenceResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tools/get_warning" : {
+      "post" : {
+        "tags" : [ "evidence-tools" ],
+        "operationId" : "getWarning",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GetWarningRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GetWarningResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tools/get_related_tests" : {
+      "post" : {
+        "tags" : [ "evidence-tools" ],
+        "operationId" : "getRelatedTests",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GetRelatedTestsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ItemsResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tools/get_coverage" : {
+      "post" : {
+        "tags" : [ "evidence-tools" ],
+        "operationId" : "getCoverage",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GetCoverageRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ItemsResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tools/get_code_context" : {
+      "post" : {
+        "tags" : [ "evidence-tools" ],
+        "operationId" : "getCodeContext",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GetCodeContextRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ItemsResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects" : {
+      "get" : {
+        "tags" : [ "projects" ],
+        "operationId" : "list",
+        "parameters" : [ {
+          "name" : "pageable",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/Pageable"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponseProjectResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "projects" ],
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateProjectRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProjectResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/_probe/echo" : {
+      "post" : {
+        "tags" : [ "exception-handler-probe-controller" ],
+        "operationId" : "echo",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EchoBody"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EchoBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{id}" : {
+      "get" : {
+        "tags" : [ "projects" ],
+        "operationId" : "get",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProjectResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/_probe/validated" : {
+      "get" : {
+        "tags" : [ "exception-handler-probe-controller" ],
+        "operationId" : "validated",
+        "parameters" : [ {
+          "name" : "value",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 2147483647,
+            "minLength" : 3
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/_probe/by-id/{id}" : {
+      "get" : {
+        "tags" : [ "exception-handler-probe-controller" ],
+        "operationId" : "byId",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "SearchEvidenceRequest" : {
+        "type" : "object",
+        "properties" : {
+          "analysis_run_id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "query" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "types" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "STATIC_WARNING", "CODE_CONTEXT", "TEST_RESULT", "FAILED_TEST", "STACK_TRACE", "COVERAGE_INFORMATION" ]
+            }
+          },
+          "file_path" : {
+            "type" : "string"
+          },
+          "limit" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 50,
+            "minimum" : 1
+          }
+        },
+        "required" : [ "analysis_run_id" ]
+      },
+      "EvidenceSummaryItem" : {
+        "type" : "object",
+        "properties" : {
+          "short_id" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "STATIC_WARNING", "CODE_CONTEXT", "TEST_RESULT", "FAILED_TEST", "STACK_TRACE", "COVERAGE_INFORMATION" ]
+          },
+          "summary" : {
+            "type" : "string"
+          },
+          "file_path" : {
+            "type" : "string"
+          },
+          "start_line" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "symbol" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SearchEvidenceResult" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EvidenceSummaryItem"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "truncated" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "GetWarningRequest" : {
+        "type" : "object",
+        "properties" : {
+          "analysis_run_id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "evidence_id" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "analysis_run_id" ]
+      },
+      "GetWarningResult" : {
+        "type" : "object",
+        "properties" : {
+          "short_id" : {
+            "type" : "string"
+          },
+          "analysis_run_id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "file_path" : {
+            "type" : "string"
+          },
+          "start_line" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "end_line" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "symbol" : {
+            "type" : "string"
+          },
+          "summary" : {
+            "type" : "string"
+          },
+          "tool" : {
+            "type" : "string",
+            "enum" : [ "spotbugs", "semgrep" ]
+          },
+          "rule_id" : {
+            "type" : "string"
+          },
+          "rule_id_normalized" : {
+            "type" : "string"
+          },
+          "severity_raw" : {
+            "type" : "string"
+          },
+          "severity_normalized" : {
+            "type" : "string",
+            "enum" : [ "HIGH", "MEDIUM", "LOW", "INFO" ]
+          },
+          "has_primary_location" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "GetRelatedTestsRequest" : {
+        "type" : "object",
+        "properties" : {
+          "analysis_run_id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "evidence_id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "relations" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "SUPPORTS", "CONTRADICTS", "COVERS", "LOCATED_IN" ]
+            }
+          }
+        },
+        "required" : [ "analysis_run_id" ]
+      },
+      "ItemsResult" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ToolEvidenceItem"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "ToolEvidenceItem" : {
+        "type" : "object",
+        "properties" : {
+          "short_id" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "STATIC_WARNING", "CODE_CONTEXT", "TEST_RESULT", "FAILED_TEST", "STACK_TRACE", "COVERAGE_INFORMATION" ]
+          },
+          "summary" : {
+            "type" : "string"
+          },
+          "file_path" : {
+            "type" : "string"
+          },
+          "start_line" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "symbol" : {
+            "type" : "string"
+          },
+          "relation" : {
+            "type" : "string",
+            "enum" : [ "SUPPORTS", "CONTRADICTS", "COVERS", "LOCATED_IN" ]
+          },
+          "method" : {
+            "type" : "string",
+            "enum" : [ "LINE_EXACT", "LINE_NEAREST_EXECUTABLE", "RANGE_OVERLAP", "METHOD_AGGREGATE", "STACK_FRAME", "NAMING_CONVENTION", "SYMBOL_MATCH", "CROSS_TOOL_AGREEMENT" ]
+          },
+          "weight" : {
+            "type" : "number",
+            "format" : "double"
+          }
+        }
+      },
+      "GetCoverageRequest" : {
+        "type" : "object",
+        "properties" : {
+          "analysis_run_id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "evidence_id" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "analysis_run_id" ]
+      },
+      "GetCodeContextRequest" : {
+        "type" : "object",
+        "properties" : {
+          "analysis_run_id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "evidence_id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "context_lines" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 50,
+            "minimum" : 0
+          }
+        },
+        "required" : [ "analysis_run_id" ]
+      },
+      "CreateProjectRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ProjectResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "EchoBody" : {
+        "type" : "object",
+        "properties" : {
+          "text" : {
+            "type" : "string"
+          }
+        }
+      },
+      "Pageable" : {
+        "type" : "object",
+        "properties" : {
+          "page" : {
+            "type" : "integer",
+            "format" : "int32",
+            "minimum" : 0
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32",
+            "minimum" : 1
+          },
+          "sort" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "PageResponseProjectResponse" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ProjectResponse"
+            }
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      }
+    }
+  }
+}
