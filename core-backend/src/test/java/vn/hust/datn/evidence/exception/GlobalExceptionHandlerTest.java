@@ -6,15 +6,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 
 import vn.hust.datn.evidence.AbstractWebIntegrationTest;
+import vn.hust.datn.probe.ExceptionHandlerProbeController;
 
 /**
  * Trước tuần 4, ngoại lệ đầu vào cơ bản (UUID sai định dạng, JSON hỏng) rơi vào catch-all
  * {@code Exception} và trả về 500 — sai ngữ nghĩa cho lỗi rõ ràng của client. Test này xác nhận
  * ba handler mới trả đúng 400, không lẫn vào lưới an toàn cuối cùng.
+ *
+ * <p>{@link ExceptionHandlerProbeController} nằm ngoài package được {@code @SpringBootApplication}
+ * quét (để không rò vào spec OpenAPI công khai) nên phải nạp tường minh bằng {@code @Import} ở
+ * đây. Đánh đổi: thêm một Spring test context (một lần khởi động + Flyway riêng) — chấp nhận được
+ * để giữ spec sạch.
  */
+@Import(ExceptionHandlerProbeController.class)
 class GlobalExceptionHandlerTest extends AbstractWebIntegrationTest {
 
     @Test

@@ -211,34 +211,6 @@
         }
       }
     },
-    "/api/v1/_probe/echo" : {
-      "post" : {
-        "tags" : [ "exception-handler-probe-controller" ],
-        "operationId" : "echo",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/EchoBody"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/EchoBody"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/projects/{id}" : {
       "get" : {
         "tags" : [ "projects" ],
@@ -259,61 +231,6 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ProjectResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/_probe/validated" : {
-      "get" : {
-        "tags" : [ "exception-handler-probe-controller" ],
-        "operationId" : "validated",
-        "parameters" : [ {
-          "name" : "value",
-          "in" : "query",
-          "required" : true,
-          "schema" : {
-            "type" : "string",
-            "maxLength" : 2147483647,
-            "minLength" : 3
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/_probe/by-id/{id}" : {
-      "get" : {
-        "tags" : [ "exception-handler-probe-controller" ],
-        "operationId" : "byId",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string",
-            "format" : "uuid"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
                 }
               }
             }
@@ -599,14 +516,6 @@
           "updatedAt" : {
             "type" : "string",
             "format" : "date-time"
-          }
-        }
-      },
-      "EchoBody" : {
-        "type" : "object",
-        "properties" : {
-          "text" : {
-            "type" : "string"
           }
         }
       },

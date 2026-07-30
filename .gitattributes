@@ -2,3 +2,7 @@
 # so byte/canonical string mà lẫn CRLF (Git trên Windows tự đổi \n -> \r\n khi checkout) sẽ
 # đỏ trên CI (Linux) mà xanh trên máy dev, hoặc ngược lại. Xem OpenApiSnapshotTest.
 *.json text eol=lf
+
+# api-types.ts được openapi-typescript sinh ra và đối chiếu bằng `git diff --exit-code` trong CI
+# (job frontend) — cùng lý do như *.json ở trên.
+frontend/src/shared/lib/api-types.ts text eol=lf

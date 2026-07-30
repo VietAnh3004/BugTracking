@@ -1,4 +1,4 @@
-package vn.hust.datn.evidence.testsupport;
+package vn.hust.datn.probe;
 
 import java.util.UUID;
 
@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Chỉ tồn tại trong test scope, nằm trong package được {@code @SpringBootApplication} quét, nên
- * Spring nạp nó vào context test như một controller thật.
+ * Chỉ tồn tại trong test scope. Nằm ngoài package {@code vn.hust.datn.evidence} nên {@code
+ * @SpringBootApplication} KHÔNG quét được nó — nếu không, 3 endpoint {@code _probe} này sẽ rò vào
+ * spec OpenAPI công khai (đã xảy ra thật, xem ADR liên quan tuần 5-7). Test cần nó phải nạp tường
+ * minh bằng {@code @Import(ExceptionHandlerProbeController.class)}.
  *
  * <p>Mục đích duy nhất: kích hoạt từng nhánh của {@link
  * vn.hust.datn.evidence.exception.GlobalExceptionHandler} bằng request thật qua MockMvc, tách
