@@ -11,14 +11,14 @@
 
 ## Trạng thái tiến độ
 
-*Cập nhật: 27/07/2026*
+*Cập nhật: 30/07/2026*
 
 | Giai đoạn | Trạng thái |
 |---|---|
 | **Tuần 1** — skeleton, CI, hạ tầng, spike | ✅ Xong |
 | **Tuần 2** — vulnshop + artifact thật + khung khảo sát | ✅ Xong |
-| **Tuần 3** — Unified Evidence Model | ⬜ Chưa bắt đầu ← **việc tiếp theo** |
-| **Tuần 4** — API contract + OpenAPI | ⬜ Chưa bắt đầu |
+| **Tuần 3** — Unified Evidence Model | ✅ Xong (xem §D2) |
+| **Tuần 4** — API contract + OpenAPI | ⬜ Chưa bắt đầu ← **việc tiếp theo** |
 
 ### Việc còn dở của tuần 2 (không chặn tuần 3)
 
@@ -591,6 +591,31 @@ Sản phẩm:
 Ràng buộc từ bài học tuần 1: **`analysis_run` với 0 cảnh báo phải bị coi là lỗi**, không được lưu
 lặng lẽ. Lần chạy SpotBugs trên JDK 25 là ví dụ thật — pipeline "thành công" nhưng không có dữ
 liệu nào.
+
+### D2. Tuần 3 — đã hoàn thành (30/07/2026)
+
+Trước khi viết schema đã tự parse toàn bộ 4 artifact thật và phát hiện sketch ở mục 2 không biểu
+diễn được dữ liệu thật ở 4 điểm (đa vị trí của warning, stack trace không luôn chỉ ra production,
+cấu trúc kép của JaCoCo, 4 định dạng path khác nhau) — chi tiết đầy đủ và lý do từng quyết định ở
+[ADR 0004](adr/0004-unified-evidence-model-hai-tang.md). Quyết định phạm vi: **chỉ 5 bảng xương
+sống ở V2** (`analysis_run`, `evidence_record`, `warning`, `evidence_link`, `claim` +
+`claim_citation`) — bảng thô mirror từng công cụ hoãn sang V3 (tuần 8-9) vì không có consumer nào
+trước EvidenceLinker, chỉ thiết kế trước trong `docs/evidence-model.md`.
+
+Đã hiện thực:
+- `V2__evidence_model.sql` + 7 entity JPA đầu tiên của dự án + repository.
+- `docs/evidence-model.md` — bảng provenance (mỗi cột trỏ về đúng chỗ trong artifact thật), ERD
+  mermaid, mục "Thiết kế cho V3".
+- `docs/check-evidence-model.py` — đối chiếu tự động doc ↔ artifact ↔ SQL, thêm vào CI.
+- Test tích hợp trên Testcontainers (`pgvector/pgvector:pg16`): Flyway V1→V2 + `ddl-auto: validate`
+  qua được trên toàn bộ entity; `EnumCheckConstraintTest` đối chiếu 11 CHECK constraint với
+  `Enum.values()`; `AnalysisRunNotSilentlyEmptyTest` xác nhận "0 cảnh báo = lỗi" là ràng buộc DB
+  thật; `PgvectorSmokeTest` xác nhận chuỗi pgvector chạy được mà chưa cần chốt số chiều embedding.
+
+Sự cố môi trường gặp phải (không phải lỗi thiết kế): Testcontainers 1.21.0 không đọc được response
+`/info` của Docker Desktop 29.0.1 trên Windows (named pipe lẫn TCP, `BadRequestException` 400 với
+body rỗng) — nâng lên `testcontainers.version` 1.21.4 trong `core-backend/pom.xml` giải quyết
+triệt để.
 
 ### E. API contract + OpenAPI (tuần 4)
 

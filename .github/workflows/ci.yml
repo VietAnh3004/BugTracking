@@ -28,6 +28,12 @@ jobs:
         run: mvn -B spotless:check
       - name: Build và test
         run: mvn -B verify
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Đối chiếu evidence-model.md với artifact thật và V2 migration
+        working-directory: .
+        run: python docs/check-evidence-model.py
 
   agent-service:
     runs-on: ubuntu-latest

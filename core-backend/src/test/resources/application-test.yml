@@ -1,0 +1,21 @@
+# Cấu hình cho test dùng Testcontainers. datasource.url/username/password bị AbstractIntegrationTest
+# ghi đè bằng @DynamicPropertySource (container sinh cổng ngẫu nhiên) — các giá trị dưới đây chỉ để
+# thoả mãn placeholder bắt buộc của application.yml (CORS_ORIGINS, JWT_SECRET,...), không dùng thật.
+spring:
+  datasource:
+    url: jdbc:postgresql://placeholder:5432/placeholder
+    username: placeholder
+    password: placeholder
+
+app:
+  cors:
+    allowed-origins: http://localhost:5173
+  jwt:
+    secret: test-only-secret-du-32-ky-tu-khong-dung-that
+  storage:
+    endpoint: http://localhost:9000
+    access-key: test
+    secret-key: test
+    bucket: test-bucket
+  agent:
+    base-url: http://localhost:8000

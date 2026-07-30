@@ -79,6 +79,27 @@ docker tag  mirror.gcr.io/pgvector/pgvector:pg16 pgvector/pgvector:pg16
 
 **Mount Docker từ Git Bash**: cần `MSYS_NO_PATHCONV=1` và đường dẫn dạng `//d/study/...`.
 
+**Testcontainers (core-backend) không tự kết nối được Docker Desktop trên máy này.** Cả named
+pipe mặc định lẫn `docker info` qua CLI đều OK, nhưng `docker-java` (thư viện Testcontainers dùng)
+nhận về `BadRequestException 400` với body rỗng — lỗi tương thích giữa Testcontainers 1.21.0 và
+Docker Desktop 29.0.1, không phải cấu hình sai. Đã sửa 2 việc, cả hai đều cần:
+
+1. Nâng `testcontainers.version` lên `1.21.4` trong `core-backend/pom.xml` (đã làm, không cần lặp lại).
+2. Bật **Settings → General → "Expose daemon on tcp://localhost:2375 without TLS"** trong Docker
+   Desktop (làm một lần, việc của người dùng, còn nguyên sau khi bật), rồi mỗi phiên Git Bash mới
+   chạy test cần export biến này trước (chưa tìm cách persist được qua PowerShell/registry):
+   ```bash
+   export DOCKER_HOST="tcp://127.0.0.1:2375"
+   ```
+   Dùng `127.0.0.1`, **không phải `localhost`** — Cloudflare WARP trên máy này chặn DNS cho
+   `localhost`, khiến `docker -H tcp://localhost:2375` báo "lookup localhost ... no such host".
+
+**Testcontainers dùng chung 1 container qua nhiều class test**: KHÔNG dùng annotation
+`@Testcontainers`/`@Container` trên field static — nó khiến Testcontainers tự `stop()` container
+trong `afterAll` của class test *đầu tiên* chạy xong, các class sau dùng chung field đó connect
+vào container đã chết (`CannotGetJdbcConnection`, timeout đúng 30s). Tự `start()` thủ công trong
+static initializer, không bao giờ gọi `stop()` — xem `core-backend/src/test/java/vn/hust/datn/evidence/AbstractIntegrationTest.java`.
+
 **Comment trong XML không được chứa `--`** (đã làm hỏng pom.xml một lần).
 
 ## Lệnh hay dùng
