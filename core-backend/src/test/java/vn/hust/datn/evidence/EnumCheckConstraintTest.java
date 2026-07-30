@@ -20,6 +20,11 @@ import vn.hust.datn.evidence.domain.EvidenceLinkRelation;
 import vn.hust.datn.evidence.domain.EvidenceSource;
 import vn.hust.datn.evidence.domain.EvidenceStatus;
 import vn.hust.datn.evidence.domain.EvidenceType;
+import vn.hust.datn.evidence.domain.RefreshTokenRevokedReason;
+import vn.hust.datn.evidence.domain.SnapshotEntryType;
+import vn.hust.datn.evidence.domain.SnapshotSourceType;
+import vn.hust.datn.evidence.domain.SnapshotStatus;
+import vn.hust.datn.evidence.domain.UserRole;
 import vn.hust.datn.evidence.domain.WarningSeverity;
 import vn.hust.datn.evidence.domain.WarningTool;
 
@@ -91,6 +96,31 @@ class EnumCheckConstraintTest extends AbstractIntegrationTest {
     @Test
     void claimCitationResolution() {
         assertCheckMatchesEnum("claim_citation", "resolution", ClaimCitationResolution.values());
+    }
+
+    @Test
+    void appUserRole() {
+        assertCheckMatchesEnum("app_user", "role", UserRole.values());
+    }
+
+    @Test
+    void refreshTokenRevokedReason() {
+        assertCheckMatchesEnum("refresh_token", "revoked_reason", RefreshTokenRevokedReason.values());
+    }
+
+    @Test
+    void repositorySnapshotStatus() {
+        assertCheckMatchesEnum("repository_snapshot", "status", SnapshotStatus.values());
+    }
+
+    @Test
+    void repositorySnapshotSourceType() {
+        assertCheckMatchesEnum("repository_snapshot", "source_type", SnapshotSourceType.values());
+    }
+
+    @Test
+    void snapshotFileEntryType() {
+        assertCheckMatchesEnum("snapshot_file", "entry_type", SnapshotEntryType.values());
     }
 
     private void assertCheckMatchesEnum(String table, String column, Enum<?>[] enumValues) {

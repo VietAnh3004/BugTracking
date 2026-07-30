@@ -20,6 +20,10 @@ import lombok.Setter;
  * <p>Cố tình tách thành bước riêng (tuần 3, bước 1) trước khi đụng tới schema V2 mới: đây là lần
  * đầu {@code ddl-auto: validate} chạy thật, nên cô lập câu hỏi "mapping UUID/TIMESTAMPTZ có đúng
  * không" khỏi câu hỏi "schema V2 mới viết có đúng không" — 5 cột dễ gỡ lỗi hơn 60 cột.
+ *
+ * <p>{@code ownerId} thêm ở V3 (tuần 5-7) — điểm cắm authorization: tài nguyên không thuộc về
+ * bạn thì {@code ProjectRepository.findByIdAndOwnerId} không trả về gì, không phải một cột riêng
+ * để so sánh trong Java.
  */
 @Entity
 @Table(name = "project")
@@ -31,6 +35,11 @@ public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    // nullable=false sẽ bật ở V4, cùng lúc cột DB được backfill và SET NOT NULL (xem
+    // V4__project_owner_not_null.sql) — ProjectService.create() bắt buộc nhận ownerId từ B6.
+    @Column(name = "owner_id")
+    private UUID ownerId;
 
     @Column(nullable = false)
     private String name;
