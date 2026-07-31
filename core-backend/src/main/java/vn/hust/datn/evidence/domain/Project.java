@@ -36,9 +36,7 @@ public class Project {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    // nullable=false sẽ bật ở V4, cùng lúc cột DB được backfill và SET NOT NULL (xem
-    // V4__project_owner_not_null.sql) — ProjectService.create() bắt buộc nhận ownerId từ B6.
-    @Column(name = "owner_id")
+    @Column(name = "owner_id", nullable = false)
     private UUID ownerId;
 
     @Column(nullable = false)

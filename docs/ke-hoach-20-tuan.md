@@ -34,8 +34,8 @@ Kế hoạch thực thi đầy đủ (18 hạng mục A→E) nằm ở
 | B3 | Spring Security 2 filter chain (JWT Bearer + service token cho `/api/v1/tools/**`) + CORS qua filter | ✅ Xong |
 | B4 | Đăng ký/đăng nhập/`/auth/me` | ✅ Xong |
 | B5 | Refresh token xoay vòng + phát hiện tái sử dụng | ✅ Xong |
-| B6 | Gán owner cho project + authorization + migration V4 (backfill + `SET NOT NULL` cho `project.owner_id`) | ⬜ Tiếp theo |
-| C1-C3 | MinIO object storage + upload zip an toàn + API duyệt file/đọc theo dòng | ⬜ |
+| B6 | Gán owner cho project + authorization + migration V4 (backfill + `SET NOT NULL` cho `project.owner_id`) | ✅ Xong |
+| C1-C3 | MinIO object storage + upload zip an toàn + API duyệt file/đọc theo dòng | ⬜ Tiếp theo |
 | D1-D7 | Frontend: Tailwind v4, routing, auth, upload, source viewer | ⬜ |
 | E1-E2 | Regenerate api-types, ADR 0006/0007, kiểm chứng end-to-end | ⬜ |
 

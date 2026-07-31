@@ -24,8 +24,17 @@ class AnalysisRunNotSilentlyEmptyTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void taoSnapshotGoc() {
+        UUID ownerId = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO app_user (id, email, password_hash, display_name) VALUES (?, ?, ?, ?)",
+                ownerId,
+                "owner-" + ownerId + "@test.local",
+                "!not-a-real-bcrypt-hash!",
+                "Test Owner");
+
         UUID projectId = UUID.randomUUID();
-        jdbcTemplate.update("INSERT INTO project (id, name) VALUES (?, ?)", projectId, "test-project");
+        jdbcTemplate.update(
+                "INSERT INTO project (id, owner_id, name) VALUES (?, ?, ?)", projectId, ownerId, "test-project");
 
         snapshotId = UUID.randomUUID();
         jdbcTemplate.update(

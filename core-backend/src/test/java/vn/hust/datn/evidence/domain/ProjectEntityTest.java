@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import vn.hust.datn.evidence.AbstractIntegrationTest;
 import vn.hust.datn.evidence.repository.ProjectRepository;
+import vn.hust.datn.evidence.testsupport.TestFixtures;
 
 /**
  * Bước 1 của tuần 3: đúng MỘT entity, map vào bảng {@code project} đã tồn tại từ V1.
@@ -22,9 +23,13 @@ class ProjectEntityTest extends AbstractIntegrationTest {
     @Autowired
     private ProjectRepository projectRepository;
 
+    @Autowired
+    private TestFixtures fixtures;
+
     @Test
     void luuVaDocLaiDuocMotProject() {
         Project project = new Project();
+        project.setOwnerId(fixtures.user("owner-" + System.nanoTime() + "@test.local").getId());
         project.setName("vulnshop");
         project.setDescription("Case study có gieo lỗi chủ đích");
         project.setCreatedAt(OffsetDateTime.now());

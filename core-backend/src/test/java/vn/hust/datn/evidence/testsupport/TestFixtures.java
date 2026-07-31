@@ -21,6 +21,8 @@ import vn.hust.datn.evidence.domain.EvidenceStatus;
 import vn.hust.datn.evidence.domain.EvidenceType;
 import vn.hust.datn.evidence.domain.Project;
 import vn.hust.datn.evidence.domain.RepositorySnapshot;
+import vn.hust.datn.evidence.domain.User;
+import vn.hust.datn.evidence.domain.UserRole;
 import vn.hust.datn.evidence.domain.Warning;
 import vn.hust.datn.evidence.domain.WarningSeverity;
 import vn.hust.datn.evidence.domain.WarningTool;
@@ -29,6 +31,7 @@ import vn.hust.datn.evidence.repository.EvidenceLinkRepository;
 import vn.hust.datn.evidence.repository.EvidenceRecordRepository;
 import vn.hust.datn.evidence.repository.ProjectRepository;
 import vn.hust.datn.evidence.repository.RepositorySnapshotRepository;
+import vn.hust.datn.evidence.repository.UserRepository;
 import vn.hust.datn.evidence.repository.WarningRepository;
 
 /**
@@ -63,10 +66,34 @@ public class TestFixtures {
     @Autowired
     private EvidenceLinkRepository evidenceLinkRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     private final AtomicInteger seqCounter = new AtomicInteger(0);
 
+    public User user(String email) {
+        User user = new User();
+        user.setEmail(email);
+        // Không phải mật khẩu thật nào cần đăng nhập được qua fixture này - test auth thật đi
+        // qua AuthService.register() (BCrypt thật), fixture này chỉ cần một hàng app_user hợp lệ
+        // để project.owner_id có FK trỏ tới.
+        user.setPasswordHash("!not-a-real-bcrypt-hash!");
+        user.setDisplayName("Test User");
+        user.setRole(UserRole.USER);
+        user.setEnabled(true);
+        user.setCreatedAt(OffsetDateTime.now());
+        user.setUpdatedAt(OffsetDateTime.now());
+        return userRepository.saveAndFlush(user);
+    }
+
+    /** Project vô chủ - chỉ dùng cho test không đụng tới authorization (evidence tool, mapper...). */
     public Project project(String name) {
+        return project(name, user(name + "-owner@test.local"));
+    }
+
+    public Project project(String name, User owner) {
         Project project = new Project();
+        project.setOwnerId(owner.getId());
         project.setName(name);
         project.setDescription(null);
         project.setCreatedAt(OffsetDateTime.now());

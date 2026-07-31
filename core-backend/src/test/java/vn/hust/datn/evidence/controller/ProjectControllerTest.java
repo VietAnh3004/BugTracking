@@ -1,6 +1,5 @@
 package vn.hust.datn.evidence.controller;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -8,20 +7,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
 import vn.hust.datn.evidence.AbstractWebIntegrationTest;
+import vn.hust.datn.evidence.domain.User;
+import vn.hust.datn.evidence.testsupport.TestFixtures;
 
 /**
- * Toàn bộ request kèm {@code .with(jwt())} — chỉ cần "đã xác thực", chưa cần đúng
- * {@code CurrentUser}/quyền sở hữu (đó là B6, tuần 5-7). Thiếu nó thì mọi request rơi vào 401 của
- * {@code apiChain} ({@link vn.hust.datn.evidence.config.SecurityConfig}) trước khi chạm tới
- * controller.
+ * Toàn bộ request kèm {@code .with(authenticatedAs(user))} — controller giờ đọc
+ * {@code @AuthenticationPrincipal CurrentUser} thật (không phải {@code Jwt} trần của
+ * {@code .with(jwt())}) để forward xuống {@code ProjectService} làm {@code ownerId}.
  */
 class ProjectControllerTest extends AbstractWebIntegrationTest {
 
+    @Autowired
+    private TestFixtures fixtures;
+
     @Test
     void taoDuAnThanhCongTraVe201VoiLocationHeader() throws Exception {
+        User user = fixtures.user("owner-%d@test.local".formatted(System.nanoTime()));
         String body = """
                 {"name": "vulnshop-%d", "description": "case study"}
                 """.formatted(System.nanoTime());
@@ -30,7 +35,7 @@ class ProjectControllerTest extends AbstractWebIntegrationTest {
                 .perform(post("/api/v1/projects")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body)
-                        .with(jwt()))
+                        .with(authenticatedAs(user)))
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
                 .andExpect(jsonPath("$.id").exists())
@@ -39,24 +44,33 @@ class ProjectControllerTest extends AbstractWebIntegrationTest {
 
     @Test
     void taoDuAnThieuTenTraVe400() throws Exception {
+        User user = fixtures.user("owner-%d@test.local".formatted(System.nanoTime()));
+
         getMockMvc()
-                .perform(post("/api/v1/projects").contentType(MediaType.APPLICATION_JSON).content("{}").with(jwt()))
+                .perform(post("/api/v1/projects")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}")
+                        .with(authenticatedAs(user)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.type").value("https://datn.hust.vn/problems/validation-failed"));
     }
 
     @Test
     void layDuAnKhongTonTaiTraVe404() throws Exception {
+        User user = fixtures.user("owner-%d@test.local".formatted(System.nanoTime()));
+
         getMockMvc()
-                .perform(get("/api/v1/projects/" + java.util.UUID.randomUUID()).with(jwt()))
+                .perform(get("/api/v1/projects/" + java.util.UUID.randomUUID()).with(authenticatedAs(user)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.type").value("https://datn.hust.vn/problems/not-found"));
     }
 
     @Test
     void danhSachTraVePageResponse() throws Exception {
+        User user = fixtures.user("owner-%d@test.local".formatted(System.nanoTime()));
+
         getMockMvc()
-                .perform(get("/api/v1/projects").with(jwt()))
+                .perform(get("/api/v1/projects").with(authenticatedAs(user)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items").isArray())
                 .andExpect(jsonPath("$.total").exists());

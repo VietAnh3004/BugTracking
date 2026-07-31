@@ -1,9 +1,17 @@
 package vn.hust.datn.evidence;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
+
+import vn.hust.datn.evidence.config.security.CurrentUser;
+import vn.hust.datn.evidence.config.security.CurrentUserAuthenticationToken;
+import vn.hust.datn.evidence.domain.User;
 
 import lombok.Getter;
 
@@ -36,5 +44,20 @@ public abstract class AbstractWebIntegrationTest extends AbstractIntegrationTest
             request.addHeader("X-Service-Token", TEST_SERVICE_TOKEN);
             return request;
         };
+    }
+
+    /**
+     * Xác thực request như {@code user} thật (principal {@link CurrentUser} đúng shape mà
+     * {@code @AuthenticationPrincipal} bind) — KHÔNG dùng
+     * {@code SecurityMockMvcRequestPostProcessors.jwt()} trần cho việc này: nó tự dựng
+     * {@code JwtAuthenticationToken} với {@code Jwt} làm principal, bỏ qua hoàn toàn
+     * {@code CurrentUserAuthenticationConverter} thật của {@code SecurityConfig}, nên
+     * {@code @AuthenticationPrincipal CurrentUser} sẽ nhận {@code null}.
+     */
+    protected static RequestPostProcessor authenticatedAs(User user) {
+        CurrentUser principal = new CurrentUser(user.getId(), user.getEmail(), user.getRole());
+        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+        var authentication = new CurrentUserAuthenticationToken(null, principal, authorities);
+        return SecurityMockMvcRequestPostProcessors.authentication(authentication);
     }
 }

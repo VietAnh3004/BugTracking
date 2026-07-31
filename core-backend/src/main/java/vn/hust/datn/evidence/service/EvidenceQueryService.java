@@ -169,6 +169,24 @@ public class EvidenceQueryService {
                         : new EvidenceNotFoundException(shortId));
     }
 
+    /**
+     * Điểm cắm authorization mà ADR 0005 nói tới — CHƯA CÓ caller nào ở tuần 5-7 (REST resource UI
+     * cho evidence hoãn tới tuần 10-11), viết sẵn để khoá tên chỗ cắm trước khi có nhu cầu thật.
+     *
+     * <p>KHÔNG đụng vào {@link #ensureRunQueryable(UUID)}: đường tool ({@code /api/v1/tools/**})
+     * dùng service token, phân quyền đã xảy ra ở entry point theo ADR 0005, và
+     * {@code experiments/runner.py} (thực nghiệm cốt lõi của đồ án) chạy batch không có phiên
+     * người dùng — đổi hành vi của {@code ensureRunQueryable} sẽ phá cả hai.
+     */
+    public void requireRunOwnedBy(UUID runId, UUID ownerId) {
+        UUID actualOwnerId = analysisRunRepository
+                .findOwnerIdByRunId(runId)
+                .orElseThrow(() -> new ResourceNotFoundException("analysis_run", runId));
+        if (!actualOwnerId.equals(ownerId)) {
+            throw new ResourceNotFoundException("analysis_run", runId);
+        }
+    }
+
     private AnalysisRun ensureRunQueryable(UUID runId) {
         AnalysisRun run =
                 analysisRunRepository.findById(runId).orElseThrow(() -> new ResourceNotFoundException("analysis_run", runId));
