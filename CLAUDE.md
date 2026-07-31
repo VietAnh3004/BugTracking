@@ -164,6 +164,15 @@ assert "ném đúng exception" ở lần gọi đầu sẽ xanh giả. Sửa b�
 Bài học chung: **ghi-rồi-ném trong một method `@Transactional` luôn cần xét lại rollback rule**,
 không chỉ riêng refresh token.
 
+**Test class đặt tên `*IT.java` (hậu tố "Integration Test" kiểu Maven Failsafe) sẽ KHÔNG BAO GIỜ
+CHẠY trong repo này.** `pom.xml` chỉ cấu hình `maven-surefire-plugin` (bind vào phase `test`, mặc
+định chỉ include `**/Test*.java, **/*Test.java, **/*Tests.java, **/*TestCase.java`) — không có
+`maven-failsafe-plugin` (bind vào phase `integration-test`/`verify`, include `**/*IT.java`).
+Triệu chứng: `mvn clean verify` báo "BUILD SUCCESS" dù test đó có bug rành rành — vì nó chưa từng
+được thực thi, không phải vì nó đã pass. Gặp thật với `MinioObjectStorageClientIT` (đã đổi tên
+thành `MinioObjectStorageClientTest` để khớp quy ước `*Test.java` toàn repo). Trước khi tin một
+test class "xanh", kiểm `target/surefire-reports/` có file `.txt` cho đúng tên class đó không.
+
 **`http.exceptionHandling(ex -> ex.authenticationEntryPoint(...))` KHÔNG đủ để 401 trả về JSON khi
 dùng `oauth2ResourceServer()`.** `OAuth2ResourceServerConfigurer` tự đăng ký
 `BearerTokenAuthenticationEntryPoint` riêng qua

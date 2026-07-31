@@ -21,6 +21,7 @@
     <mapstruct.version>1.6.3</mapstruct.version>
     <springdoc.version>2.8.6</springdoc.version>
     <spotless.version>2.44.4</spotless.version>
+    <minio.version>8.5.17</minio.version>
     <!-- Ghi đè bản Testcontainers mà Spring Boot 3.5.0 quản lý (1.21.0): bản đó không đọc được
          response /info của Docker Desktop 29.x trên Windows named pipe lẫn TCP (BadRequestException
          400 với body rỗng bất kể transport) — lỗi tương thích docker-java, không phải cấu hình sai. -->
@@ -59,6 +60,18 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+    </dependency>
+
+    <!--
+        SDK MinIO thay vì aws-sdk-v2: cấu hình 3 dòng (endpoint/credentials) thay vì
+        endpointOverride + forcePathStyle + region giả cần thiết để aws-sdk-v2 nói chuyện được
+        với MinIO. Rủi ro "khoá cứng vào MinIO" được triệt bằng thiết kế, không bằng chọn SDK:
+        io.minio.* chỉ được import trong đúng một lớp, MinioObjectStorageClient.
+    -->
+    <dependency>
+      <groupId>io.minio</groupId>
+      <artifactId>minio</artifactId>
+      <version>${minio.version}</version>
     </dependency>
 
     <!-- Migration: schema chỉ thay đổi qua Flyway, ddl-auto luôn là 'validate'. -->
@@ -119,6 +132,13 @@
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Chỉ dùng trong đúng một test JUnit thuần (MinioObjectStorageClientTest) - xem Javadoc lớp
+         đó về lý do KHÔNG đưa MinIO vào AbstractIntegrationTest dùng chung. -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>minio</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
