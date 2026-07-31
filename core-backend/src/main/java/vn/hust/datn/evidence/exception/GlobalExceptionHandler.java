@@ -64,6 +64,16 @@ public class GlobalExceptionHandler {
         return problem(HttpStatus.CONFLICT, "run-not-queryable", "Run chưa thể truy vấn", ex.getMessage(), request);
     }
 
+    @ExceptionHandler(EmailAlreadyUsedException.class)
+    public ProblemDetail handleEmailAlreadyUsed(EmailAlreadyUsedException ex, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "email-already-used", "Email đã được đăng ký", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex, HttpServletRequest request) {
+        return problem(HttpStatus.UNAUTHORIZED, "invalid-credentials", "Đăng nhập thất bại", ex.getMessage(), request);
+    }
+
     /** Lỗi validate đầu vào: gom tất cả field sai vào một response thay vì báo từng cái một. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
