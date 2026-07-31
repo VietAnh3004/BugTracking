@@ -74,6 +74,17 @@ public class GlobalExceptionHandler {
         return problem(HttpStatus.UNAUTHORIZED, "invalid-credentials", "Đăng nhập thất bại", ex.getMessage(), request);
     }
 
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ProblemDetail handleInvalidRefreshToken(InvalidRefreshTokenException ex, HttpServletRequest request) {
+        return problem(HttpStatus.UNAUTHORIZED, "invalid-refresh-token", "Refresh token không hợp lệ", null, request);
+    }
+
+    @ExceptionHandler(RefreshTokenReuseException.class)
+    public ProblemDetail handleRefreshTokenReuse(RefreshTokenReuseException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.UNAUTHORIZED, "refresh-token-reused", "Phiên đăng nhập đã bị thu hồi", null, request);
+    }
+
     /** Lỗi validate đầu vào: gom tất cả field sai vào một response thay vì báo từng cái một. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {

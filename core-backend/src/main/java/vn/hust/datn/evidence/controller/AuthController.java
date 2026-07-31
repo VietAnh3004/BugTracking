@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 import vn.hust.datn.evidence.config.security.CurrentUser;
 import vn.hust.datn.evidence.dto.AuthTokensResponse;
 import vn.hust.datn.evidence.dto.LoginRequest;
+import vn.hust.datn.evidence.dto.RefreshRequest;
 import vn.hust.datn.evidence.dto.RegisterRequest;
 import vn.hust.datn.evidence.dto.UserResponse;
 import vn.hust.datn.evidence.service.AuthService;
+import vn.hust.datn.evidence.service.RefreshTokenService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
     private final AuthService authService;
+    private final RefreshTokenService refreshTokenService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
@@ -56,5 +59,21 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<UserResponse> me(@AuthenticationPrincipal CurrentUser currentUser) {
         return ResponseEntity.ok(authService.me(currentUser.id()));
+    }
+
+    @PostMapping("/refresh")
+    @SecurityRequirements
+    public AuthTokensResponse refresh(
+            @Valid @RequestBody RefreshRequest request, @RequestHeader(value = "User-Agent", required = false) String userAgent) {
+        return refreshTokenService.refresh(request.refreshToken(), userAgent);
+    }
+
+    // Không nhận @AuthenticationPrincipal: SecurityConfig.apiChain đã bắt buộc JWT hợp lệ cho
+    // path này (không nằm trong whitelist), sở hữu refreshToken hợp lệ trong body là đủ để đăng
+    // xuất - không cần đối chiếu với danh tính JWT.
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@Valid @RequestBody RefreshRequest request) {
+        refreshTokenService.logout(request.refreshToken());
     }
 }

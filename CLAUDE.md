@@ -139,6 +139,31 @@ trong hai, `NimbusJwtEncoder` không chọn được JWK dù thuật toán đã 
 `encode()` (runtime), không lộ lúc khởi động ứng dụng hay lúc biên dịch. Xem
 `core-backend/src/main/java/vn/hust/datn/evidence/config/JwtConfig.java`.
 
+**`No qualifying bean of type 'XMapper'` có thể xảy ra NGAY CẢ SAU `mvn clean verify`** — không
+chỉ do build tăng tiến như đã ghi ở trên. Gặp thật: `target/generated-sources/annotations/.../XMapperImpl.java`
+bị **IDE background compiler (Eclipse JDT)** ghi đè — file đó có comment
+`compiler: Eclipse JDT (IDE)` thay vì Maven's javac, và **thiếu `@Component`** vì IDE không biết
+cờ `-Amapstruct.defaultComponentModel=spring` chỉ khai trong `pom.xml`. Đây là tranh chấp giữa
+IDE (chạy nền, tự biên dịch để lấy diagnostics) và tiến trình `mvn` — cả hai cùng ghi vào
+`target/`. Triệu chứng: `mvn clean verify` đỏ với lỗi thiếu bean dù `mvn clean verify` lần **trước
+đó hoặc sau đó** xanh với cùng một bộ code không đổi. Cách xử lý: chạy lại `mvn clean verify` một
+lần nữa — nếu xanh, lần đỏ trước là do trúng đúng lúc IDE ghi đè giữa chừng, không phải lỗi code.
+Cân nhắc: kiểm tra `date`/`compiler` trong comment của file `*Impl.java` bị nghi ngờ trước khi tốn
+thời gian debug logic mapper.
+
+**`@Transactional` mặc định ROLLBACK khi có unchecked exception thoát ra khỏi method — kể cả khi
+exception đó là thứ BẠN CHỦ Ý ném ra sau khi đã ghi dữ liệu quan trọng (vd thu hồi refresh token
+trước khi báo lỗi).** Gặp thật: `RefreshTokenService.refresh()` gọi `revokeFamily(...)` (UPDATE
+thật) rồi ném `RefreshTokenReuseException` để báo 401 — nhưng vì method có `@Transactional` không
+khai `noRollbackFor`, Spring rollback TOÀN BỘ transaction khi exception thoát ra, xoá luôn thao
+tác thu hồi vừa ghi. Biện pháp bảo mật quan trọng nhất của luồng refresh token **không bao giờ
+thực sự lưu xuống DB** dù code "trông đúng" và log "trông đúng". Chỉ `RefreshTokenRotationTest`
+(gọi lại lần thứ hai để xác nhận token mới nhất cũng bị thu hồi) mới bắt được lỗi này — test chỉ
+assert "ném đúng exception" ở lần gọi đầu sẽ xanh giả. Sửa bằng
+`@Transactional(noRollbackFor = {RefreshTokenReuseException.class, InvalidRefreshTokenException.class})`.
+Bài học chung: **ghi-rồi-ném trong một method `@Transactional` luôn cần xét lại rollback rule**,
+không chỉ riêng refresh token.
+
 **`http.exceptionHandling(ex -> ex.authenticationEntryPoint(...))` KHÔNG đủ để 401 trả về JSON khi
 dùng `oauth2ResourceServer()`.** `OAuth2ResourceServerConfigurer` tự đăng ký
 `BearerTokenAuthenticationEntryPoint` riêng qua
