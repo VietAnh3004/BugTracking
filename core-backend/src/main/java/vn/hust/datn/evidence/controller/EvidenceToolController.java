@@ -21,6 +21,8 @@ import vn.hust.datn.evidence.dto.tool.SearchEvidenceRequest;
 import vn.hust.datn.evidence.dto.tool.SearchEvidenceResult;
 import vn.hust.datn.evidence.service.EvidenceQueryService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
@@ -31,10 +33,16 @@ import lombok.RequiredArgsConstructor;
  * dịch tên trường) và trả về đúng shape tool, tách biệt hoàn toàn khỏi DTO của
  * {@link ProjectController}. Tool call = 1 POST là quan hệ 1:1 tuyệt đối, đo được qua {@link
  * vn.hust.datn.evidence.config.ToolCallLoggingInterceptor}.
+ *
+ * <p>{@code @SecurityRequirements} (số nhiều) THAY THẾ yêu cầu {@code bearerAuth} toàn cục
+ * (khai ở {@link vn.hust.datn.evidence.config.OpenApiConfig}) bằng đúng {@code serviceToken} —
+ * khớp với {@link vn.hust.datn.evidence.config.SecurityConfig#toolChain}, nơi
+ * {@code /api/v1/tools/**} chỉ chấp nhận header {@code X-Service-Token}, không chấp nhận JWT.
  */
 @RestController
 @RequestMapping("/api/v1/tools")
 @Tag(name = "evidence-tools")
+@SecurityRequirements(@SecurityRequirement(name = "serviceToken"))
 @RequiredArgsConstructor
 public class EvidenceToolController {
 

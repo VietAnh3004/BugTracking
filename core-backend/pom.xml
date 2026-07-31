@@ -45,6 +45,22 @@
       <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
 
+    <!--
+        JWT qua oauth2-resource-server thay vì jjwt: ta không làm OAuth2 (không có Authorization
+        Server), chỉ mượn NimbusJwtDecoder/NimbusJwtEncoder + BearerTokenAuthenticationFilter mà
+        Spring khuyến nghị cho JWT tự phát. Đổi lại: validate exp/iss có sẵn qua
+        OAuth2TokenValidator, 401 chuẩn RFC 6750, và springdoc tự bỏ qua tham số
+        @AuthenticationPrincipal (jjwt thì phải tự viết filter + tự cấu hình springdoc).
+    -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+    </dependency>
+
     <!-- Migration: schema chỉ thay đổi qua Flyway, ddl-auto luôn là 'validate'. -->
     <dependency>
       <groupId>org.flywaydb</groupId>
@@ -98,6 +114,11 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

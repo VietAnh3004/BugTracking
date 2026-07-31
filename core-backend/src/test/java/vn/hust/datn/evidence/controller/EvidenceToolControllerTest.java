@@ -46,7 +46,7 @@ class EvidenceToolControllerTest extends AbstractWebIntegrationTest {
                         .formatted(run.getId(), warning.getEvidenceRecord().getShortId());
 
         getMockMvc()
-                .perform(post("/api/v1/tools/get_warning").contentType(MediaType.APPLICATION_JSON).content(body))
+                .perform(post("/api/v1/tools/get_warning").contentType(MediaType.APPLICATION_JSON).content(body).with(serviceToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rule_id").value("WEAK_MESSAGE_DIGEST_MD5"))
                 .andExpect(jsonPath("$.file_path").value("PasswordHasher.java"))
@@ -64,7 +64,7 @@ class EvidenceToolControllerTest extends AbstractWebIntegrationTest {
                 """.formatted(run.getId());
 
         getMockMvc()
-                .perform(post("/api/v1/tools/get_warning").contentType(MediaType.APPLICATION_JSON).content(body))
+                .perform(post("/api/v1/tools/get_warning").contentType(MediaType.APPLICATION_JSON).content(body).with(serviceToken()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.type").value("https://datn.hust.vn/problems/evidence-not-found"));
     }
@@ -86,7 +86,7 @@ class EvidenceToolControllerTest extends AbstractWebIntegrationTest {
                         .formatted(runB.getId(), warning.getEvidenceRecord().getShortId());
 
         getMockMvc()
-                .perform(post("/api/v1/tools/get_warning").contentType(MediaType.APPLICATION_JSON).content(body))
+                .perform(post("/api/v1/tools/get_warning").contentType(MediaType.APPLICATION_JSON).content(body).with(serviceToken()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.type").value("https://datn.hust.vn/problems/evidence-wrong-run"));
     }
@@ -102,7 +102,7 @@ class EvidenceToolControllerTest extends AbstractWebIntegrationTest {
                 """.formatted(run.getId());
 
         getMockMvc()
-                .perform(post("/api/v1/tools/get_warning").contentType(MediaType.APPLICATION_JSON).content(body))
+                .perform(post("/api/v1/tools/get_warning").contentType(MediaType.APPLICATION_JSON).content(body).with(serviceToken()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.type").value("https://datn.hust.vn/problems/run-not-queryable"));
     }
@@ -124,7 +124,7 @@ class EvidenceToolControllerTest extends AbstractWebIntegrationTest {
                         .formatted(run.getId(), warning.getEvidenceRecord().getShortId());
 
         getMockMvc()
-                .perform(post("/api/v1/tools/get_related_tests").contentType(MediaType.APPLICATION_JSON).content(body))
+                .perform(post("/api/v1/tools/get_related_tests").contentType(MediaType.APPLICATION_JSON).content(body).with(serviceToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(1))
                 .andExpect(jsonPath("$.items[0].method").value("NAMING_CONVENTION"))
@@ -146,7 +146,7 @@ class EvidenceToolControllerTest extends AbstractWebIntegrationTest {
                         .formatted(run.getId());
 
         getMockMvc()
-                .perform(post("/api/v1/tools/search_evidence").contentType(MediaType.APPLICATION_JSON).content(body))
+                .perform(post("/api/v1/tools/search_evidence").contentType(MediaType.APPLICATION_JSON).content(body).with(serviceToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items").isNotEmpty())
                 .andExpect(jsonPath("$.total").exists());
@@ -166,7 +166,7 @@ class EvidenceToolControllerTest extends AbstractWebIntegrationTest {
                         .formatted(run.getId(), warning.getEvidenceRecord().getShortId());
 
         getMockMvc()
-                .perform(post("/api/v1/tools/get_coverage").contentType(MediaType.APPLICATION_JSON).content(body))
+                .perform(post("/api/v1/tools/get_coverage").contentType(MediaType.APPLICATION_JSON).content(body).with(serviceToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(0));
     }
@@ -185,7 +185,7 @@ class EvidenceToolControllerTest extends AbstractWebIntegrationTest {
                         .formatted(run.getId(), warning.getEvidenceRecord().getShortId());
 
         getMockMvc()
-                .perform(post("/api/v1/tools/get_code_context").contentType(MediaType.APPLICATION_JSON).content(body))
+                .perform(post("/api/v1/tools/get_code_context").contentType(MediaType.APPLICATION_JSON).content(body).with(serviceToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(0));
     }

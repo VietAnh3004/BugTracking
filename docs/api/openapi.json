@@ -11,6 +11,9 @@
   "servers" : [ {
     "url" : "/"
   } ],
+  "security" : [ {
+    "bearerAuth" : [ ]
+  } ],
   "tags" : [ {
     "name" : "projects",
     "description" : "Quản lý dự án được phân tích."
@@ -44,7 +47,10 @@
               }
             }
           }
-        }
+        },
+        "security" : [ {
+          "serviceToken" : [ ]
+        } ]
       }
     },
     "/api/v1/tools/get_warning" : {
@@ -72,7 +78,10 @@
               }
             }
           }
-        }
+        },
+        "security" : [ {
+          "serviceToken" : [ ]
+        } ]
       }
     },
     "/api/v1/tools/get_related_tests" : {
@@ -100,7 +109,10 @@
               }
             }
           }
-        }
+        },
+        "security" : [ {
+          "serviceToken" : [ ]
+        } ]
       }
     },
     "/api/v1/tools/get_coverage" : {
@@ -128,7 +140,10 @@
               }
             }
           }
-        }
+        },
+        "security" : [ {
+          "serviceToken" : [ ]
+        } ]
       }
     },
     "/api/v1/tools/get_code_context" : {
@@ -156,7 +171,10 @@
               }
             }
           }
-        }
+        },
+        "security" : [ {
+          "serviceToken" : [ ]
+        } ]
       }
     },
     "/api/v1/projects" : {
@@ -565,6 +583,18 @@
           }
         },
         "required" : [ "items", "page", "size", "total" ]
+      }
+    },
+    "securitySchemes" : {
+      "bearerAuth" : {
+        "type" : "http",
+        "scheme" : "bearer",
+        "bearerFormat" : "JWT"
+      },
+      "serviceToken" : {
+        "type" : "apiKey",
+        "name" : "X-Service-Token",
+        "in" : "header"
       }
     }
   }

@@ -1,7 +1,5 @@
 package vn.hust.datn.evidence.exception;
 
-import java.net.URI;
-import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -17,18 +15,23 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * Điểm xử lý lỗi duy nhất của toàn bộ API.
  *
  * <p>Controller không được bắt lỗi rải rác: mọi ngoại lệ đều nổi lên đây và trả về cùng một định
  * dạng RFC 7807 (Problem Details), nhờ đó frontend chỉ cần một chỗ để hiển thị lỗi.
+ *
+ * <p>Chỉ bắt được ngoại lệ trong {@code DispatcherServlet} — 401/403 của Spring Security phát sinh
+ * ở tầng servlet filter, TRƯỚC {@code DispatcherServlet}, nên có handler riêng
+ * ({@code vn.hust.datn.evidence.config.security.ProblemDetailAuthenticationEntryPoint}/{@code
+ * ProblemDetailAccessDeniedHandler}) dùng chung {@link ProblemDetails} với lớp này.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
-    private static final String TYPE_PREFIX = "https://datn.hust.vn/problems/";
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
@@ -115,6 +118,17 @@ public class GlobalExceptionHandler {
         return detail;
     }
 
+    /** File upload vượt {@code MAX_UPLOAD_SIZE} — không có handler này, Tomcat/Spring trả về 500. */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ProblemDetail handleUploadTooLarge(MaxUploadSizeExceededException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.PAYLOAD_TOO_LARGE,
+                "upload-too-large",
+                "File tải lên quá lớn",
+                "Kích thước file vượt quá giới hạn cho phép.",
+                request);
+    }
+
     /**
      * Lưới an toàn cuối cùng.
      *
@@ -133,14 +147,6 @@ public class GlobalExceptionHandler {
     }
 
     private ProblemDetail problem(HttpStatus status, String type, String title, String detail, HttpServletRequest req) {
-        ProblemDetail problem = ProblemDetail.forStatus(status);
-        problem.setType(URI.create(TYPE_PREFIX + type));
-        problem.setTitle(title);
-        if (detail != null) {
-            problem.setDetail(detail);
-        }
-        problem.setInstance(URI.create(req.getRequestURI()));
-        problem.setProperty("timestamp", Instant.now());
-        return problem;
+        return ProblemDetails.of(status, type, title, detail, req.getRequestURI());
     }
 }

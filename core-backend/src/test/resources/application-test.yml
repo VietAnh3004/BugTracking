@@ -12,6 +12,15 @@ app:
     allowed-origins: http://localhost:5173
   jwt:
     secret: test-only-secret-du-32-ky-tu-khong-dung-that
+    expiration: PT15M
+    refresh-expiration: P14D
+    issuer: datn-hust-test
+  security:
+    service-token: test-only-service-token-du-32-ky-tu-khong-dung-that
+    # 10 vòng BCrypt mất ~100ms/lần hash - nhân với hàng chục test đăng ký/đăng nhập sẽ cộng
+    # dồn thành hàng chục giây. 4 vòng đủ chậm để chứng minh logic đúng, không đủ chậm để làm
+    # người chạy test tưởng hạ tầng bị treo.
+    bcrypt-strength: 4
   storage:
     endpoint: http://localhost:9000
     access-key: test

@@ -1,7 +1,9 @@
 package vn.hust.datn.evidence;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import lombok.Getter;
 
@@ -22,6 +24,17 @@ import lombok.Getter;
 @Getter
 public abstract class AbstractWebIntegrationTest extends AbstractIntegrationTest {
 
-    @org.springframework.beans.factory.annotation.Autowired
+    /** Khớp {@code app.security.service-token} trong {@code application-test.yml}. */
+    protected static final String TEST_SERVICE_TOKEN = "test-only-service-token-du-32-ky-tu-khong-dung-that";
+
+    @Autowired
     private MockMvc mockMvc;
+
+    /** Header service token hợp lệ cho request tới {@code /api/v1/tools/**} trong test. */
+    protected static RequestPostProcessor serviceToken() {
+        return request -> {
+            request.addHeader("X-Service-Token", TEST_SERVICE_TOKEN);
+            return request;
+        };
+    }
 }

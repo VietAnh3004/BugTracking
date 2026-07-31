@@ -63,7 +63,16 @@ app:
     allowed-origins: ${CORS_ORIGINS}
   jwt:
     secret: ${JWT_SECRET}
-    expiration: ${JWT_EXPIRATION:PT12H}
+    # Ngắn có chủ đích (15 phút): access token không thu hồi được (stateless), nên phải tự hết
+    # hạn nhanh. Refresh token (JWT_REFRESH_EXPIRATION) mới là thứ giữ phiên đăng nhập sống —
+    # nó thu hồi được (lưu hash trong DB) và bù lại thời hạn ngắn của access token.
+    expiration: ${JWT_EXPIRATION:PT15M}
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:P14D}
+    issuer: ${JWT_ISSUER:datn-hust-evidence-agent}
+  security:
+    # Bí mật chia sẻ cho agent-service gọi /api/v1/tools/** — KHÔNG phải JWT (ADR 0005 điểm 2).
+    service-token: ${SERVICE_TOKEN}
+    bcrypt-strength: ${BCRYPT_STRENGTH:10}
   storage:
     endpoint: ${STORAGE_ENDPOINT}
     access-key: ${STORAGE_ACCESS_KEY}

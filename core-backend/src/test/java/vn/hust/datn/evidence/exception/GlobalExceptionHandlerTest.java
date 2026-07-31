@@ -1,5 +1,6 @@
 package vn.hust.datn.evidence.exception;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -28,7 +29,7 @@ class GlobalExceptionHandlerTest extends AbstractWebIntegrationTest {
     @Test
     void uuidSaiDinhDangTraVe400KhongPhai500() throws Exception {
         getMockMvc()
-                .perform(get("/api/v1/_probe/by-id/khong-phai-uuid"))
+                .perform(get("/api/v1/_probe/by-id/khong-phai-uuid").with(jwt()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.type").value("https://datn.hust.vn/problems/invalid-parameter"));
     }
@@ -36,7 +37,10 @@ class GlobalExceptionHandlerTest extends AbstractWebIntegrationTest {
     @Test
     void jsonHongCuPhapTraVe400() throws Exception {
         getMockMvc()
-                .perform(post("/api/v1/_probe/echo").contentType(MediaType.APPLICATION_JSON).content("{khong-phai-json"))
+                .perform(post("/api/v1/_probe/echo")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{khong-phai-json")
+                        .with(jwt()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.type").value("https://datn.hust.vn/problems/malformed-request-body"));
     }
@@ -44,7 +48,7 @@ class GlobalExceptionHandlerTest extends AbstractWebIntegrationTest {
     @Test
     void requestParamViPhamRangBuocTraVe400CoFieldErrors() throws Exception {
         getMockMvc()
-                .perform(get("/api/v1/_probe/validated").param("value", "ab"))
+                .perform(get("/api/v1/_probe/validated").param("value", "ab").with(jwt()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.type").value("https://datn.hust.vn/problems/validation-failed"))
                 .andExpect(jsonPath("$.fieldErrors").exists());
@@ -53,7 +57,7 @@ class GlobalExceptionHandlerTest extends AbstractWebIntegrationTest {
     @Test
     void requestParamHopLeThiTraVe200() throws Exception {
         getMockMvc()
-                .perform(get("/api/v1/_probe/validated").param("value", "abcdef"))
+                .perform(get("/api/v1/_probe/validated").param("value", "abcdef").with(jwt()))
                 .andExpect(status().isOk());
     }
 }

@@ -43,8 +43,11 @@ class ConfigPropertiesValidationTest {
 
     @Test
     void jwtSecretNgan32KyTuThiBiTuChoi() {
-        // HS256 cần khoá tối thiểu 256 bit; khoá ngắn hơn làm chữ ký yếu đi.
-        JwtProperties properties = new JwtProperties("qua-ngan", Duration.ofHours(12));
+        // HS256 cần khoá tối thiểu 256 bit; khoá ngắn hơn làm chữ ký yếu đi. Dùng 20 ký tự có dấu
+        // ('á' = 2 byte UTF-8) để đủ 40 byte (KHÔNG bị compact constructor chặn ở bước đếm byte)
+        // nhưng vẫn dưới 32 KÝ TỰ - tách riêng nhánh @Size(min=32) khỏi nhánh đếm byte thủ công.
+        JwtProperties properties =
+                new JwtProperties("á".repeat(20), Duration.ofMinutes(15), Duration.ofDays(14), "datn-hust");
 
         assertThat(validator.validate(properties)).anyMatch(violation -> violation
                 .getPropertyPath()
@@ -54,8 +57,8 @@ class ConfigPropertiesValidationTest {
 
     @Test
     void jwtSecretDuDaiThiHopLe() {
-        JwtProperties properties =
-                new JwtProperties("mot-khoa-bi-mat-du-dai-toi-thieu-32-ky-tu", Duration.ofHours(12));
+        JwtProperties properties = new JwtProperties(
+                "mot-khoa-bi-mat-du-dai-toi-thieu-32-ky-tu", Duration.ofMinutes(15), Duration.ofDays(14), "datn-hust");
 
         assertThat(validator.validate(properties)).isEmpty();
     }
@@ -63,9 +66,19 @@ class ConfigPropertiesValidationTest {
     @Test
     void jwtExpirationKhongDuongThiBiTuChoi() {
         // Token hết hạn ngay khi vừa cấp sẽ đẩy người dùng ra ngay sau khi đăng nhập.
-        assertThatThrownBy(() -> new JwtProperties("mot-khoa-bi-mat-du-dai-toi-thieu-32-ky-tu", Duration.ZERO))
+        assertThatThrownBy(() -> new JwtProperties(
+                        "mot-khoa-bi-mat-du-dai-toi-thieu-32-ky-tu", Duration.ZERO, Duration.ofDays(14), "datn-hust"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("JWT_EXPIRATION");
+    }
+
+    @Test
+    void jwtSecretNganCaVeByteThiBiTuChoiVoiThongDiepRoRang() {
+        // Chuỗi ngắn (ít ký tự) chắc chắn cũng ít byte UTF-8 hơn 32 - kiểm tra thông điệp lỗi
+        // của nhánh đếm byte (khác nhánh @Size đếm ký tự ở test phía trên) được kích hoạt đúng.
+        assertThatThrownBy(() -> new JwtProperties("qua-ngan", Duration.ofMinutes(15), Duration.ofDays(14), "datn-hust"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("byte");
     }
 
     @Test

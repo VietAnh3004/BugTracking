@@ -5,9 +5,12 @@ import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
 
@@ -31,6 +34,20 @@ import io.swagger.v3.oas.models.tags.Tag;
 @Configuration
 public class OpenApiConfig {
 
+    /**
+     * Hai security scheme:
+     *
+     * <ul>
+     *   <li>{@code bearerAuth} — JWT của người dùng, áp dụng MẶC ĐỊNH cho mọi endpoint (qua {@code
+     *       addSecurityItem} toàn cục). Endpoint công khai (đăng ký/đăng nhập/refresh) phải tự gắn
+     *       {@code @SecurityRequirements()} rỗng để xoá yêu cầu này.
+     *   <li>{@code serviceToken} — header {@code X-Service-Token}, chỉ dùng cho {@code
+     *       /api/v1/tools/**}. Controller đó gắn {@code @SecurityRequirements(@SecurityRequirement(
+     *       name = "serviceToken"))} để THAY THẾ (không cộng thêm) yêu cầu {@code bearerAuth} toàn
+     *       cục — hai cơ chế xác thực này loại trừ lẫn nhau ở tầng Spring Security (SecurityConfig),
+     *       spec phải phản ánh đúng thực tế đó.
+     * </ul>
+     */
     @Bean
     public OpenAPI evidenceAgentOpenApi() {
         return new OpenAPI()
@@ -46,6 +63,20 @@ public class OpenApiConfig {
                                 .name("evidence-tools")
                                 .description(
                                         "5 evidence tool mà Agent Service gọi. RPC theo tên tool, không phải REST"
-                                                + " resource — xem ADR 0005.")));
+                                                + " resource — xem ADR 0005.")))
+                .components(new Components()
+                        .addSecuritySchemes(
+                                "bearerAuth",
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT"))
+                        .addSecuritySchemes(
+                                "serviceToken",
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.HEADER)
+                                        .name("X-Service-Token")))
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
     }
 }
