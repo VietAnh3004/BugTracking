@@ -31,8 +31,8 @@ Kế hoạch thực thi đầy đủ (18 hạng mục A→E) nằm ở
 | A | Dọn 3 endpoint `_probe` khỏi spec OpenAPI công khai | ✅ Xong |
 | B1 | Migration V3: `app_user`, `refresh_token`, `snapshot_file`, `project.owner_id`, `repository_snapshot.{status,source_type,file_count,total_size_bytes,error_message}` | ✅ Xong |
 | B2 | Bật `required` trong spec OpenAPI (`@Schema(requiredMode=...)` trên `ProjectResponse`/`CreateProjectRequest`/`PageResponse`) | ✅ Xong |
-| B3 | Spring Security 2 filter chain (JWT Bearer + service token cho `/api/v1/tools/**`) + CORS qua filter | ⬜ Tiếp theo |
-| B4 | Đăng ký/đăng nhập/`/auth/me` | ⬜ |
+| B3 | Spring Security 2 filter chain (JWT Bearer + service token cho `/api/v1/tools/**`) + CORS qua filter | ✅ Xong |
+| B4 | Đăng ký/đăng nhập/`/auth/me` | ⬜ Tiếp theo |
 | B5 | Refresh token xoay vòng + phát hiện tái sử dụng | ⬜ |
 | B6 | Gán owner cho project + authorization + migration V4 (backfill + `SET NOT NULL` cho `project.owner_id`) | ⬜ |
 | C1-C3 | MinIO object storage + upload zip an toàn + API duyệt file/đọc theo dòng | ⬜ |

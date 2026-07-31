@@ -118,6 +118,38 @@ entity trả về bị detach, và Hibernate từ chối gán entity detached v�
 `core-backend/src/test/java/vn/hust/datn/evidence/testsupport/TestFixtures.java` (method
 `warning()`).
 
+**Spring Security + `oauth2-resource-server` (từ tuần 5-7, xem `SecurityConfig.java`): CORS phải
+gắn vào Spring Security, không phải `WebMvcConfigurer.addCorsMappings`.** `addCorsMappings` chạy
+ở tầng `HandlerMapping` bên trong `DispatcherServlet` — Spring Security là servlet filter chạy
+**trước** đó. Preflight `OPTIONS` không mang header `Authorization` (đặc tả CORS cấm), nên với
+`anyRequest().authenticated()` nó bị `AuthorizationFilter` trả 401 trước khi bao giờ tới
+`HandlerMapping`. Trình duyệt thấy preflight không phải 2xx và báo **"blocked by CORS policy"**
+— không phải 401 — khiến người debug đi sửa nhầm chỗ (CORS thay vì auth). Cách đúng: bean
+`CorsConfigurationSource` + `http.cors(cors -> cors.configurationSource(...))` trong
+`SecurityFilterChain`. Xem `core-backend/src/main/java/vn/hust/datn/evidence/config/CorsConfig.java`
+và test canh lỗi này: `CorsPreflightTest`.
+
+**`NimbusJwtEncoder.encode(JwtEncoderParameters.from(claims))` (một tham số, không kèm header) sẽ
+ném `JwtEncodingException: Failed to select a JWK signing key` nếu `JWKSource` chỉ có khoá HMAC.**
+Khi không truyền `JwsHeader` tường minh, mặc định thuật toán là **RS256**, không phải HS256 — JWK
+đối xứng (`OctetSequenceKey`) không khớp. Luôn gọi
+`JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims)`. Ngoài ra
+`OctetSequenceKey` phải khai tường minh `.keyUse(KeyUse.SIGNATURE)` và `.keyID(...)` — thiếu một
+trong hai, `NimbusJwtEncoder` không chọn được JWK dù thuật toán đã đúng, và lỗi chỉ lộ ra lúc gọi
+`encode()` (runtime), không lộ lúc khởi động ứng dụng hay lúc biên dịch. Xem
+`core-backend/src/main/java/vn/hust/datn/evidence/config/JwtConfig.java`.
+
+**`http.exceptionHandling(ex -> ex.authenticationEntryPoint(...))` KHÔNG đủ để 401 trả về JSON khi
+dùng `oauth2ResourceServer()`.** `OAuth2ResourceServerConfigurer` tự đăng ký
+`BearerTokenAuthenticationEntryPoint` riêng qua
+`ExceptionHandlingConfigurer.defaultAuthenticationEntryPointFor(...)` — cơ chế ưu tiên theo
+request-matcher, đứng **trước** entry point "mặc định" khai ở `exceptionHandling()`. Không khai
+entry point tường minh **bên trong** `oauth2ResourceServer(oauth2 -> oauth2.authenticationEntryPoint(...).jwt(...))`
+thì 401 rơi vào entry point gốc của Spring Security (không trả JSON, không theo format
+ProblemDetail của dự án) — triệu chứng cụ thể từng gặp: test `MockMvc` báo
+`No value at JSON path "$.type"` vì body response rỗng. Xem
+`core-backend/src/main/java/vn/hust/datn/evidence/config/SecurityConfig.java`.
+
 ## Lệnh hay dùng
 
 ```bash
