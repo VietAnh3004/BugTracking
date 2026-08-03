@@ -110,6 +110,23 @@ toàn đúng — nguyên nhân là compile tăng tiến (incremental) của Mave
 phiên. Trước khi coi một lỗi biên dịch/bean-không-tìm-thấy là lỗi thật, chạy lại với
 `mvn clean verify` — nếu xanh thì lỗi trước đó là giả, do stale `target/`.
 
+**Chạy `mvn` ở chế độ nền (background): thông báo "completed (exit code 0)" của harness KHÔNG
+đáng tin — phải tự đọc log.** Gặp thật 3 lần liên tiếp trong một phiên: harness báo exit code 0
+trong khi log ghi rõ `BUILD FAILURE` và `EXIT=1`. Cách làm đúng đã dùng xuyên suốt: luôn
+`mvn ... > verify.log 2>&1; echo "EXIT=$?" >> verify.log`, rồi kiểm bằng
+`grep -E "BUILD|^EXIT|Tests run:.*Failures" verify.log`. Đừng bao giờ kết luận "build xanh" từ
+thông báo của harness. (Ghi chú liên quan: `mvn ... | tail -N; echo $?` cũng sai — đó là exit code
+của `tail`, không phải của `mvn`.)
+
+**Lỗi khoá file trên Windows khi `mvn clean` tái diễn thường xuyên, và có HAI dạng khác nhau:**
+`Failed to delete ...\target\test-classes` (hỏng ở goal `clean`) và
+`error while writing ...: ...\target\classes\...\X.class` (hỏng ở goal `compile`). Cả hai đều do
+tranh chấp với IDE background compiler / antivirus đang giữ file trong `target/`, KHÔNG phải lỗi
+code — chạy lại y nguyên lệnh đó là xanh. Gặp thật 2 lần liên tiếp trong một phiên (phải chạy tới
+lần thứ ba mới qua). Cùng họ với cạm bẫy "IDE ghi đè `*MapperImpl.java`" ghi ở dưới: `target/` là
+tài nguyên tranh chấp giữa IDE và `mvn`. Trước khi tốn thời gian debug, kiểm xem thông điệp lỗi có
+nhắc tới đường dẫn trong `target/` hay không.
+
 **`TestFixtures` (test helper dùng `saveAndFlush` nhiều bước liên tiếp trong cùng method):
 method nào cần entity vừa lưu vẫn "managed" ở bước sau (vd gán vào quan hệ `@MapsId`) phải đánh
 dấu `@Transactional`.** Thiếu annotation này, mỗi `saveAndFlush` tự mở/đóng transaction riêng,
