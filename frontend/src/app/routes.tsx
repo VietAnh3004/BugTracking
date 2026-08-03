@@ -56,6 +56,40 @@ export const routes: RouteObject[] = [
           { index: true, element: <Navigate to="/projects" replace /> },
           { path: 'projects', element: <ProjectsPage /> },
           { path: 'projects/:projectId', element: <ProjectDetailPage /> },
+          {
+            // `lazy` theo route: phần duyệt mã nguồn là mảng nặng nhất của ứng dụng (cây file +
+            // source viewer) nhưng người dùng chỉ mở nó sau khi đã đăng nhập và chọn snapshot —
+            // không nên nằm trong bundle đầu tiên của màn hình đăng nhập.
+            path: 'snapshots/:snapshotId',
+            lazy: async () => {
+              const { SnapshotBrowserLayout } =
+                await import('@/features/snapshots/layouts/SnapshotBrowserLayout');
+              return { Component: SnapshotBrowserLayout };
+            },
+            // errorElement RIÊNG: lỗi khi đọc một file (vd nội dung hỏng) không được hạ luôn khung
+            // ứng dụng — người dùng vẫn phải còn cây file để chọn file khác.
+            errorElement: <RouteErrorBoundary />,
+            children: [
+              {
+                // Splat route: đường dẫn file chứa dấu `/` nên phải là `files/*`. URL đọc được
+                // như trên GitHub, và `#L42` còn rảnh cho số dòng.
+                path: 'files/*',
+                lazy: async () => {
+                  const { SourceViewerPage } =
+                    await import('@/features/snapshots/pages/SourceViewerPage');
+                  return { Component: SourceViewerPage };
+                },
+              },
+              {
+                index: true,
+                lazy: async () => {
+                  const { SourceViewerPage } =
+                    await import('@/features/snapshots/pages/SourceViewerPage');
+                  return { Component: SourceViewerPage };
+                },
+              },
+            ],
+          },
         ],
       },
       { path: '*', element: <NotFoundPage /> },
