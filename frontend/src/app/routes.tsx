@@ -22,6 +22,10 @@ import { Navigate, type RouteObject } from 'react-router-dom';
 import { NotFoundPage } from '@/app/NotFoundPage';
 import { RouteErrorBoundary } from '@/app/RouteErrorBoundary';
 import { RootLayout } from '@/app/layouts/RootLayout';
+import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
+import { PublicOnlyRoute } from '@/features/auth/components/PublicOnlyRoute';
+import { LoginPage } from '@/features/auth/pages/LoginPage';
+import { RegisterPage } from '@/features/auth/pages/RegisterPage';
 import { ProjectsPage } from '@/features/projects/pages/ProjectsPage';
 
 export const routes: RouteObject[] = [
@@ -33,10 +37,25 @@ export const routes: RouteObject[] = [
     // không hạ luôn khung ứng dụng.
     errorElement: <RouteErrorBoundary />,
     children: [
-      // Trang chủ chưa có nội dung riêng: điều hướng thẳng tới danh sách dự án thay vì dựng một
-      // dashboard rỗng. `replace` để nút Back không kẹt trong vòng lặp chuyển hướng.
-      { index: true, element: <Navigate to="/projects" replace /> },
-      { path: 'projects', element: <ProjectsPage /> },
+      // Hai guard dưới đây là route KHÔNG CÓ `path` (pathless layout route): chúng chỉ bọc nhóm
+      // route con để áp điều kiện truy cập, không tự chiếm một đoạn URL nào. Nhờ vậy `/projects`
+      // vẫn là `/projects` chứ không thành `/protected/projects`.
+      {
+        element: <PublicOnlyRoute />,
+        children: [
+          { path: 'login', element: <LoginPage /> },
+          { path: 'register', element: <RegisterPage /> },
+        ],
+      },
+      {
+        element: <ProtectedRoute />,
+        children: [
+          // Trang chủ chưa có nội dung riêng: điều hướng thẳng tới danh sách dự án thay vì dựng
+          // một dashboard rỗng. `replace` để nút Back không kẹt trong vòng lặp chuyển hướng.
+          { index: true, element: <Navigate to="/projects" replace /> },
+          { path: 'projects', element: <ProjectsPage /> },
+        ],
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

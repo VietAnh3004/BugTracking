@@ -1,25 +1,43 @@
 /**
- * Khung ứng dụng: tiêu đề, thanh trạng thái backend, và vùng `Outlet` cho route con.
+ * Khung ứng dụng: tiêu đề, danh tính người dùng, và vùng `Outlet` cho route con.
  *
  * Là layout route (không phải component thường) nên nó KHÔNG bị unmount khi chuyển giữa các route
- * con — trạng thái trong khung (sau này là thanh điều hướng, phiên đăng nhập) giữ nguyên khi đổi
- * trang, và `BackendStatus` không phải gọi lại API mỗi lần điều hướng.
+ * con — trạng thái trong khung giữ nguyên khi đổi trang, và `BackendStatus` không phải gọi lại API
+ * mỗi lần điều hướng.
  */
 
 import { Link, Outlet } from 'react-router-dom';
 
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { BackendStatus } from '@/features/system/components/BackendStatus';
 
 export function RootLayout() {
+  const { status, user, signOut } = useAuth();
+
   return (
     <div className="mx-auto max-w-[880px] px-6 py-8 font-sans">
-      <header className="border-border border-b pb-4">
-        <Link to="/projects" className="text-ink no-underline">
-          <h1 className="mb-1 text-2xl font-semibold">
-            Nền tảng phân tích chương trình dựa trên bằng chứng
-          </h1>
-        </Link>
-        <p className="text-ink-muted mt-0">Đồ án tốt nghiệp — Nguyễn Việt Anh, 20224923</p>
+      <header className="border-border flex items-start justify-between border-b pb-4">
+        <div>
+          <Link to="/projects" className="text-ink no-underline">
+            <h1 className="mb-1 text-2xl font-semibold">
+              Nền tảng phân tích chương trình dựa trên bằng chứng
+            </h1>
+          </Link>
+          <p className="text-ink-muted mt-0">Đồ án tốt nghiệp — Nguyễn Việt Anh, 20224923</p>
+        </div>
+
+        {status === 'authenticated' && user !== null ? (
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <span className="text-ink-muted text-sm">{user.displayName}</span>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="text-brand cursor-pointer text-sm underline"
+            >
+              Đăng xuất
+            </button>
+          </div>
+        ) : null}
       </header>
 
       <main className="pt-6">
