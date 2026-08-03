@@ -17,6 +17,11 @@ public interface SnapshotFileRepository extends JpaRepository<SnapshotFile, UUID
     // theo danh sách phẳng của toàn bộ snapshot.
     List<SnapshotFile> findBySnapshotIdOrderByEntryTypeDescNameAsc(UUID snapshotId);
 
+    // Sắp theo path cho API /files: FE tự dựng cây từ danh sách PHẲNG (xem ADR/kế hoạch tuần 5-7),
+    // và thứ tự theo path giữ mọi node cùng thư mục nằm liền nhau — dựng cây một lượt, không phải
+    // sắp lại phía client.
+    List<SnapshotFile> findBySnapshotIdOrderByPathAsc(UUID snapshotId);
+
     long countBySnapshotId(UUID snapshotId);
 
     boolean existsBySnapshotIdAndEntryType(UUID snapshotId, SnapshotEntryType entryType);

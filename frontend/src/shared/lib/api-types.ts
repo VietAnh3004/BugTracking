@@ -107,7 +107,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["listByProject"];
         put?: never;
         post: operations["upload"];
         delete?: never;
@@ -180,7 +180,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/projects/{id}": {
+    "/api/v1/snapshots/{snapshotId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -188,6 +188,54 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/snapshots/{snapshotId}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listFiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/snapshots/{snapshotId}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -367,6 +415,45 @@ export interface components {
             email: string;
             password: string;
         };
+        SnapshotFileResponse: {
+            path: string;
+            parentPath: string;
+            name: string;
+            /** @enum {string} */
+            entryType: "FILE" | "DIRECTORY";
+            extension?: string;
+            /** Format: int64 */
+            sizeBytes: number;
+            /**
+             * Format: int32
+             * @description null cho thư mục và file nhị phân — 'không đếm được', khác với '0 dòng'
+             */
+            lineCount?: number;
+            binary: boolean;
+            /** @description false khi file vượt ngưỡng lưu trữ: vẫn hiện trong cây nhưng không đọc được nội dung */
+            stored: boolean;
+        };
+        FileContentResponse: {
+            path: string;
+            /**
+             * Format: int32
+             * @description Dòng đầu tiên trả về, đánh số từ 1
+             */
+            fromLine: number;
+            /**
+             * Format: int32
+             * @description Dòng cuối cùng trả về (bao gồm), 0 nếu file rỗng
+             */
+            toLine: number;
+            /**
+             * Format: int32
+             * @description Tổng số dòng của cả file, lấy từ chỉ mục
+             */
+            totalLines: number;
+            /** @description true khi chưa trả hết file — FE hiển thị banner */
+            truncated: boolean;
+            lines: string[];
+        };
         Pageable: {
             /** Format: int32 */
             page?: number;
@@ -376,6 +463,15 @@ export interface components {
         };
         PageResponseProjectResponse: {
             items: components["schemas"]["ProjectResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            total: number;
+        };
+        PageResponseSnapshotResponse: {
+            items: components["schemas"]["SnapshotResponse"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -558,6 +654,30 @@ export interface operations {
             };
         };
     };
+    listByProject: {
+        parameters: {
+            query: {
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseSnapshotResponse"];
+                };
+            };
+        };
+    };
     upload: {
         parameters: {
             query?: never;
@@ -688,6 +808,76 @@ export interface operations {
         };
     };
     get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                snapshotId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SnapshotResponse"];
+                };
+            };
+        };
+    };
+    listFiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                snapshotId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SnapshotFileResponse"][];
+                };
+            };
+        };
+    };
+    readFile: {
+        parameters: {
+            query: {
+                path: string;
+                fromLine?: number;
+                toLine?: number;
+            };
+            header?: never;
+            path: {
+                snapshotId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FileContentResponse"];
+                };
+            };
+        };
+    };
+    get_1: {
         parameters: {
             query?: never;
             header?: never;

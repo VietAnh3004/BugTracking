@@ -230,6 +230,38 @@
       }
     },
     "/api/v1/projects/{projectId}/snapshots" : {
+      "get" : {
+        "tags" : [ "snapshots" ],
+        "operationId" : "listByProject",
+        "parameters" : [ {
+          "name" : "projectId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "pageable",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/Pageable"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponseSnapshotResponse"
+                }
+              }
+            }
+          }
+        }
+      },
       "post" : {
         "tags" : [ "snapshots" ],
         "operationId" : "upload",
@@ -404,10 +436,117 @@
         "security" : [ ]
       }
     },
+    "/api/v1/snapshots/{snapshotId}" : {
+      "get" : {
+        "tags" : [ "snapshots" ],
+        "operationId" : "get",
+        "parameters" : [ {
+          "name" : "snapshotId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SnapshotResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/snapshots/{snapshotId}/files" : {
+      "get" : {
+        "tags" : [ "snapshots" ],
+        "operationId" : "listFiles",
+        "parameters" : [ {
+          "name" : "snapshotId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SnapshotFileResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/snapshots/{snapshotId}/file" : {
+      "get" : {
+        "tags" : [ "snapshots" ],
+        "operationId" : "readFile",
+        "parameters" : [ {
+          "name" : "snapshotId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "path",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "fromLine",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "toLine",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FileContentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{id}" : {
       "get" : {
         "tags" : [ "projects" ],
-        "operationId" : "get",
+        "operationId" : "get_1",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -861,6 +1000,78 @@
         },
         "required" : [ "email", "password" ]
       },
+      "SnapshotFileResponse" : {
+        "type" : "object",
+        "properties" : {
+          "path" : {
+            "type" : "string"
+          },
+          "parentPath" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "entryType" : {
+            "type" : "string",
+            "enum" : [ "FILE", "DIRECTORY" ]
+          },
+          "extension" : {
+            "type" : "string"
+          },
+          "sizeBytes" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "lineCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "null cho thư mục và file nhị phân — 'không đếm được', khác với '0 dòng'"
+          },
+          "binary" : {
+            "type" : "boolean"
+          },
+          "stored" : {
+            "type" : "boolean",
+            "description" : "false khi file vượt ngưỡng lưu trữ: vẫn hiện trong cây nhưng không đọc được nội dung"
+          }
+        },
+        "required" : [ "binary", "entryType", "name", "parentPath", "path", "sizeBytes", "stored" ]
+      },
+      "FileContentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "path" : {
+            "type" : "string"
+          },
+          "fromLine" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Dòng đầu tiên trả về, đánh số từ 1"
+          },
+          "toLine" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Dòng cuối cùng trả về (bao gồm), 0 nếu file rỗng"
+          },
+          "totalLines" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Tổng số dòng của cả file, lấy từ chỉ mục"
+          },
+          "truncated" : {
+            "type" : "boolean",
+            "description" : "true khi chưa trả hết file — FE hiển thị banner"
+          },
+          "lines" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        },
+        "required" : [ "fromLine", "lines", "path", "toLine", "totalLines", "truncated" ]
+      },
       "Pageable" : {
         "type" : "object",
         "properties" : {
@@ -889,6 +1100,30 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ProjectResponse"
+            }
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "items", "page", "size", "total" ]
+      },
+      "PageResponseSnapshotResponse" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SnapshotResponse"
             }
           },
           "page" : {

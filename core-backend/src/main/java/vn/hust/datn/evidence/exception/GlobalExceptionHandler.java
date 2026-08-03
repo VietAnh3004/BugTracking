@@ -163,6 +163,31 @@ public class GlobalExceptionHandler {
                 HttpStatus.PAYLOAD_TOO_LARGE, "archive-limit-exceeded", "Archive vượt giới hạn cho phép", ex.getMessage(), request);
     }
 
+    /** Snapshot đang giải nén hoặc đã FAILED — cây file rỗng lúc này vô nghĩa. */
+    @ExceptionHandler(SnapshotNotReadyException.class)
+    public ProblemDetail handleSnapshotNotReady(SnapshotNotReadyException ex, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "snapshot-not-ready", "Snapshot chưa sẵn sàng", ex.getMessage(), request);
+    }
+
+    /** Đọc theo dòng một file nhị phân. */
+    @ExceptionHandler(BinaryFileException.class)
+    public ProblemDetail handleBinaryFile(BinaryFileException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE, "binary-file", "File nhị phân không đọc được theo dòng", ex.getMessage(), request);
+    }
+
+    /** Thư mục, hoặc file quá lớn nên không được đẩy lên object storage. */
+    @ExceptionHandler(FileContentNotStoredException.class)
+    public ProblemDetail handleFileContentNotStored(FileContentNotStoredException ex, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "file-content-not-stored", "Không có nội dung để đọc", ex.getMessage(), request);
+    }
+
+    /** Khoảng dòng yêu cầu không hợp lệ hoặc quá rộng. */
+    @ExceptionHandler(InvalidLineRangeException.class)
+    public ProblemDetail handleInvalidLineRange(InvalidLineRangeException ex, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "invalid-line-range", "Khoảng dòng không hợp lệ", ex.getMessage(), request);
+    }
+
     /**
      * Lưới an toàn cuối cùng.
      *

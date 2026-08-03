@@ -37,8 +37,8 @@ Kế hoạch thực thi đầy đủ (18 hạng mục A→E) nằm ở
 | B6 | Gán owner cho project + authorization + migration V4 (backfill + `SET NOT NULL` cho `project.owner_id`) | ✅ Xong |
 | C1 | MinIO object storage client (`ObjectStorageClient` + `MinioObjectStorageClient`) | ✅ Xong |
 | C2 | Upload zip an toàn (`ZipExtractor`, `SnapshotService`, chống zip-slip/zip-bomb) + lập chỉ mục `snapshot_file` | ✅ Xong |
-| C3 | API duyệt cây file + đọc nội dung theo khoảng dòng | ⬜ Tiếp theo |
-| D1-D7 | Frontend: Tailwind v4, routing, auth, upload, source viewer | ⬜ |
+| C3 | API duyệt cây file + đọc nội dung theo khoảng dòng (`SnapshotQueryService`, 4 endpoint GET) | ✅ Xong |
+| D1-D7 | Frontend: Tailwind v4, routing, auth, upload, source viewer | ⬜ Tiếp theo |
 | E1-E2 | Regenerate api-types, ADR 0006/0007, kiểm chứng end-to-end | ⬜ |
 
 **C2 — ghi chú kỹ thuật đáng chú ý:**
@@ -58,6 +58,23 @@ Kế hoạch thực thi đầy đủ (18 hạng mục A→E) nằm ở
   tên ở lúc BUILD (`ZipException`), nên test "hai entry trùng path" phải dùng hai path khác nhau
   theo byte thô nhưng trùng nhau SAU chuẩn hoá (`dir/a.txt` vs `dir\a.txt`) mới chạm được nhánh
   code `seenPaths` — kịch bản tấn công thật hơn dự tính ban đầu.
+
+**C3 — ghi chú kỹ thuật đáng chú ý:**
+- Bốn endpoint: `GET /projects/{id}/snapshots` (phân trang), `GET /snapshots/{id}` (metadata),
+  `GET /snapshots/{id}/files` (danh sách PHẲNG, FE tự dựng cây), `GET /snapshots/{id}/file?path=&fromLine=&toLine=`.
+- `path` là **query param**, không phải path variable wildcard — đường dẫn chứa `/` nên wildcard
+  buộc phải tự giải mã phần đuôi URL, mở lại đúng lớp lỗi encoding/traversal mà `ZipExtractor` vừa
+  chặn ở C2. Tra bằng `UNIQUE (snapshot_id, path)` nên chỉ khớp chính xác.
+- `SnapshotQueryService.splitLines()` **phải khớp từng chi tiết** với `ZipExtractor.countLines()`:
+  chỉ tách theo `'\n'`, cố tình KHÔNG dùng `String.lines()` (nó còn tách theo `'\r'` đơn lẻ, cho
+  số dòng khác bộ đếm lúc upload trên file dùng CR cũ). Hai đoạn code đếm dòng khác nhau = hai cơ
+  hội lệch nhau, và lệch một dòng ở đây làm source viewer highlight sai **mọi** evidence. Có canh
+  bằng log WARN khi `line_count` trong chỉ mục khác số dòng đọc được thật.
+- `GET /snapshots/{id}` **không** đòi `READY` (khác `/files` và `/file`, hai cái đó trả 409
+  `snapshot-not-ready`): đây chính là endpoint để FE đọc `status`/`errorMessage` của một snapshot
+  `FAILED` — bắt nó đòi READY thì không bao giờ xem được lý do hỏng.
+- `toLine = fromLine + số dòng trả về - 1` là công thức duy nhất, không có nhánh đặc biệt: lát rỗng
+  tự nhiên cho ra `toLine = fromLine - 1` (file rỗng, `fromLine=1` ⇒ `toLine=0`).
 
 **Điều chỉnh quan trọng so với plan gốc** (đọc trước khi làm B6, kẻo backfill hai lần):
 `project.owner_id` được thêm ở V3 dưới dạng **nullable**, KHÔNG `NOT NULL` như plan gốc dự định —
