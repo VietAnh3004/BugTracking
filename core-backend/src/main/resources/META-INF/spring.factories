@@ -1,0 +1,6 @@
+# UnresolvedPlaceholderValidator phải đăng ký ở ĐÂY chứ không phải bằng @Component: nó lắng nghe
+# ApplicationEnvironmentPreparedEvent, sự kiện xảy ra TRƯỚC khi ApplicationContext tồn tại — lúc đó
+# chưa có cơ chế quét component nào để tìm ra bean. spring.factories là cách duy nhất Spring Boot
+# biết tới listener ở giai đoạn sớm này.
+org.springframework.context.ApplicationListener=\
+  vn.hust.datn.evidence.config.UnresolvedPlaceholderValidator

@@ -19,7 +19,7 @@
 | **Tuần 2** — vulnshop + artifact thật + khung khảo sát | ✅ Xong |
 | **Tuần 3** — Unified Evidence Model | ✅ Xong (xem §D2) |
 | **Tuần 4** — API contract + OpenAPI | ✅ Xong (xem §E2) |
-| **Tuần 5-7** — core backend CRUD + JWT auth + frontend routing | 🔄 Đang làm — xem §G |
+| **Tuần 5-7** — core backend CRUD + JWT auth + frontend routing | ✅ Xong (xem §G) |
 
 ### §G — Tuần 5-7: tiến độ chi tiết (đang làm)
 
@@ -38,8 +38,37 @@ Kế hoạch thực thi đầy đủ (18 hạng mục A→E) nằm ở
 | C1 | MinIO object storage client (`ObjectStorageClient` + `MinioObjectStorageClient`) | ✅ Xong |
 | C2 | Upload zip an toàn (`ZipExtractor`, `SnapshotService`, chống zip-slip/zip-bomb) + lập chỉ mục `snapshot_file` | ✅ Xong |
 | C3 | API duyệt cây file + đọc nội dung theo khoảng dòng (`SnapshotQueryService`, 4 endpoint GET) | ✅ Xong |
-| D1-D7 | Frontend: Tailwind v4, routing, auth, upload, source viewer | ⬜ Tiếp theo |
-| E1-E2 | Regenerate api-types, ADR 0006/0007, kiểm chứng end-to-end | ⬜ |
+| D1-D7 | Frontend: Tailwind v4, routing, auth + ADR 0006, single-flight refresh, upload, cây file + source viewer | ✅ Xong |
+| E1-E2 | Kiểm chứng end-to-end thật, ADR 0007, cập nhật tài liệu | ✅ Xong |
+
+**E — kiểm chứng end-to-end thật (03/08/2026), không phải suy luận từ test:**
+
+Chạy hạ tầng thật (Postgres + MinIO qua docker compose) + backend thật, kiểm bằng `curl`:
+
+| # | Kiểm | Kết quả |
+|---|---|---|
+| 1 | Preflight `OPTIONS` không kèm token | 200 + đủ header CORS |
+| 2 | Response 401 vẫn có `Access-Control-Allow-Origin` | Có (thiếu thì FE thấy "CORS error" thay vì 401) |
+| 3 | Đăng ký → đăng nhập → tạo dự án | OK |
+| 4 | Upload `case-study/vulnshop` thật (35 file) | `READY`, `fileCount=35`, 72.657 byte |
+| 5 | `GET /files` | 66 mục = 31 thư mục tự sinh + 35 file |
+| 6 | Object thật trên MinIO | đúng 35 object dưới `snapshots/{id}/`, giữ cấu trúc thư mục |
+| 7 | Đọc file: `totalLines` | 53, khớp `wc -l` của file gốc |
+| 8 | Đọc khoảng dòng 10-14 | khớp từng dòng với file trên đĩa (1-based đúng) |
+| 9 | Người dùng khác truy cập project/snapshot/files/upload | 404 ở cả bốn (không phải 403) |
+| 10 | Dùng lại refresh token đã xoay | 401 `refresh-token-reused` |
+| 11 | Token **mới nhất** sau khi phát hiện tái sử dụng | 401 — cả họ bị thu hồi, đúng thiết kế |
+
+**Phát hiện một bug thật nhờ bước này** (không test nào bắt được vì nó chỉ xuất hiện khi thiếu biến
+môi trường thật): thiếu `CORS_ORIGINS` thì ứng dụng **vẫn khởi động** và báo `UP`, với origin là
+chuỗi literal `"${CORS_ORIGINS}"`. Nguyên nhân: `@ConfigurationProperties` dùng placeholder resolver
+**lenient** (khác `@Value` strict), và `@NotBlank` chấp nhận `"${CORS_ORIGINS}"` vì nó không rỗng.
+Các biến khác chỉ *tình cờ* fail-fast nhờ validation tầng dưới. Đã sửa bằng
+`UnresolvedPlaceholderValidator` — xem CLAUDE.md.
+
+**Chưa kiểm được bằng công cụ dòng lệnh** (cần trình duyệt thật, nhưng đã có test tự động canh):
+F5 tại deep link không nhảy về `/login` (`ProtectedRoute.test.tsx`), và ba request song song chỉ
+gọi `/auth/refresh` đúng một lần (`apiClientRefresh.test.ts`, đã mutation-test).
 
 **C2 — ghi chú kỹ thuật đáng chú ý:**
 - Ranh giới transaction tách thành 3 lớp: `SnapshotPersistenceService.createPending` (REQUIRES_NEW,

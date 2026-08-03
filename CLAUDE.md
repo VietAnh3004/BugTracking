@@ -111,6 +111,25 @@ y hệt (đúng 60.0s), rất dễ đi sửa nhầm chỗ. Cách khoanh vùng nh
 `npx vitest run --config <config tối giản>` với `environment: 'node'` (xanh trong 3s) rồi đổi sang
 `'jsdom'` (đỏ sau 60s) — biến số duy nhất khác nhau chính là thủ phạm.
 
+**`@ConfigurationProperties` KHÔNG fail-fast khi thiếu biến môi trường — khác hẳn `@Value`.**
+`@Value` dùng placeholder resolver nghiêm ngặt và ném lỗi khi không giải được `${VAR}`, nhưng
+`@ConfigurationProperties` dùng `PropertySourcesPlaceholdersResolver` với
+`ignoreUnresolvablePlaceholders = true`: biến thiếu được bind **nguyên văn** thành chuỗi
+`"${VAR}"`. Gặp thật khi kiểm chứng end-to-end tuần 5-7: bỏ `CORS_ORIGINS` thì ứng dụng **khởi
+động bình thường**, `/actuator/health` trả `UP`, nhưng origin được phép là chuỗi `"${CORS_ORIGINS}"`
+— mọi request từ trình duyệt bị chặn CORS trong khi người vận hành thấy một ứng dụng "khoẻ mạnh".
+`@NotBlank` không cứu được vì `"${CORS_ORIGINS}"` là chuỗi không rỗng. Các biến khác chỉ tình cờ
+fail-fast nhờ validation ở tầng dưới (`JwtProperties` kiểm độ dài byte, MinIO từ chối hostname lạ)
+— tức là bảo vệ ngẫu nhiên, không phải cơ chế. Đã sửa bằng
+`core-backend/src/main/java/vn/hust/datn/evidence/config/UnresolvedPlaceholderValidator.java`
+(nghe `ApplicationEnvironmentPreparedEvent`, quét mọi property `app.*`, đăng ký qua
+`META-INF/spring.factories` vì lúc đó chưa có ApplicationContext để `@Component` hoạt động).
+
+**MinIO từ chối khởi động nếu `MINIO_ROOT_PASSWORD` < 8 ký tự** (user < 3 ký tự cũng vậy) và thoát
+với exit code 1 — nhưng `docker compose up -d` vẫn báo "Started", nên rất dễ tưởng nó đang chạy.
+Triệu chứng thật: `curl :9000/minio/health/live` trả về rỗng/connection refused, còn
+`docker compose ps` không liệt kê service đó. Kiểm bằng `docker logs evidence-agent-minio-1`.
+
 **Comment trong XML không được chứa `--`** (đã làm hỏng pom.xml một lần).
 
 **`mvn verify` báo lỗi giả sau nhiều lần `mvn test`/`spotless:apply` liên tiếp không `clean`.**
