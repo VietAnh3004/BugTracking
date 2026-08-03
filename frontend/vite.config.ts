@@ -1,10 +1,13 @@
 import { fileURLToPath, URL } from 'node:url';
 
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [react()],
+  // Tailwind v4 qua plugin Vite chính chủ, KHÔNG qua PostCSS: plugin tự quét source và biên dịch
+  // trong pipeline của Vite, nên không cần postcss.config.js, autoprefixer, hay tailwind.config.js.
+  plugins: [tailwindcss(), react()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

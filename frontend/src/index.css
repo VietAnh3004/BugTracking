@@ -1,14 +1,76 @@
-﻿:root {
-  color-scheme: light dark;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+/*
+ * Tailwind CSS v4 — cấu hình CSS-first, KHÔNG có tailwind.config.js.
+ *
+ * v4 bỏ file config JS: mọi token khai trong khối `@theme` dưới đây và tự động trở thành utility
+ * class (`--color-brand` ⇒ `bg-brand`, `text-brand`, `border-brand`...). Đổi lại, `@theme` là
+ * nguồn sự thật DUY NHẤT cho màu — không hardcode mã hex trong component (§1bis: không hardcode).
+ *
+ * Cố tình LIGHT-ONLY ở đợt này: `color-scheme: light dark` cũ đã bỏ. Khai báo hỗ trợ dark mà
+ * không định nghĩa token cho cả hai chế độ là cách chắc chắn để giao diện vỡ trên máy đặt dark —
+ * hứa suông còn tệ hơn không hứa. Thêm dark mode sau = thêm khối `@media (prefers-color-scheme)`
+ * ghi đè đúng các biến này, không phải sửa component nào.
+ */
+
+@import 'tailwindcss';
+
+@theme {
+  /* Nền và đường viền — thang xám trung tính, không ngả xanh/ấm. */
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-ink: #0f172a;
+  --color-ink-muted: #64748b;
+
+  /* Màu thương hiệu, dùng cho hành động chính và trạng thái đang chọn. */
+  --color-brand: #1d4ed8;
+  --color-brand-hover: #1e40af;
+  --color-brand-subtle: #eff6ff;
+
+  /* Source viewer: nền khối mã và dải làm nổi dòng được evidence trỏ tới (#L42). */
+  --color-code-bg: #f8fafc;
+  --color-line-highlight: #fef9c3;
+
+  /*
+   * Font mã nguồn phải là monospace THẬT: source viewer canh số dòng theo cột, font tỷ lệ làm
+   * lệch cột và code trông sai.
+   */
+  --font-mono:
+    ui-monospace, 'JetBrains Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
 }
 
-* {
-  box-sizing: border-box;
+/*
+ * Màu mức độ nghiêm trọng, ánh xạ 1-1 với enum WarningSeverity của backend.
+ *
+ * `static` (khác khối `@theme` ở trên) buộc Tailwind LUÔN sinh ra bốn biến này, kể cả khi chưa
+ * component nào dùng tới. Mặc định v4 tree-shake token không được utility class nào tham chiếu —
+ * đã kiểm chứng: build đầu tiên của D1 chỉ giữ lại đúng hai biến được `var()` gọi trực tiếp trong
+ * `body`, tám biến còn lại bị loại sạch khỏi CSS.
+ *
+ * Vì sao riêng nhóm này cần `static`: màu severity là thứ DUY NHẤT sẽ được tra theo dữ liệu chạy
+ * (`warning.severityNormalized` từ API). Tailwind quét source bằng phân tích TĨNH trên văn bản,
+ * nên class ghép động kiểu `` `bg-sev-${severity.toLowerCase()}` `` KHÔNG BAO GIỜ được sinh ra —
+ * và hỏng IM LẶNG: phần tử vẫn render, chỉ là không có màu. Hai cách dùng đúng, đều an toàn nhờ
+ * `static`:
+ *   1. bảng tra chứa TÊN CLASS NGUYÊN VĂN — `{ HIGH: 'bg-sev-high', MEDIUM: 'bg-sev-medium', … }`
+ *      (scanner đọc được vì chuỗi hiện nguyên hình trong source);
+ *   2. hoặc `style={{ backgroundColor: 'var(--color-sev-high)' }}` khi cần dựng động thật sự.
+ * Tuyệt đối không ghép chuỗi để tạo tên class Tailwind.
+ */
+@theme static {
+  --color-sev-high: #dc2626;
+  --color-sev-medium: #ea580c;
+  --color-sev-low: #ca8a04;
+  --color-sev-info: #0284c7;
+}
+
+:root {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  background-color: var(--color-surface-muted);
+  color: var(--color-ink);
 }

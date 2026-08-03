@@ -34,8 +34,24 @@ repos:
       - id: ruff-format
         files: ^agent-service/
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+  # Prettier chạy bằng CHÍNH node_modules của frontend, không qua mirrors-prettier.
+  #
+  # mirrors-prettier cài prettier vào một môi trường node CÔ LẬP theo `rev` của repo hook — nghĩa
+  # là hai bản prettier khác nhau: bản của hook (ghim ở rev, trước đây là 3.1.0) và bản của
+  # package.json mà CI `npm run format:check` dùng (3.9.6). Hai bản format khác nhau ở đâu đó là
+  # vòng lặp vô tận: hook sửa file một kiểu, CI đòi kiểu khác.
+  #
+  # Từ khi .prettierrc.json khai `prettier-plugin-tailwindcss` (sắp xếp class Tailwind theo thứ tự
+  # chuẩn), môi trường cô lập còn hỏng thẳng vì không có plugin đó. Thêm `additional_dependencies`
+  # chỉ vá được triệu chứng và tạo ra một chỗ NỮA phải nhớ cập nhật khi nâng phiên bản.
+  #
+  # Trỏ thẳng vào binary trong repo là cách duy nhất bảo đảm hook, CI và máy lập trình viên dùng
+  # đúng một bản prettier + đúng một bộ plugin. Đổi lại: phải `npm install` trước khi commit file
+  # frontend — chấp nhận được vì `files:` dưới đây chỉ khớp file trong frontend/src.
+  - repo: local
     hooks:
       - id: prettier
+        name: prettier (frontend/node_modules)
+        language: system
+        entry: frontend/node_modules/.bin/prettier --write
         files: ^frontend/src/.*\.(ts|tsx|css)$
