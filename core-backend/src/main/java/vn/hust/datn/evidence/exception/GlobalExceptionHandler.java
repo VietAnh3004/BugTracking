@@ -150,6 +150,19 @@ public class GlobalExceptionHandler {
                 request);
     }
 
+    /** Zip không hợp lệ, hỏng, hoặc chứa entry không an toàn (zip-slip, path trùng...). */
+    @ExceptionHandler(InvalidArchiveException.class)
+    public ProblemDetail handleInvalidArchive(InvalidArchiveException ex, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "invalid-archive", "Archive không hợp lệ", ex.getMessage(), request);
+    }
+
+    /** Zip vượt ngưỡng chống zip-bomb ({@link vn.hust.datn.evidence.config.properties.UploadProperties}). */
+    @ExceptionHandler(ArchiveLimitExceededException.class)
+    public ProblemDetail handleArchiveLimitExceeded(ArchiveLimitExceededException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.PAYLOAD_TOO_LARGE, "archive-limit-exceeded", "Archive vượt giới hạn cho phép", ex.getMessage(), request);
+    }
+
     /**
      * Lưới an toàn cuối cùng.
      *

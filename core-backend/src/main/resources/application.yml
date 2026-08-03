@@ -78,6 +78,11 @@ app:
     access-key: ${STORAGE_ACCESS_KEY}
     secret-key: ${STORAGE_SECRET_KEY}
     bucket: ${STORAGE_BUCKET}
+  upload:
+    max-files: ${UPLOAD_MAX_FILES:20000}
+    max-uncompressed-bytes: ${UPLOAD_MAX_UNCOMPRESSED_BYTES:524288000}
+    max-compression-ratio: ${UPLOAD_MAX_COMPRESSION_RATIO:200}
+    max-stored-file-bytes: ${UPLOAD_MAX_STORED_FILE_BYTES:2097152}
   agent:
     base-url: ${AGENT_SERVICE_URL}
     # Agent gọi LLM nhiều vòng nên một lượt suy luận có thể kéo dài hàng chục giây.

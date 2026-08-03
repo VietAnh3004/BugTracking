@@ -100,6 +100,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectId}/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -302,6 +318,24 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        SnapshotResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            projectId: string;
+            /** @enum {string} */
+            status: "PENDING" | "EXTRACTING" | "READY" | "FAILED";
+            /** @enum {string} */
+            sourceType: "ZIP_UPLOAD" | "GIT_CLONE";
+            sourceRef?: string;
+            /** Format: int32 */
+            fileCount: number;
+            /** Format: int64 */
+            totalSizeBytes: number;
+            errorMessage?: string;
+            /** Format: date-time */
+            createdAt: string;
         };
         RegisterRequest: {
             email: string;
@@ -520,6 +554,35 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ProjectResponse"];
+                };
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SnapshotResponse"];
                 };
             };
         };

@@ -36,9 +36,28 @@ Kế hoạch thực thi đầy đủ (18 hạng mục A→E) nằm ở
 | B5 | Refresh token xoay vòng + phát hiện tái sử dụng | ✅ Xong |
 | B6 | Gán owner cho project + authorization + migration V4 (backfill + `SET NOT NULL` cho `project.owner_id`) | ✅ Xong |
 | C1 | MinIO object storage client (`ObjectStorageClient` + `MinioObjectStorageClient`) | ✅ Xong |
-| C2-C3 | Upload zip an toàn + API duyệt file/đọc theo dòng | ⬜ Tiếp theo |
+| C2 | Upload zip an toàn (`ZipExtractor`, `SnapshotService`, chống zip-slip/zip-bomb) + lập chỉ mục `snapshot_file` | ✅ Xong |
+| C3 | API duyệt cây file + đọc nội dung theo khoảng dòng | ⬜ Tiếp theo |
 | D1-D7 | Frontend: Tailwind v4, routing, auth, upload, source viewer | ⬜ |
 | E1-E2 | Regenerate api-types, ADR 0006/0007, kiểm chứng end-to-end | ⬜ |
+
+**C2 — ghi chú kỹ thuật đáng chú ý:**
+- Ranh giới transaction tách thành 3 lớp: `SnapshotPersistenceService.createPending` (REQUIRES_NEW,
+  bia mộ commit ngay) → giải nén + ghi MinIO NGOÀI transaction nào → `finalizeReady` (một
+  transaction ngắn, chỉ `saveAll` + đổi status). `markFailed` cũng REQUIRES_NEW. Ba method này
+  BẮT BUỘC nằm khác class với `SnapshotService.upload()` — gọi qua `this.` sẽ là self-invocation,
+  bỏ qua proxy Spring, khiến `REQUIRES_NEW` không hoạt động (không lỗi, chỉ lặng lẽ sai) — cùng họ
+  bug với bài học `@Transactional(noRollbackFor=...)` đã ghi trong `CLAUDE.md`.
+- `SnapshotService.upload()` phải dùng giá trị `RepositorySnapshot` do `finalizeReady(...)` TRẢ VỀ
+  làm response, không phải biến `pending` tạo từ `createPending(...)` — bug tự phát hiện lúc code
+  review: `pending` là entity từ một transaction khác đã commit và detach, không tự phản ánh
+  `status=READY`/`fileCount` được set ở transaction sau.
+- Tự bắt được 2 bug lúc viết `ZipExtractorTest`: (1) `normalizePath` ban đầu CẮT dấu `/` đầu thay
+  vì TỪ CHỐI — biến `/etc/passwd` thành path hợp lệ `etc/passwd`, vô hiệu hoá phòng thủ zip-slip
+  cho đúng trường hợp kinh điển nhất; (2) `java.util.zip.ZipOutputStream` tự chặn hai entry cùng
+  tên ở lúc BUILD (`ZipException`), nên test "hai entry trùng path" phải dùng hai path khác nhau
+  theo byte thô nhưng trùng nhau SAU chuẩn hoá (`dir/a.txt` vs `dir\a.txt`) mới chạm được nhánh
+  code `seenPaths` — kịch bản tấn công thật hơn dự tính ban đầu.
 
 **Điều chỉnh quan trọng so với plan gốc** (đọc trước khi làm B6, kẻo backfill hai lần):
 `project.owner_id` được thêm ở V3 dưới dạng **nullable**, KHÔNG `NOT NULL` như plan gốc dự định —
