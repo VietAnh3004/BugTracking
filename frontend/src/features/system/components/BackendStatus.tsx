@@ -28,8 +28,8 @@ export function BackendStatus() {
     return (
       <div>
         <StatusBadge tone="danger" label="Mất kết nối backend" />
-        <p style={{ color: '#991b1b', fontSize: '0.875rem' }}>{reason}</p>
-        <p style={{ color: '#6b7280', fontSize: '0.8125rem' }}>API: {appConfig.apiBaseUrl}</p>
+        <p className="text-sm text-red-700">{reason}</p>
+        <p className="text-ink-muted text-xs">API: {appConfig.apiBaseUrl}</p>
       </div>
     );
   }
@@ -40,7 +40,7 @@ export function BackendStatus() {
         tone={data.status === 'UP' ? 'ok' : 'warning'}
         label={`Backend: ${data.status}`}
       />
-      <p style={{ color: '#6b7280', fontSize: '0.8125rem' }}>API: {appConfig.apiBaseUrl}</p>
+      <p className="text-ink-muted text-xs">API: {appConfig.apiBaseUrl}</p>
     </div>
   );
 }

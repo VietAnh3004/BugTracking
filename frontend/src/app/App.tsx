@@ -3,29 +3,18 @@ import { BackendStatus } from '@/features/system/components/BackendStatus';
 
 export function App() {
   return (
-    <main
-      style={{
-        fontFamily: 'system-ui, sans-serif',
-        margin: '0 auto',
-        maxWidth: 880,
-        padding: '2rem 1.5rem',
-      }}
-    >
-      <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>
+    <main className="mx-auto max-w-[880px] px-6 py-8 font-sans">
+      <h1 className="mb-1 text-2xl font-semibold">
         Nền tảng phân tích chương trình dựa trên bằng chứng
       </h1>
-      <p style={{ color: '#6b7280', marginTop: 0 }}>Đồ án tốt nghiệp — Nguyễn Việt Anh, 20224923</p>
+      <p className="text-ink-muted mt-0">Đồ án tốt nghiệp — Nguyễn Việt Anh, 20224923</p>
 
-      <section
-        style={{ borderTop: '1px solid #e5e7eb', marginTop: '1.5rem', paddingTop: '1.5rem' }}
-      >
+      <section className="border-border mt-6 border-t pt-6">
         <BackendStatus />
       </section>
 
-      <section
-        style={{ borderTop: '1px solid #e5e7eb', marginTop: '1.5rem', paddingTop: '1.5rem' }}
-      >
-        <h2 style={{ fontSize: '1.125rem', marginTop: 0 }}>Dự án</h2>
+      <section className="border-border mt-6 border-t pt-6">
+        <h2 className="mt-0 text-lg font-semibold">Dự án</h2>
         <ProjectList />
       </section>
     </main>

@@ -28,14 +28,12 @@ export function ProjectList() {
   }
 
   return (
-    <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+    <ul className="m-0 list-none p-0">
       {data.items.map((project) => (
-        <li key={project.id} style={{ borderBottom: '1px solid #e5e7eb', padding: '0.5rem 0' }}>
+        <li key={project.id} className="border-border border-b py-2">
           <strong>{project.name}</strong>
           {project.description ? (
-            <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
-              {project.description}
-            </p>
+            <p className="text-ink-muted mt-1 mb-0 text-sm">{project.description}</p>
           ) : null}
         </li>
       ))}
