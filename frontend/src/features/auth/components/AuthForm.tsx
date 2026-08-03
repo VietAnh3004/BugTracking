@@ -53,39 +53,3 @@ export function AuthForm({
     </section>
   );
 }
-
-/** Ô nhập có nhãn gắn đúng `htmlFor`/`id` — thiếu cặp này thì `getByLabelText` trong test không tìm ra. */
-export function AuthField({
-  id,
-  label,
-  type,
-  value,
-  onChange,
-  autoComplete,
-  required = true,
-}: {
-  id: string;
-  label: string;
-  type: string;
-  value: string;
-  onChange: (value: string) => void;
-  autoComplete: string;
-  required?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium">
-        {label}
-      </label>
-      <input
-        id={id}
-        type={type}
-        value={value}
-        required={required}
-        autoComplete={autoComplete}
-        onChange={(event) => onChange(event.target.value)}
-        className="border-border focus:border-brand rounded border px-3 py-2 outline-none"
-      />
-    </div>
-  );
-}

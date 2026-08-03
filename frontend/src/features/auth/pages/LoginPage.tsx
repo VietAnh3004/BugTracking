@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { AuthField, AuthForm } from '@/features/auth/components/AuthForm';
+import { AuthForm } from '@/features/auth/components/AuthForm';
 import { useLogin } from '@/features/auth/hooks/useLogin';
 import { ApiError } from '@/shared/lib/apiClient';
+import { TextField } from '@/shared/ui/TextField';
 
 import type { FormEvent } from 'react';
 
@@ -41,7 +42,7 @@ export function LoginPage() {
         </>
       }
     >
-      <AuthField
+      <TextField
         id="email"
         label="Email"
         type="email"
@@ -49,7 +50,7 @@ export function LoginPage() {
         onChange={setEmail}
         autoComplete="email"
       />
-      <AuthField
+      <TextField
         id="password"
         label="Mật khẩu"
         type="password"

@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  fromRouteParam,
-  parseLineHash,
-  toFilePathUrl,
-  toLineHash,
-} from '@/features/snapshots/lib/filePathUrl';
+import { fromRouteParam, parseLineHash, toFilePathUrl } from '@/features/snapshots/lib/filePathUrl';
 
 describe('toFilePathUrl', () => {
   it('giữ nguyên dấu / phân tách thư mục', () => {
@@ -84,9 +79,5 @@ describe('parseLineHash', () => {
 
   it('trả null với #L0 vì dòng đánh số từ 1', () => {
     expect(parseLineHash('#L0')).toBeNull();
-  });
-
-  it('toLineHash và parseLineHash là cặp nghịch đảo', () => {
-    expect(parseLineHash(toLineHash(123))).toBe(123);
   });
 });

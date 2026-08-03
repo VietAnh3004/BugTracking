@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { UploadZone } from '@/features/snapshots/components/UploadZone';
@@ -45,6 +45,24 @@ describe('UploadZone', () => {
     const input = screen.getByLabelText('Chọn file zip');
 
     await userEvent.upload(input, zipFile());
+
+    await waitFor(() => {
+      expect(uploadFileMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  /**
+   * Nhánh kéo-thả đi qua `onDrop`/`dataTransfer`, hoàn toàn khác nhánh `<input type="file">` ở
+   * trên — một nhánh chạy được không bảo đảm nhánh kia chạy được.
+   */
+  it('kéo thả file vào vùng cũng bắt đầu tải lên', async () => {
+    uploadFileMock.mockResolvedValue({ id: 's1', status: 'READY' });
+    renderUploadZone();
+
+    const dropZone = screen.getByText(/Kéo thả file .zip/).parentElement;
+    expect(dropZone).not.toBeNull();
+
+    fireEvent.drop(dropZone as HTMLElement, { dataTransfer: { files: [zipFile()] } });
 
     await waitFor(() => {
       expect(uploadFileMock).toHaveBeenCalledTimes(1);

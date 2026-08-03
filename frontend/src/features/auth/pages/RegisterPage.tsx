@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { AuthField, AuthForm } from '@/features/auth/components/AuthForm';
+import { AuthForm } from '@/features/auth/components/AuthForm';
 import { useRegister } from '@/features/auth/hooks/useRegister';
 import { ApiError } from '@/shared/lib/apiClient';
+import { TextField } from '@/shared/ui/TextField';
 
 import type { FormEvent } from 'react';
 
@@ -38,7 +39,7 @@ export function RegisterPage() {
         </>
       }
     >
-      <AuthField
+      <TextField
         id="email"
         label="Email"
         type="email"
@@ -46,7 +47,7 @@ export function RegisterPage() {
         onChange={setEmail}
         autoComplete="email"
       />
-      <AuthField
+      <TextField
         id="displayName"
         label="Tên hiển thị"
         type="text"
@@ -54,7 +55,7 @@ export function RegisterPage() {
         onChange={setDisplayName}
         autoComplete="name"
       />
-      <AuthField
+      <TextField
         id="password"
         label="Mật khẩu"
         type="password"

@@ -42,7 +42,3 @@ export function parseLineHash(hash: string): number | null {
   // Dòng đánh số từ 1 (khớp `evidence_record.start_line`), nên `#L0` là vô nghĩa.
   return line >= 1 ? line : null;
 }
-
-export function toLineHash(line: number): string {
-  return `#L${String(line)}`;
-}
