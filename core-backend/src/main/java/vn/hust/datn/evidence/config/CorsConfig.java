@@ -49,6 +49,14 @@ public class CorsConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
+        // `/actuator/**` BẮT BUỘC phải có, không phải "cho đủ": frontend gọi `/actuator/health`
+        // ngay ở màn hình đầu tiên (xem `useBackendHealth`) để phát hiện sớm cấu hình sai. Chỉ
+        // đăng ký `/api/**` thì request đó không có header CORS nào và trình duyệt chặn thẳng —
+        // triệu chứng là "No 'Access-Control-Allow-Origin' header is present" ngay khi mở app,
+        // trong khi mọi endpoint /api/** lại hoạt động bình thường nên rất dễ đổ lỗi nhầm cho
+        // frontend. Gặp thật khi kiểm chứng bằng trình duyệt (curl không lộ ra vì curl không ép
+        // chính sách same-origin).
+        source.registerCorsConfiguration("/actuator/**", configuration);
         return source;
     }
 }

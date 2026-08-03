@@ -52,6 +52,32 @@ class CorsPreflightTest extends AbstractWebIntegrationTest {
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ALLOWED_ORIGIN));
     }
 
+    /**
+     * Canh một bug ĐÃ GẶP THẬT: `CorsConfig` ban đầu chỉ đăng ký `/api/**`, nên `/actuator/health`
+     * — request ĐẦU TIÊN mà frontend gửi đi (xem `useBackendHealth`) — không có header CORS nào và
+     * bị trình duyệt chặn ngay khi mở ứng dụng, trong khi mọi endpoint `/api/**` vẫn chạy tốt.
+     *
+     * <p>Kiểm bằng `curl` không phát hiện được: `curl` không ép chính sách same-origin, nó trả về
+     * 200 bình thường. Chỉ trình duyệt thật mới lộ ra.
+     */
+    @Test
+    void actuatorHealthCoHeaderCorsVaFrontendGoiDuoc() throws Exception {
+        getMockMvc()
+                .perform(get("/actuator/health").header(HttpHeaders.ORIGIN, ALLOWED_ORIGIN))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ALLOWED_ORIGIN));
+    }
+
+    @Test
+    void preflightToiActuatorHealthTraVe200() throws Exception {
+        getMockMvc()
+                .perform(options("/actuator/health")
+                        .header(HttpHeaders.ORIGIN, ALLOWED_ORIGIN)
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ALLOWED_ORIGIN));
+    }
+
     @Test
     void preflightToiApiToolsBiTuChoi() throws Exception {
         // toolChain tắt hẳn CORS (agent-service gọi server-to-server, không có Origin) - preflight

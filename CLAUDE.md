@@ -111,6 +111,16 @@ y hệt (đúng 60.0s), rất dễ đi sửa nhầm chỗ. Cách khoanh vùng nh
 `npx vitest run --config <config tối giản>` với `environment: 'node'` (xanh trong 3s) rồi đổi sang
 `'jsdom'` (đỏ sau 60s) — biến số duy nhất khác nhau chính là thủ phạm.
 
+**`UrlBasedCorsConfigurationSource` chỉ áp cho ĐÚNG các mẫu đường dẫn đã đăng ký — endpoint ngoài
+mẫu không có header CORS nào.** Gặp thật: `CorsConfig` đăng ký `/api/**`, nhưng frontend gọi
+`/actuator/health` ngay ở màn hình đầu tiên (`useBackendHealth`) nên bị trình duyệt chặn với
+*"No 'Access-Control-Allow-Origin' header is present"* ngay khi mở app — trong khi **mọi endpoint
+`/api/**` vẫn chạy tốt**, rất dễ đổ lỗi nhầm cho frontend. **`curl` KHÔNG phát hiện được** vì curl
+không ép chính sách same-origin: nó trả 200 bình thường dù không có header CORS. Bài học chung:
+kiểm CORS bằng curl chỉ chứng minh header *có tồn tại* trên endpoint bạn nghĩ tới — muốn biết
+frontend gọi những đường dẫn nào thì phải mở trình duyệt thật. Test canh:
+`CorsPreflightTest.actuatorHealthCoHeaderCorsVaFrontendGoiDuoc`.
+
 **`@ConfigurationProperties` KHÔNG fail-fast khi thiếu biến môi trường — khác hẳn `@Value`.**
 `@Value` dùng placeholder resolver nghiêm ngặt và ném lỗi khi không giải được `${VAR}`, nhưng
 `@ConfigurationProperties` dùng `PropertySourcesPlaceholdersResolver` với
