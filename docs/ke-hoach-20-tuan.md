@@ -5,7 +5,13 @@
 > Chép vào đây để nằm trong git history và để phiên làm việc mới đọc được — thư mục `.claude`
 > không tự động được đọc.
 >
-> Sửa kế hoạch thì cập nhật cả hai bản.
+> **Phân vai giữa hai bản** (chốt 03/08/2026, sau khi phát hiện chúng đã lệch nhau):
+> - Bản gốc giữ **thiết kế và lý do**: kiến trúc, mô hình dữ liệu, chuẩn code, thực nghiệm.
+> - Bản này là **nguồn sự thật duy nhất về TIẾN ĐỘ** (mục dưới đây và §G) — vì nó nằm trong git
+>   history nên đối chiếu được với commit thật.
+>
+> Sửa nội dung *kế hoạch* thì cập nhật cả hai bản. Cập nhật *tiến độ* thì chỉ sửa bản này — ghi ở
+> cả hai nơi là cách chắc chắn để chúng lệch nhau.
 
 ---
 

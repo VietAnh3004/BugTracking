@@ -1,6 +1,7 @@
 # frontend
 
-SPA tĩnh: quản lý dự án, danh sách cảnh báo, evidence explorer, chat với AI Agent và human review.
+SPA tĩnh: đăng nhập, quản lý dự án, tải mã nguồn lên, duyệt cây file và xem mã nguồn theo dòng.
+Danh sách cảnh báo, evidence explorer và chat với AI Agent sẽ thêm ở các tuần sau.
 
 ## Deploy độc lập
 
@@ -14,21 +15,40 @@ Chi tiết và lý do: [ADR 0002](../docs/adr/0002-frontend-cau-hinh-luc-chay.md
 
 ```
 src/
-├── app/          Providers, routing, layout
-├── features/     Tổ chức theo TÍNH NĂNG, không theo loại file
-│   └── system/   { components/  hooks/ }
-└── shared/
-    ├── ui/       Thuần trình bày — không gọi API, không biết nghiệp vụ
-    ├── lib/      apiClient, kiểu sinh từ OpenAPI
-    └── config/   Đọc cấu hình runtime
+├── app/            Routing (routes.tsx), providers, layout, error boundary
+├── features/       Tổ chức theo TÍNH NĂNG, không theo loại file
+│   ├── auth/       { api/ components/ context/ hooks/ pages/ }
+│   ├── projects/   { components/ hooks/ pages/ }
+│   ├── snapshots/  { api/ components/ hooks/ layouts/ lib/ pages/ }
+│   └── system/     { components/ hooks/ }
+├── shared/
+│   ├── ui/         Thuần trình bày — không gọi API, không biết nghiệp vụ
+│   ├── lib/        apiClient, uploadClient, tokenStorage, queryClient, kiểu sinh từ OpenAPI
+│   └── config/     Đọc cấu hình runtime
+└── test/           Setup và helper dùng chung cho test
 ```
 
 Quy ước:
 
 - Logic lấy dữ liệu nằm trong custom hook, không nằm trong JSX.
-- Không component nào gọi `fetch` trực tiếp — dùng `apiClient`.
+- Không component nào gọi `fetch` trực tiếp — dùng `apiClient`. Ngoại lệ **duy nhất** là
+  `uploadClient` (dùng `XMLHttpRequest` vì `fetch` không có sự kiện tiến trình upload), và nó phải
+  dùng lại helper export từ `apiClient` thay vì chép logic.
 - Mọi trạng thái bất đồng bộ phải render đủ loading / error / empty.
 - Component vượt ~150 dòng là tín hiệu cần tách.
+- **Không `dangerouslySetInnerHTML` cho dữ liệu bắt nguồn từ file upload** — source viewer render
+  nội dung do người dùng tải lên, đây là bề mặt XSS thật (ADR 0006).
+
+## Định tuyến và xác thực
+
+Dùng data router (`createBrowserRouter`) nhưng **không dùng `loader`/`action`**: mọi request đi qua
+`apiClient` + TanStack Query, thêm `loader` là dựng tầng cache thứ hai chạy song song. Lý do đầy đủ
+ở đầu `src/app/routes.tsx`.
+
+Access token giữ trong bộ nhớ, refresh token trong `localStorage` (`shared/lib/tokenStorage.ts` là
+nơi duy nhất chạm `localStorage`). `apiClient` tự làm mới token khi gặp 401, gom mọi lời gọi refresh
+đang bay về **một** promise — không phải tối ưu mà là bắt buộc, vì backend phát hiện tái sử dụng
+refresh token và sẽ thu hồi cả phiên nếu bị gọi nhiều lần với cùng token.
 
 ## Chạy local
 
@@ -45,15 +65,22 @@ mọi lỗi CORS cho tới lúc deploy tách domain.
 ```bash
 npm run lint
 npm run format:check
+npm run typecheck
+npm test
 npm run build      # bao gồm kiểm tra kiểu
 ```
+
+Test dùng **happy-dom**, không phải jsdom: trên máy phát triển Windows, nạp jsdom mất ~11 giây mỗi
+lần khiến mọi worker của Vitest vượt ngưỡng khởi động 60 giây và toàn bộ test đỏ với thông điệp
+không hề nhắc tới jsdom. Xem `CLAUDE.md` ở gốc repo.
 
 ## Sinh lại kiểu dữ liệu API
 
 ```bash
-npm run api:generate   # cần core-backend đang chạy
+npm run api:generate        # đọc ../docs/api/openapi.json đã commit — KHÔNG cần backend chạy
+npm run api:generate:live   # đọc từ backend đang chạy, dùng khi phát triển
 ```
 
-Kiểu dữ liệu API sinh từ OpenAPI spec của backend nên hai bên không thể lệch nhau mà không bị
-phát hiện lúc biên dịch. Vì vậy TypeScript giữ ở 5.9: `openapi-typescript` 7.x yêu cầu peer
-`typescript@^5.x`.
+Trước khi push **bắt buộc** chạy `npm run api:generate` (bản đọc từ file đã commit): CI chạy lệnh
+này rồi `git diff --exit-code`, nên spec và kiểu TypeScript không thể lệch nhau mà không bị phát
+hiện. Vì vậy TypeScript giữ ở 5.9 — `openapi-typescript` 7.x yêu cầu peer `typescript@^5.x`.
