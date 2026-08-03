@@ -26,6 +26,7 @@ import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
 import { PublicOnlyRoute } from '@/features/auth/components/PublicOnlyRoute';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
+import { ProjectDetailPage } from '@/features/projects/pages/ProjectDetailPage';
 import { ProjectsPage } from '@/features/projects/pages/ProjectsPage';
 
 export const routes: RouteObject[] = [
@@ -54,6 +55,7 @@ export const routes: RouteObject[] = [
           // một dashboard rỗng. `replace` để nút Back không kẹt trong vòng lặp chuyển hướng.
           { index: true, element: <Navigate to="/projects" replace /> },
           { path: 'projects', element: <ProjectsPage /> },
+          { path: 'projects/:projectId', element: <ProjectDetailPage /> },
         ],
       },
       { path: '*', element: <NotFoundPage /> },

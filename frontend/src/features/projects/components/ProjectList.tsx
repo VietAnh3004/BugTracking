@@ -4,6 +4,8 @@
  * và trường hợp danh sách rỗng cũng có thông điệp riêng (khác với "đang tải").
  */
 
+import { Link } from 'react-router-dom';
+
 import { useProjects } from '@/features/projects/hooks/useProjects';
 import { ApiError } from '@/shared/lib/apiClient';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
@@ -31,7 +33,9 @@ export function ProjectList() {
     <ul className="m-0 list-none p-0">
       {data.items.map((project) => (
         <li key={project.id} className="border-border border-b py-2">
-          <strong>{project.name}</strong>
+          <Link to={`/projects/${project.id}`} className="text-brand font-semibold">
+            {project.name}
+          </Link>
           {project.description ? (
             <p className="text-ink-muted mt-1 mb-0 text-sm">{project.description}</p>
           ) : null}

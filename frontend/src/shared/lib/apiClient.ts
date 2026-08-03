@@ -120,6 +120,40 @@ function refreshOnce(): Promise<boolean> {
   return inFlightRefresh;
 }
 
+/**
+ * Ba hàm dưới đây được export riêng cho `uploadClient` — module DUY NHẤT được phép không dùng
+ * `fetch` (nó cần `XMLHttpRequest` để có sự kiện tiến trình upload). Export thay vì để nó chép lại
+ * logic: base URL, cách gắn token và cách bóc ProblemDetail phải giống hệt nhau ở cả hai đường,
+ * nếu không sẽ có hai kiểu hiển thị lỗi khác nhau trong cùng một ứng dụng.
+ */
+export function resolveUrl(path: string): string {
+  return `${appConfig.apiBaseUrl}${path}`;
+}
+
+export function authorizationHeader(): Record<string, string> {
+  return accessToken !== null ? { Authorization: `Bearer ${accessToken}` } : {};
+}
+
+/** Bóc ProblemDetail từ body dạng chuỗi (XHR trả `responseText`, không có `.json()`). */
+export function parseProblem(status: number, rawBody: string): ProblemDetail {
+  try {
+    return JSON.parse(rawBody) as ProblemDetail;
+  } catch {
+    return { status, title: rawBody === '' ? 'Yêu cầu thất bại' : rawBody };
+  }
+}
+
+/**
+ * Làm mới access token một cách chủ động, dùng chung đúng cơ chế single-flight ở trên.
+ *
+ * `uploadClient` gọi hàm này TRƯỚC khi bắt đầu tải file: không thể "thử lại khi gặp 401" với một
+ * file 200MB — người dùng sẽ phải chờ tải lại từ đầu, và với kết nối chậm thì access token có thể
+ * hết hạn ngay giữa lần tải thứ hai.
+ */
+export function refreshAccessToken(): Promise<boolean> {
+  return refreshOnce();
+}
+
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
   /**
@@ -132,11 +166,11 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
 function sendRequest(path: string, options: RequestOptions): Promise<Response> {
   const { body, headers, skipAuthRefresh: _skipAuthRefresh, ...rest } = options;
 
-  return fetch(`${appConfig.apiBaseUrl}${path}`, {
+  return fetch(resolveUrl(path), {
     ...rest,
     headers: {
       ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-      ...(accessToken !== null ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...authorizationHeader(),
       ...headers,
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
