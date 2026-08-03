@@ -75,6 +75,8 @@ jobs:
         run: npm run lint
       - name: Kiểm tra format
         run: npm run format:check
+      - name: Test
+        run: npm test
       - name: Build (bao gồm kiểm tra kiểu)
         run: npm run build
       - name: Đối chiếu api-types.ts với docs/api/openapi.json đã commit

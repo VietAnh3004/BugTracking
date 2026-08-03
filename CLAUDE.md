@@ -101,6 +101,16 @@ trong `afterAll` của class test *đầu tiên* chạy xong, các class sau dù
 vào container đã chết (`CannotGetJdbcConnection`, timeout đúng 30s). Tự `start()` thủ công trong
 static initializer, không bao giờ gọi `stop()` — xem `core-backend/src/test/java/vn/hust/datn/evidence/AbstractIntegrationTest.java`.
 
+**Test frontend phải dùng `happy-dom`, KHÔNG dùng `jsdom`** — trên máy này `require('jsdom')` mất
+**~11 giây mỗi lần** kể cả khi cache đã ấm (đo lặp nhiều lần; lần đầu sau khi cài là 39s), còn
+`require('happy-dom')` chỉ ~1-3 giây. Nguyên nhân: jsdom gồm hàng nghìn file nhỏ, bị Windows
+Defender quét lại mỗi lần nạp. Hệ quả nếu dùng jsdom: mọi worker của Vitest vượt ngưỡng khởi động
+60 giây và **toàn bộ** test đỏ với `[vitest-pool]: Failed to start forks worker ... Timeout waiting
+for worker to respond` — thông điệp **không hề nhắc tới jsdom**, và đổi `--pool=threads` cũng hỏng
+y hệt (đúng 60.0s), rất dễ đi sửa nhầm chỗ. Cách khoanh vùng nhanh: chạy
+`npx vitest run --config <config tối giản>` với `environment: 'node'` (xanh trong 3s) rồi đổi sang
+`'jsdom'` (đỏ sau 60s) — biến số duy nhất khác nhau chính là thủ phạm.
+
 **Comment trong XML không được chứa `--`** (đã làm hỏng pom.xml một lần).
 
 **`mvn verify` báo lỗi giả sau nhiều lần `mvn test`/`spotless:apply` liên tiếp không `clean`.**
