@@ -1,0 +1,20 @@
+# `.venv` là môi trường ảo của máy host: binary sai nền tảng, và nặng hàng trăm MB.
+.venv
+
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# Bí mật không bao giờ được vào image — .env của service này chứa LLM_API_KEY.
+.env
+.env.*
+!.env.example
+
+*.log
+.git
+.gitignore
+Dockerfile
+.dockerignore
+README.md

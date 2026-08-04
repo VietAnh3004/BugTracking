@@ -1,0 +1,16 @@
+# `target/` chứa jar và class biên dịch trên máy host — vô dụng trong image (Dockerfile tự build
+# lại từ source) và làm build context phồng lên hàng trăm MB, mỗi lần build phải gửi lại toàn bộ
+# sang Docker daemon.
+target
+
+# Bí mật không bao giờ được vào image.
+.env
+.env.*
+!.env.example
+
+*.log
+.git
+.gitignore
+Dockerfile
+.dockerignore
+README.md

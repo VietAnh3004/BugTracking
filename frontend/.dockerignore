@@ -1,0 +1,21 @@
+# Dockerfile dùng `COPY . .` sau `npm ci`, nên KHÔNG loại `node_modules` ở đây là lỗi build thật
+# chứ không chỉ chậm: `npm ci` trong image cài binary Linux, rồi `COPY . .` đè lên bằng
+# `node_modules` của máy Windows (vd @tailwindcss/oxide-win32-x64-msvc). `npm run build` sau đó
+# chết với thông điệp kiểu "You installed <pkg> on another platform" — rất khó đoán ra nguyên nhân
+# vì lỗi nằm ở lớp COPY, không phải ở code.
+node_modules
+dist
+
+# Bí mật không bao giờ được vào image.
+.env
+.env.*
+!.env.example
+
+# Rác không cần cho build.
+coverage
+*.log
+.git
+.gitignore
+Dockerfile
+.dockerignore
+README.md

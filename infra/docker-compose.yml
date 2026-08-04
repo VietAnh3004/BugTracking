@@ -61,6 +61,17 @@ services:
       STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
       STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       STORAGE_BUCKET: ${STORAGE_BUCKET:-repositories}
+      # Giới hạn upload: đều có mặc định trong application.yml, khai lại ở đây để chỉnh được khi
+      # deploy mà không phải build lại image. MAX_UPLOAD_SIZE chặn byte thô của request; ba biến
+      # UPLOAD_* chặn theo nội dung SAU khi giải nén (chống zip-bomb).
+      MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-100MB}
+      UPLOAD_MAX_FILES: ${UPLOAD_MAX_FILES:-20000}
+      UPLOAD_MAX_UNCOMPRESSED_BYTES: ${UPLOAD_MAX_UNCOMPRESSED_BYTES:-524288000}
+      UPLOAD_MAX_COMPRESSION_RATIO: ${UPLOAD_MAX_COMPRESSION_RATIO:-200}
+      UPLOAD_MAX_STORED_FILE_BYTES: ${UPLOAD_MAX_STORED_FILE_BYTES:-2097152}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-PT15M}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-P14D}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
       - "${CORE_BACKEND_PORT:-8080}:8080"
     depends_on:
