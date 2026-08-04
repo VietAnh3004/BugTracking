@@ -91,6 +91,11 @@ nhưng xác nhận công thức chuẩn hoá path đúng — xem mục 5):
 | cwe_ids | spotbugs | `spotbugs:BugInstance[@type='WEAK_MESSAGE_DIGEST_MD5']/@cweid` | `328` |
 | has_primary_location | DERIVED | true nếu tồn tại `SourceLine[@primary='true']` con trực tiếp | `true` |
 | source_index | DERIVED | thứ tự phần tử trong file gốc | `0` |
+| severity_rank | DERIVED | generated column, sinh từ severity_normalized (HIGH=0…INFO=3) | `0` |
+
+`severity_rank` tồn tại vì `ORDER BY severity_normalized` là thứ tự **chữ cái**: HIGH, INFO, LOW,
+MEDIUM. Sai mà rất khó thấy vì HIGH vẫn đứng đầu. Mọi truy vấn sắp xếp theo mức nghiêm trọng phải
+dùng cột này.
 
 Ví dụ thứ hai cho `rule_id`/`severity`, minh hoạ Semgrep KHÔNG có `severity_raw` (đã xác nhận
 `result.level` không tồn tại trên SARIF result, chỉ có ở `tool.driver.rules[].defaultConfiguration.level`):
@@ -215,25 +220,144 @@ erDiagram
    `package/@name + '/' + sourcefile/@name` · Surefire không có path nào, chỉ tên file trần
    trong text thô của stack trace.
 
-## 7. Thiết kế cho V5 (tuần 8-9) — chưa hiện thực
+## 7. Năm bảng thô (V5, tuần 8-9)
 
 Không tạo ở V2 vì không có consumer nào cho tới EvidenceLinker (tuần 10-11) và parser thật
 (tuần 8-9); tạo sớm sẽ là bảng rỗng không parser, không test, không ai biết sai cho tới lúc đó.
 
-| Bảng | Vì sao cần | Cột đáng chú ý |
+| Bảng | Vì sao cần | Khuôn quan hệ |
 |---|---|---|
-| `warning_location` | Phát hiện 1: 3/28 warning có nhiều vị trí | `ordinal`, `role_raw` (không enum hoá — detector mới sinh role mới), `is_primary`, `start_line` nullable |
-| `test_case` | Nguồn TEST_RESULT/FAILED_TEST | `status`, `failure_kind` (FAILURE/ERROR — khác `<error>` XML nghĩa), `stack_trace_raw` |
-| `stack_frame` | Phát hiện 2: parse riêng để reparse được nếu heuristic sai | `frame_kind` (PRODUCTION/TEST/TEST_FRAMEWORK/JDK/LIBRARY), `line_number` nullable (`Native Method`) |
-| `coverage_line` | Giữ `mi/ci/mb/cb` để phân biệt PARTIAL, không thu về boolean | `status` generated (COVERED/MISSED/PARTIAL) |
-| `coverage_method` | Phát hiện 3: KHÔNG có FK sang coverage_line (quan hệ không tồn tại trong dữ liệu thật) | `first_line` (không có `end_line` — JaCoCo không cung cấp) |
+| `warning_location` | Phát hiện 1: 3/28 warning có nhiều vị trí | 1:N `(evidence_record_id, ordinal)`, FK trỏ `warning` |
+| `test_case` | Nguồn TEST_RESULT/FAILED_TEST | **1:1 PK=FK** như `warning` |
+| `stack_frame` | Phát hiện 2: parse riêng để reparse được nếu heuristic sai | 1:N `(evidence_record_id, ordinal)` |
+| `coverage_line` | Giữ `mi/ci/mb/cb` để phân biệt PARTIAL, không thu về boolean | 1:N `(evidence_record_id, line_number)` |
+| `coverage_method` | Phát hiện 3: KHÔNG có FK sang `coverage_line` (quan hệ không tồn tại trong dữ liệu thật) | 1:N + UUID PK |
+
+Ba sai lệch có chủ đích so với bản thiết kế ban đầu ở mục này, đều phát sinh khi viết DDL thật:
+
+- `stack_frame.frame_kind` có thêm giá trị **`UNKNOWN`**: một dòng `at ...` không parse được vẫn
+  phải sinh ra hàng. Bỏ qua im lặng là đúng thứ dự án này chống.
+- `test_case` có thêm `stack_trace_evidence_id`, `display_name`, `report_file`. Cột đầu là
+  provenance **cấu trúc** (trace này thuộc test nào), không phải `evidence_link` ngữ nghĩa — nhờ nó
+  tuần 8-9 tra được trace của một test hỏng mà chưa cần EvidenceLinker.
+- `warning_location` có thêm `path_raw` (đường dẫn nguyên văn) bên cạnh `file_path` (đã chuẩn hoá),
+  để reparse được khi heuristic chuẩn hoá sai.
 
 `evidence_link.method` đã có sẵn giá trị `STACK_FRAME`/`METHOD_AGGREGATE`/`NAMING_CONVENTION` chờ
-V5 vì phát hiện 2 chứng minh không thể chỉ dựa vào stack trace. (Bản trước của tài liệu này ghi
-`COVERAGE` — **giá trị đó chưa bao giờ tồn tại** trong CHECK của V2 lẫn enum `EvidenceLinkMethod`;
-giá trị đúng cho liên kết theo độ phủ là `METHOD_AGGREGATE`.)
+EvidenceLinker vì phát hiện 2 chứng minh không thể chỉ dựa vào stack trace. (Bản trước của tài liệu
+này ghi `COVERAGE` — **giá trị đó chưa bao giờ tồn tại** trong CHECK của V2 lẫn enum
+`EvidenceLinkMethod`; giá trị đúng cho liên kết theo độ phủ là `METHOD_AGGREGATE`.)
 
-## 8. Kiểm chứng tự động
+## 8. Bảng provenance — `warning_location`
+
+Ví dụ dùng chung: `WEAK_MESSAGE_DIGEST_MD5` tại `PasswordHasher.java:40` (vị trí `ordinal=0`).
+
+| Cột | Nguồn | Locator | Ví dụ |
+|---|---|---|---|
+| evidence_record_id | DERIVED | FK tới `warning.evidence_record_id` (= `evidence_record.id`) | — |
+| ordinal | DERIVED | thứ tự `SourceLine` con trực tiếp trong BugInstance | `0` |
+| role_raw | spotbugs | `spotbugs:BugInstance[@type='OBL_UNSATISFIED_OBLIGATION']/SourceLine[2]/@role` | `SOURCE_LINE_PATH_CONTINUES` |
+| is_primary | DERIVED | có `@primary='true'` hay không; false cho 5/28 bug chỉ có `synthetic='true'` | `true` |
+| path_raw | spotbugs | `spotbugs:BugInstance[@type='WEAK_MESSAGE_DIGEST_MD5']/SourceLine[@primary='true']/@sourcepath` | `vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java` |
+| file_path | DERIVED | chuẩn hoá `path_raw` về `snapshot_file.path`; NULL nếu không khớp | — |
+| start_line | spotbugs | `spotbugs:BugInstance[@type='WEAK_MESSAGE_DIGEST_MD5']/SourceLine[@primary='true']/@start` | `40` |
+| end_line | spotbugs | `spotbugs:BugInstance[@type='WEAK_MESSAGE_DIGEST_MD5']/SourceLine[@primary='true']/@end` | `40` |
+| class_name | spotbugs | `spotbugs:BugInstance[@type='WEAK_MESSAGE_DIGEST_MD5']/SourceLine[@primary='true']/@classname` | `vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher` |
+| method_name | spotbugs | `spotbugs:BugInstance[@type='WEAK_MESSAGE_DIGEST_MD5']/Method[@primary='true']/@name` | `checksumForDeduplication` |
+
+Locator của `role_raw` cố tình lấy từ một BugInstance **khác** (`OBL_UNSATISFIED_OBLIGATION`,
+vị trí thứ 2): 27/33 vị trí thật không có `@role`, nên ví dụ MD5 sẽ không chứng minh được gì.
+
+## 9. Bảng provenance — `test_case`
+
+Ví dụ dùng chung: `OrderStatusCheckerTest.isShipped_chuoiTaoLucChay_vanPhaiTraVeDung` — test hỏng
+kiểu assertion, tức là ca **không có** frame nào trỏ về mã production (3/5 test hỏng thuộc loại
+này, phát hiện 2).
+
+| Cột | Nguồn | Locator | Ví dụ |
+|---|---|---|---|
+| evidence_record_id | DERIVED | PK = FK tới evidence_record, khuôn 1:1 như warning | — |
+| class_name | surefire | `surefire:TEST-vn.hust.datn.casestudy.vulnshop.order.OrderStatusCheckerTest.xml#./testcase[@name='isShipped_chuoiTaoLucChay_vanPhaiTraVeDung']/@classname` | `vn.hust.datn.casestudy.vulnshop.order.OrderStatusCheckerTest` |
+| method_name | DERIVED | tách từ display_name, bỏ hậu tố `[n]` của test tham số hoá | `isShipped_chuoiTaoLucChay_vanPhaiTraVeDung` |
+| display_name | surefire | `surefire:TEST-vn.hust.datn.casestudy.vulnshop.order.OrderStatusCheckerTest.xml#./testcase[@name='isShipped_chuoiTaoLucChay_vanPhaiTraVeDung']/@name` | `isShipped_chuoiTaoLucChay_vanPhaiTraVeDung` |
+| status | DERIVED | có thẻ `failure`/`error`/`skipped` con hay không | `FAILED` |
+| failure_kind | DERIVED | tên thẻ: `<failure>`→FAILURE, `<error>`→ERROR | `FAILURE` |
+| failure_type | surefire | `surefire:TEST-vn.hust.datn.casestudy.vulnshop.order.OrderStatusCheckerTest.xml#./testcase[@name='isShipped_chuoiTaoLucChay_vanPhaiTraVeDung']/failure/@type` | `org.opentest4j.AssertionFailedError` |
+| failure_message | surefire | `surefire:TEST-vn.hust.datn.casestudy.vulnshop.order.OrderStatusCheckerTest.xml#./testcase[@name='isShipped_chuoiTaoLucChay_vanPhaiTraVeDung']/failure/@message` | `expected: <true> but was: <false>` |
+| stack_trace_raw | surefire | `surefire:TEST-vn.hust.datn.casestudy.vulnshop.order.OrderStatusCheckerTest.xml#./testcase[@name='isShipped_chuoiTaoLucChay_vanPhaiTraVeDung']/failure` | |
+| duration_ms | surefire | `surefire:TEST-vn.hust.datn.casestudy.vulnshop.order.OrderStatusCheckerTest.xml#./testcase[@name='isShipped_chuoiTaoLucChay_vanPhaiTraVeDung']/@time` | `0.002` |
+| stack_trace_evidence_id | DERIVED | FK tới evidence_record loại STACK_TRACE của chính test này | — |
+| report_file | DERIVED | tên file `TEST-*.xml` đã sinh ra hàng này | — |
+
+`duration_ms` là chỗ duy nhất có **đổi đơn vị**: Surefire ghi `@time` bằng **giây** dạng thập phân,
+cột lưu **mili giây** dạng INT. Cột "Ví dụ" ở trên là giá trị nguyên văn trong artifact (`0.002`),
+giá trị lưu xuống là `2`.
+
+## 10. Bảng provenance — `stack_frame`
+
+Bảng này **hoàn toàn DERIVED**: mọi cột đến từ việc parse `test_case.stack_trace_raw`, không có
+locator nào trỏ thẳng vào artifact được vì stack trace trong Surefire XML là **text thô**, không
+có cấu trúc XML.
+
+| Cột | Nguồn | Locator | Ví dụ |
+|---|---|---|---|
+| evidence_record_id | DERIVED | FK tới evidence_record loại STACK_TRACE | — |
+| ordinal | DERIVED | thứ tự dòng `at ...` trong trace | `0` |
+| raw_line | DERIVED | nguyên văn một dòng `at ...` — nguồn để reparse | — |
+| module_prefix | DERIVED | phần trước `/` cuối cùng của FQCN | `java.base` |
+| declaring_class | DERIVED | FQCN sau khi bỏ module_prefix | — |
+| method_name | DERIVED | tên method trong dòng `at ...` | — |
+| source_file_name | DERIVED | tên file trần trong ngoặc; NULL cho `(Native Method)` | — |
+| line_number | DERIVED | số sau dấu `:` trong ngoặc; NULL khi không có | — |
+| file_path | DERIVED | chuẩn hoá từ package + source_file_name về snapshot_file.path | — |
+| frame_kind | DERIVED | heuristic theo package; `UNKNOWN` khi dòng không parse được | `PRODUCTION` |
+
+Vì sao vẫn tách thành bảng thay vì chỉ giữ text: heuristic `frame_kind` **sẽ** phải sửa (chỉ 2/5
+test hỏng thật có frame production), và khi sửa phải reparse được từ `raw_line` mà không cần quay
+lại artifact gốc.
+
+## 11. Bảng provenance — `coverage_line`
+
+Ví dụ dùng chung: `OrderStatusChecker.java` dòng 27 — một dòng `MISSED` có nhánh chưa chạy.
+
+| Cột | Nguồn | Locator | Ví dụ |
+|---|---|---|---|
+| evidence_record_id | DERIVED | FK tới evidence_record loại COVERAGE_INFORMATION cấp sourcefile | — |
+| line_number | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/sourcefile[@name='OrderStatusChecker.java']/line[@nr='27']/@nr` | `27` |
+| mi | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/sourcefile[@name='OrderStatusChecker.java']/line[@nr='27']/@mi` | `10` |
+| ci | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/sourcefile[@name='OrderStatusChecker.java']/line[@nr='27']/@ci` | `0` |
+| mb | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/sourcefile[@name='OrderStatusChecker.java']/line[@nr='27']/@mb` | `4` |
+| cb | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/sourcefile[@name='OrderStatusChecker.java']/line[@nr='27']/@cb` | `0` |
+| status | DERIVED | generated column từ mi/ci/mb/cb | `MISSED` |
+
+**Đừng thu bốn bộ đếm về một boolean.** "Dòng được phủ" theo JaCoCo là `ci > 0`, tức COVERED
+**cộng** PARTIAL = 77 + 5 = **82** trên vulnshop — khớp counter `LINE covered='82'` của chính
+JaCoCo và `expected-analysis.json`. Đếm mỗi COVERED ra 77 là sai.
+
+## 12. Bảng provenance — `coverage_method`
+
+Ví dụ dùng chung: method đầu tiên của `OrderStatusChecker` (`isShipped`).
+
+| Cột | Nguồn | Locator | Ví dụ |
+|---|---|---|---|
+| id | DERIVED | sinh UUID lúc materialize | — |
+| evidence_record_id | DERIVED | FK tới cùng evidence_record cấp sourcefile | — |
+| class_name | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/class[@name='vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker']/@name` | `vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker` |
+| method_name | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/class[@name='vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker']/method[1]/@name` | `isShipped` |
+| method_desc | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/class[@name='vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker']/method[1]/@desc` | `(Ljava/lang/String;)Z` |
+| first_line | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/class[@name='vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker']/method[1]/@line` | `18` |
+| missed_instructions | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/class[@name='vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker']/method[1]/counter[@type='INSTRUCTION']/@missed` | `0` |
+| covered_instructions | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/class[@name='vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker']/method[1]/counter[@type='INSTRUCTION']/@covered` | `7` |
+| missed_branches | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/class[@name='vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker']/method[1]/counter[@type='BRANCH']/@missed` | `0` |
+| covered_branches | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/class[@name='vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker']/method[1]/counter[@type='BRANCH']/@covered` | `2` |
+| missed_lines | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/class[@name='vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker']/method[1]/counter[@type='LINE']/@missed` | `0` |
+| covered_lines | jacoco | `jacoco:package[@name='vn/hust/datn/casestudy/vulnshop/order']/class[@name='vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker']/method[1]/counter[@type='LINE']/@covered` | `1` |
+
+`class_name` dùng dấu `/` (dạng JaCoCo) chứ không phải `.`: giữ nguyên văn để đối chiếu ngược lại
+artifact được. `first_line` **không có** `end_line` đi kèm vì JaCoCo không cung cấp — đó cũng là lý
+do bảng này không có FK nào sang `coverage_line`.
+
+## 13. Kiểm chứng tự động
 
 ```bash
 python docs/check-evidence-model.py

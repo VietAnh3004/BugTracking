@@ -25,7 +25,7 @@ class SchemaSmokeTest extends AbstractIntegrationTest {
 
         Integer flywayAppliedCount = jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM flyway_schema_history WHERE success = true", Integer.class);
-        assertThat(flywayAppliedCount).isGreaterThanOrEqualTo(2); // V1__baseline + V2__evidence_model
+        assertThat(flywayAppliedCount).isGreaterThanOrEqualTo(5); // V1..V5
 
         Integer tableCount = jdbcTemplate.queryForObject(
                 """
@@ -34,5 +34,25 @@ class SchemaSmokeTest extends AbstractIntegrationTest {
                 """,
                 Integer.class);
         assertThat(tableCount).isEqualTo(1);
+    }
+
+    /**
+     * Năm bảng thô của V5. Liệt kê tường minh chứ không đếm tổng số bảng: đếm tổng thì thêm bất
+     * kỳ bảng nào cũng phải sửa test, còn thiếu đúng một bảng trong năm bảng này thì không phát
+     * hiện được.
+     */
+    @Test
+    void namBangThoCuaV5DeuTonTai() {
+        for (String table :
+                new String[] {"warning_location", "test_case", "stack_frame", "coverage_line", "coverage_method"}) {
+            Integer count = jdbcTemplate.queryForObject(
+                    """
+                    SELECT count(*) FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_name = ?
+                    """,
+                    Integer.class,
+                    table);
+            assertThat(count).as("Thieu bang '%s' cua V5", table).isEqualTo(1);
+        }
     }
 }

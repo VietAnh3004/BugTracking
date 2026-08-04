@@ -68,3 +68,7 @@ spike/**/target/
 # ---------- Storage ----------
 infra/data/
 uploads/
+
+# Log build tam thoi (mvn ... > verify.log): CLAUDE.md yeu cau ghi log ra file roi tu doc
+# vi thong bao exit code cua harness khong dang tin.
+*.log

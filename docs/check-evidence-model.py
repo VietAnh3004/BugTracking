@@ -30,6 +30,12 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+# Console mac dinh cua Windows la cp1252: in mot ky tu nhu '→' lay tu tai lieu se nem
+# UnicodeEncodeError va lam script chet NGAY GIUA phan in danh sach van de — nguoi doc thay
+# traceback thay vi thay van de that. Ep UTF-8 ngay tu dau.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DOC_PATH = REPO_ROOT / "docs" / "evidence-model.md"
 MIGRATION_DIR = REPO_ROOT / "core-backend" / "src" / "main" / "resources" / "db" / "migration"
@@ -38,7 +44,15 @@ SAMPLES_DIR = REPO_ROOT / "docs" / "samples" / "vulnshop"
 # Bang co bang provenance trong doc. Cac bang con lai (analysis_run, evidence_link, claim,
 # claim_citation, app_user, refresh_token, snapshot_file...) la DERIVED thuan tuy hoac thuoc
 # tang ung dung, khong co artifact nguon nao de doi chieu tung cot.
-DOCUMENTED_TABLES = {"evidence_record", "warning"}
+DOCUMENTED_TABLES = {
+    "evidence_record",
+    "warning",
+    "warning_location",
+    "test_case",
+    "stack_frame",
+    "coverage_line",
+    "coverage_method",
+}
 
 # Guard chong xanh gia (xem docstring, diem 3).
 MIN_COLUMNS_PER_TABLE = 3
@@ -100,11 +114,17 @@ def _find_and_read(tree, xpath):
     # ElementTree.find() khong ho tro ket hop predicate ([@a='b']) VOI mot buoc "/@attr" cuoi
     # cung trong CUNG mot bieu thuc (loi that: KeyError('@')) — phai tach '/@attr' ra truoc,
     # find() phan con lai (chi con predicate loc phan tu), roi doc attribute bang .get().
-    element_path, _, attr = xpath.rpartition("/@")
-    node = tree.getroot().find(element_path) if element_path else tree.getroot()
-    if node is None:
-        return None
-    return node.get(attr) if attr else node.text
+    #
+    # Hai dang locator, phan biet bang viec CO hay KHONG co '/@':
+    #   - '<duong dan>/@attr' -> doc thuoc tinh ('/@attr' o dau chuoi nghia la thuoc tinh cua root)
+    #   - '<duong dan>'       -> doc TEXT cua phan tu (vd toan van the <failure>)
+    if "/@" in xpath:
+        element_path, _, attr = xpath.rpartition("/@")
+        node = tree.getroot().find(element_path) if element_path else tree.getroot()
+        return None if node is None else node.get(attr)
+
+    node = tree.getroot().find(xpath)
+    return None if node is None else node.text
 
 
 JSON_STEP_RE = re.compile(r"([\w-]+)|\[(\d+)\]")
@@ -243,7 +263,12 @@ def main():
                 f"khac vi du trong doc '{row['example']}'"
             )
         else:
-            print(f"  OK  {label:44s} -> {value}")
+            # Cat ngan khi in: stack_trace_raw tra ve toan van stack trace vai KB, do khong phai
+            # thu nen do day log CI. Viec so sanh o tren van dung gia tri day du.
+            printable = " ".join(str(value).split())
+            if len(printable) > 70:
+                printable = printable[:70] + "…"
+            print(f"  OK  {label:44s} -> {printable}")
 
     # (b) Doi chieu hai chieu voi cot trong SQL, THEO TUNG BANG.
     sql_tables, migration_files = sql_columns()

@@ -12,7 +12,9 @@ import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.generator.EventType;
 import org.hibernate.type.SqlTypes;
 
 import lombok.Getter;
@@ -76,4 +78,16 @@ public class Warning {
 
     @Column(name = "source_index", nullable = false)
     private int sourceIndex;
+
+    /**
+     * Thứ tự sắp xếp theo mức nghiêm trọng (HIGH=0 … INFO=3), sinh từ {@link #severityNormalized}
+     * ở tầng DB — chỉ đọc.
+     *
+     * <p>Tồn tại vì {@code ORDER BY severity_normalized} là thứ tự CHỮ CÁI: HIGH, INFO, LOW,
+     * MEDIUM. Sai mà rất khó phát hiện qua mắt thường vì HIGH vẫn đứng đầu. Mọi truy vấn sắp xếp
+     * theo mức nghiêm trọng phải dùng cột này.
+     */
+    @Generated(event = EventType.INSERT)
+    @Column(name = "severity_rank", insertable = false, updatable = false)
+    private Integer severityRank;
 }

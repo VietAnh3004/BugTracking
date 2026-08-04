@@ -1,6 +1,7 @@
 package vn.hust.datn.evidence.domain;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -11,6 +12,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -56,4 +60,28 @@ public class AnalysisRun {
 
     @Column(name = "finished_at")
     private OffsetDateTime finishedAt;
+
+    /**
+     * Tổng số vị trí file:line mà parser thử đối chiếu với {@code snapshot_file.path}. Frame
+     * JDK/JUnit KHÔNG được tính vào — nếu tính, tỉ lệ thất bại của một run hoàn toàn đúng vẫn là
+     * ~84% và bộ đếm mất sạch giá trị cảnh báo.
+     */
+    @Column(name = "location_count", nullable = false)
+    private int locationCount = 0;
+
+    /**
+     * Số vị trí không đối chiếu được. ADR 0004 gọi đích danh chuẩn hoá đường dẫn là heuristic có
+     * thể hỏng im lặng thành 0 evidence_link; cột này ép nó hiện thành số, và
+     * {@code ck_run_paths_not_all_unresolved} chặn một run SUCCEEDED khi hỏng 100%.
+     */
+    @Column(name = "unresolved_location_count", nullable = false)
+    private int unresolvedLocationCount = 0;
+
+    /**
+     * Phiên bản tool đọc từ CHÍNH artifact. Khoá {@code jacoco} vắng mặt là bình thường —
+     * jacoco.xml không khai version — chứ không phải thiếu dữ liệu.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "tool_versions")
+    private Map<String, Object> toolVersions;
 }

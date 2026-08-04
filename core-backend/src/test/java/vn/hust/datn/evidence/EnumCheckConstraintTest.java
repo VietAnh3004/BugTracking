@@ -15,6 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import vn.hust.datn.evidence.domain.AnalysisRunStatus;
 import vn.hust.datn.evidence.domain.ClaimCitationResolution;
 import vn.hust.datn.evidence.domain.ClaimVerdict;
+import vn.hust.datn.evidence.domain.CoverageStatus;
 import vn.hust.datn.evidence.domain.EvidenceLinkMethod;
 import vn.hust.datn.evidence.domain.EvidenceLinkRelation;
 import vn.hust.datn.evidence.domain.EvidenceSource;
@@ -24,6 +25,9 @@ import vn.hust.datn.evidence.domain.RefreshTokenRevokedReason;
 import vn.hust.datn.evidence.domain.SnapshotEntryType;
 import vn.hust.datn.evidence.domain.SnapshotSourceType;
 import vn.hust.datn.evidence.domain.SnapshotStatus;
+import vn.hust.datn.evidence.domain.StackFrameKind;
+import vn.hust.datn.evidence.domain.TestCaseStatus;
+import vn.hust.datn.evidence.domain.TestFailureKind;
 import vn.hust.datn.evidence.domain.UserRole;
 import vn.hust.datn.evidence.domain.WarningSeverity;
 import vn.hust.datn.evidence.domain.WarningTool;
@@ -121,6 +125,31 @@ class EnumCheckConstraintTest extends AbstractIntegrationTest {
     @Test
     void snapshotFileEntryType() {
         assertCheckMatchesEnum("snapshot_file", "entry_type", SnapshotEntryType.values());
+    }
+
+    @Test
+    void testCaseStatus() {
+        assertCheckMatchesEnum("test_case", "status", TestCaseStatus.values());
+    }
+
+    @Test
+    void testCaseFailureKind() {
+        assertCheckMatchesEnum("test_case", "failure_kind", TestFailureKind.values());
+    }
+
+    @Test
+    void stackFrameKind() {
+        assertCheckMatchesEnum("stack_frame", "frame_kind", StackFrameKind.values());
+    }
+
+    /**
+     * Cột này là GENERATED nên biểu thức sinh giá trị và CHECK là hai chỗ khác nhau — test này
+     * canh CHECK. Nếu ai đó thêm giá trị vào biểu thức CASE mà quên CHECK, INSERT sẽ đỏ lúc chạy
+     * chứ không phải lúc build; canh ở đây để lỗi lộ ra ngay trong CI.
+     */
+    @Test
+    void coverageLineStatus() {
+        assertCheckMatchesEnum("coverage_line", "status", CoverageStatus.values());
     }
 
     private void assertCheckMatchesEnum(String table, String column, Enum<?>[] enumValues) {
