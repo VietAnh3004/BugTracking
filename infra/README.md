@@ -4,7 +4,7 @@ Hạ tầng chạy local: PostgreSQL 16 + pgvector, MinIO (object storage), và 
 
 ```bash
 cp .env.example .env      # điền giá trị thật
-docker compose --env-file .env up -d --build
+docker compose up -d --build
 ```
 
 Sau ~2 phút (lần đầu lâu hơn vì phải tải dependency Maven và npm):
@@ -20,9 +20,9 @@ các server khác nhau. File compose chỉ nối sẵn các biến đó lại.
 
 | Cách | Lệnh | Khi nào dùng |
 |---|---|---|
-| **Toàn bộ bằng Docker** | `docker compose --env-file .env up -d --build` | Demo, kiểm chứng deploy, không cần sửa code |
-| **Chỉ hạ tầng** | `docker compose --env-file .env up -d postgres minio` | Đang phát triển: chạy backend/frontend trực tiếp trên máy để có hot-reload |
-| **Một service cụ thể** | `docker compose --env-file .env up -d --build core-backend` | Sau khi sửa backend, muốn chạy lại đúng nó |
+| **Toàn bộ bằng Docker** | `docker compose up -d --build` | Demo, kiểm chứng deploy, không cần sửa code |
+| **Chỉ hạ tầng** | `docker compose up -d postgres minio` | Đang phát triển: chạy backend/frontend trực tiếp trên máy để có hot-reload |
+| **Một service cụ thể** | `docker compose up -d --build core-backend` | Sau khi sửa backend, muốn chạy lại đúng nó |
 
 Sửa code rồi chạy lại **bắt buộc có `--build`** — không có cờ này, compose dùng lại image cũ và
 bạn sẽ test nhầm bản trước đó mà không hề biết.
