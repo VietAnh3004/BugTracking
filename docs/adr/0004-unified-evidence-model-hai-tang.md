@@ -74,6 +74,9 @@ cosine) chạy được ngay tuần 3 mà không phải chốt số chiều sớ
 
 - Bảng thô V3 sẽ cần entity + parser + migration `ALTER`/`CREATE` mới ở tuần 8-9; thiết kế chi
   tiết (cột, lý do) đã ghi sẵn ở `docs/evidence-model.md` mục "Thiết kế cho V3".
+  > *Ghi chú thêm 04/08/2026 (không sửa nội dung quyết định gốc):* số hiệu migration thật của đợt
+  > bảng thô là **`V5`**, không phải V3 — tuần 5-7 đã dùng mất V3 và V4. Mục tương ứng trong
+  > `docs/evidence-model.md` nay tên là "Thiết kế cho V5".
 - `claim.message_id` chưa có ràng buộc FK — bảng `message`/`conversation` thuộc phạm vi tuần
   12-13, ràng buộc sẽ thêm bằng migration riêng khi đó.
 - Rủi ro lớn nhất còn lại: chuẩn hoá đường dẫn (4 định dạng khác nhau, `originalUriBaseIds`

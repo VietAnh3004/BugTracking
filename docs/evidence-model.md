@@ -7,8 +7,13 @@ tài liệu).
 
 Phạm vi tuần 3 (V2, đã hiện thực): `analysis_run`, `evidence_record`, `warning`, `evidence_link`,
 `claim`, `claim_citation`. Bảng "thô" mirror trực tiếp từng công cụ (`test_case`, `stack_frame`,
-`coverage_line`, `coverage_method`, `warning_location`) **chưa tạo** — xem mục "Thiết kế cho V3"
+`coverage_line`, `coverage_method`, `warning_location`) **chưa tạo** — xem mục "Thiết kế cho V5"
 ở cuối, kèm 4 phát hiện từ artifact thật làm căn cứ.
+
+> **Về số hiệu migration**: tài liệu này và kế hoạch 20 tuần ban đầu đều gọi đợt bảng thô là "V3".
+> Tuần 5-7 đã dùng mất `V3__auth_and_snapshot_files.sql` và `V4__project_owner_not_null.sql`, nên
+> số hiệu thật của đợt bảng thô là **`V5`**. Mọi chỗ ghi "V3" trong ngữ cảnh bảng thô đã được sửa
+> thành V5; giữ lại ghi chú này để đối chiếu được với các commit và tài liệu cũ.
 
 ## 1. 6 loại evidence
 
@@ -16,14 +21,14 @@ Phạm vi tuần 3 (V2, đã hiện thực): `analysis_run`, `evidence_record`, 
 |---|---|---|
 | `STATIC_WARNING` | SpotBugs, Semgrep | `evidence_record` + `warning` |
 | `CODE_CONTEXT` | JavaParser (tuần 10-11) | `evidence_record` (nội dung rỗng ở V2) |
-| `TEST_RESULT` | Surefire | `evidence_record` (V3 mới có `test_case`) |
-| `FAILED_TEST` | Surefire | `evidence_record` (V3 mới có `test_case`) |
-| `STACK_TRACE` | Surefire | `evidence_record` (V3 mới có `stack_frame`) |
-| `COVERAGE_INFORMATION` | JaCoCo | `evidence_record` (V3 mới có `coverage_line`/`coverage_method`) |
+| `TEST_RESULT` | Surefire | `evidence_record` (V5 mới có `test_case`) |
+| `FAILED_TEST` | Surefire | `evidence_record` (V5 mới có `test_case`) |
+| `STACK_TRACE` | Surefire | `evidence_record` (V5 mới có `stack_frame`) |
+| `COVERAGE_INFORMATION` | JaCoCo | `evidence_record` (V5 mới có `coverage_line`/`coverage_method`) |
 
 V2 cho phép mọi loại evidence tồn tại như một `evidence_record` (đơn vị citable), nhưng chỉ
 `STATIC_WARNING` có bảng mở rộng 1:1 (`warning`) lưu metadata riêng ở dạng có ràng buộc SQL;
-4 loại còn lại tạm lưu toàn bộ chi tiết trong `content` JSONB cho tới khi bảng thô V3 ra đời.
+4 loại còn lại tạm lưu toàn bộ chi tiết trong `content` JSONB cho tới khi bảng thô V5 ra đời.
 
 ## 2. Bảng provenance — `evidence_record` (chung cho mọi loại)
 
@@ -48,16 +53,30 @@ artifact để xác nhận giá trị ví dụ khớp. `DERIVED` nghĩa là cộ
 | status | DERIVED | mặc định `ACTIVE` | `ACTIVE` |
 | created_at | DERIVED | thời điểm materialize | — |
 
+**Giá trị lưu xuống `file_path` là bản ĐÃ CHUẨN HOÁ về `snapshot_file.path`** (đường dẫn tương đối
+gốc repo đã upload), còn cột "Ví dụ" ở trên là giá trị **nguyên văn trong artifact** mà locator đọc
+được. Hai thứ khác nhau là bình thường: `sourcepath` của SpotBugs là package-relative
+(`vn/hust/.../PasswordHasher.java`), trong khi đường dẫn tra cứu được của snapshot là
+`src/main/java/vn/hust/.../PasswordHasher.java`. Giá trị nguyên văn vẫn được giữ lại trong
+`content.path_raw` để reparse được khi heuristic chuẩn hoá sai.
+
 Ví dụ đối chứng thêm cho `file_path` từ hai nguồn còn lại (không map trực tiếp vào một cột riêng,
 nhưng xác nhận công thức chuẩn hoá path đúng — xem mục 5):
 
 - **Semgrep** (`unvalidated-redirect`, `AuthController.java:49-52`): SARIF ghi đường dẫn tuyệt đối
   trong container `results[0].locations[0].physicalLocation.artifactLocation.uri` =
-  `/work/vulnshop/src/main/java/vn/hust/datn/casestudy/vulnshop/auth/AuthController.java`. Sau khi
-  strip tiền tố `/work/vulnshop/src/main/java/`, khớp đúng định dạng canonical của SpotBugs.
+  `/work/vulnshop/src/main/java/vn/hust/datn/casestudy/vulnshop/auth/AuthController.java`.
+  **Không được chuẩn hoá bằng cách strip tiền tố `/work/vulnshop/src/main/java/`** — tiền tố này
+  chỉ là hệ quả của cách `case-study/run-analysis.sh` mount thư mục vào container Docker
+  (`/work` = thư mục `case-study/`); đổi cách mount, đổi máy, hoặc chạy qua sandbox của
+  core-backend là tiền tố khác ngay, và mọi vị trí âm thầm không khớp được với snapshot.
+  Cách đúng: **khớp hậu tố dài nhất, duy nhất** với danh sách `snapshot_file.path` — rút dần
+  segment đầu (`/work/...` → `work/...` → `vulnshop/...` → `src/main/java/...`) tới khi còn đúng
+  một ứng viên. Không tìm được thì để `file_path` NULL và **đếm vào `analysis_run.unresolved_location_count`**,
+  không bao giờ đoán bừa.
 - **JaCoCo** (`OrderStatusChecker.java`): không có cột path — phải ghép
   `package/@name` (`vn/hust/datn/casestudy/vulnshop/order`) + `'/'` + `sourcefile/@name`
-  (`OrderStatusChecker.java`).
+  (`OrderStatusChecker.java`), rồi mới đưa qua cùng bước khớp hậu tố như trên.
 
 ## 3. Bảng provenance — `warning` (mở rộng 1:1 cho STATIC_WARNING)
 
@@ -97,6 +116,12 @@ SpotBugs (`priority` 1-3, **1 là cao nhất** — trái trực giác, ghi rõ t
 | Semgrep | level = warning, precision = very-high | MEDIUM |
 | Semgrep | level = warning (precision khác) | LOW |
 | Semgrep | level = note | INFO |
+
+Ghi chú cho người viết test ở tuần 8-9: trong `semgrep.sarif` thật, **cả 60/60 rule đều có
+`precision: very-high`**, nên nhánh *"level = warning, precision khác"* → LOW **không có mẫu thật
+nào**; chỉ kiểm được bằng fixture tự chế. Hai nhánh `level = error` (20 rule) và `level = note`
+(1 rule) thì có rule thật trong `tool.driver.rules[]` — ghép một `result` giả trỏ tới rule có
+thật là test được, không cần bịa cả rule.
 
 ## 5. ERD
 
@@ -190,7 +215,7 @@ erDiagram
    `package/@name + '/' + sourcefile/@name` · Surefire không có path nào, chỉ tên file trần
    trong text thô của stack trace.
 
-## 7. Thiết kế cho V3 (tuần 8-9) — chưa hiện thực
+## 7. Thiết kế cho V5 (tuần 8-9) — chưa hiện thực
 
 Không tạo ở V2 vì không có consumer nào cho tới EvidenceLinker (tuần 10-11) và parser thật
 (tuần 8-9); tạo sớm sẽ là bảng rỗng không parser, không test, không ai biết sai cho tới lúc đó.
@@ -203,8 +228,10 @@ Không tạo ở V2 vì không có consumer nào cho tới EvidenceLinker (tuầ
 | `coverage_line` | Giữ `mi/ci/mb/cb` để phân biệt PARTIAL, không thu về boolean | `status` generated (COVERED/MISSED/PARTIAL) |
 | `coverage_method` | Phát hiện 3: KHÔNG có FK sang coverage_line (quan hệ không tồn tại trong dữ liệu thật) | `first_line` (không có `end_line` — JaCoCo không cung cấp) |
 
-`evidence_link.method` đã có sẵn giá trị `STACK_FRAME`/`COVERAGE`/`NAMING_CONVENTION` chờ V3 vì
-phát hiện 2 chứng minh không thể chỉ dựa vào stack trace.
+`evidence_link.method` đã có sẵn giá trị `STACK_FRAME`/`METHOD_AGGREGATE`/`NAMING_CONVENTION` chờ
+V5 vì phát hiện 2 chứng minh không thể chỉ dựa vào stack trace. (Bản trước của tài liệu này ghi
+`COVERAGE` — **giá trị đó chưa bao giờ tồn tại** trong CHECK của V2 lẫn enum `EvidenceLinkMethod`;
+giá trị đúng cho liên kết theo độ phủ là `METHOD_AGGREGATE`.)
 
 ## 8. Kiểm chứng tự động
 
@@ -212,7 +239,16 @@ phát hiện 2 chứng minh không thể chỉ dựa vào stack trace.
 python docs/check-evidence-model.py
 ```
 
-Kiểm 3 việc: (a) mọi locator ở mục 2-3 resolve được trên artifact thật và giá trị khớp cột "Ví
-dụ"; (b) mọi cột trong `V2__evidence_model.sql` có đúng một dòng provenance (DERIVED hoặc có
-locator) và ngược lại; (c) `exit 1` nếu lệch, dùng trong CI — đúng khuôn
-`case-study/run-analysis.sh --check`.
+Kiểm 3 việc: (a) mọi locator ở các mục "Bảng provenance" resolve được trên artifact thật và giá
+trị khớp cột "Ví dụ"; (b) đối chiếu **hai chiều, theo từng bảng** giữa cột SQL trong **mọi** file
+migration (`V*__*.sql`) và dòng provenance trong tài liệu này — thừa hay thiếu ở bất kỳ chiều nào
+đều là lỗi; (c) `exit 1` nếu lệch, dùng trong CI — đúng khuôn `case-study/run-analysis.sh --check`.
+
+Hai điều cần biết khi thêm bảng mới vào tài liệu:
+
+- Tiêu đề mục phải đúng dạng ``## N. Bảng provenance — `<tên bảng>` ...`` thì script mới gom được
+  dòng theo bảng; và tên bảng phải được thêm vào `DOCUMENTED_TABLES` trong script, nếu không
+  script báo lỗi thay vì bỏ qua im lặng.
+- Script đọc cột SQL bằng regex `^ {4}(\w+) +`, tức **đúng 4 dấu cách thụt đầu**. Căn lề lệch làm
+  nó đọc được ít cột hơn thực tế; có guard "mỗi bảng ≥3 cột" chặn trường hợp đọc được 0 cột rồi
+  in "OK".
