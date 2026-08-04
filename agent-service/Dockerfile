@@ -6,7 +6,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 # Cài dependency trước source để lớp cache không bị vô hiệu mỗi lần sửa code.
-COPY pyproject.toml README.md ./
+#
+# KHÔNG copy README.md: `pyproject.toml` không khai trường `readme` nên hatchling không cần tới
+# nó, và tài liệu không có việc gì trong image chạy. Trước đây có copy, nên khi `.dockerignore`
+# loại README.md thì build chết ngay ở bước này với "/README.md: not found".
+COPY pyproject.toml ./
 COPY src ./src
 RUN pip install --no-cache-dir ".[anthropic,openai]"
 
