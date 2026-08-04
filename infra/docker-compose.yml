@@ -114,7 +114,12 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/healthz"]
+      # 127.0.0.1 chứ KHÔNG phải localhost: nginx chỉ `listen 80` (IPv4), trong khi busybox wget
+      # của alpine phân giải `localhost` sang IPv6 ::1 trước và KHÔNG tự thử lại IPv4 — kết quả là
+      # "Connection refused" và container bị đánh dấu unhealthy vĩnh viễn, dù phục vụ request từ
+      # ngoài hoàn toàn bình thường. Healthcheck của core-backend không dính vì `curl` tự fallback
+      # sang IPv4, nên lỗi chỉ lộ ra ở đúng service này.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
       interval: 10s
       timeout: 5s
       retries: 10
