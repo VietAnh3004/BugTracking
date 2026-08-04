@@ -172,14 +172,23 @@ public class JacocoCoverageCollector implements TestEvidenceCollector {
                 null,
                 null,
                 // Chi dat symbol khi sourcefile anh xa dung MOT class (20/20 truong hop o vulnshop);
-                // nhieu class trong mot file thi khong co symbol nao dung.
-                classes.size() == 1 ? XmlParsers.attr(classes.get(0), "name").replace('/', '.') : null,
+                // nhieu class trong mot file thi khong co symbol nao dung. attr() co the tra null
+                // khi artifact hong -> phai kiem, khong duoc goi thang .replace().
+                singleClassSymbol(classes),
                 summary,
                 content,
                 packageName,
                 sourceFileName,
                 lines,
                 methods);
+    }
+
+    private String singleClassSymbol(List<Element> classes) {
+        if (classes.size() != 1) {
+            return null;
+        }
+        String className = XmlParsers.attr(classes.get(0), "name");
+        return className == null ? null : className.replace('/', '.');
     }
 
     private int counter(Element parent, String type, String attribute) {

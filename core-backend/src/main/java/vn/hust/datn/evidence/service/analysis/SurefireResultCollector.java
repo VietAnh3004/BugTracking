@@ -80,6 +80,14 @@ public class SurefireResultCollector implements TestEvidenceCollector {
             Element testcase, Element suite, String suiteName, String reportFile, List<EvidenceDraft> drafts) {
         String className = XmlParsers.attr(testcase, "classname");
         String displayName = XmlParsers.attr(testcase, "name");
+        // Artifact la du lieu KHONG TIN CAY: tu giai doan D no duoc sinh ra boi analyzer chay tren
+        // repo nguoi dung upload. Thieu thuoc tinh bat buoc phai cho loi DOC DUOC (-> run FAILED
+        // kem ly do), khong phai NullPointerException (-> 500 va mot dong stack trace vo nghia).
+        if (className == null || displayName == null) {
+            throw new InvalidArtifactException(
+                    "Bao cao Surefire '%s' co <testcase> thieu thuoc tinh bat buoc (classname='%s', name='%s')"
+                            .formatted(reportFile, className, displayName));
+        }
         Integer durationMs = durationMsOf(XmlParsers.attr(testcase, "time"));
 
         // <error> = ngoai le, <failure> = assertion. Ten hai the NGUOC truc giac.

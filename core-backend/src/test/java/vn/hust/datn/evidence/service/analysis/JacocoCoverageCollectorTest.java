@@ -169,6 +169,24 @@ class JacocoCoverageCollectorTest {
                 .hasMessageContaining("agent khong");
     }
 
+    /** Artifact hỏng không được làm NPE — xem Javadoc test tương ứng ở SurefireResultCollectorTest. */
+    @Test
+    void collect_classThieuThuocTinhName_khongNemNpe() {
+        byte[] xml =
+                """
+                <report name="x"><package name="p">
+                  <class sourcefilename="A.java"/>
+                  <sourcefile name="A.java"><line nr="1" mi="0" ci="1" mb="0" cb="0"/></sourcefile>
+                </package></report>
+                """
+                        .getBytes(StandardCharsets.UTF_8);
+
+        List<EvidenceDraft> drafts = collector.collect(xml);
+
+        assertThat(drafts).hasSize(1);
+        assertThat(drafts.get(0).symbol()).isNull();
+    }
+
     @Test
     void collect_khongPhaiBaoCaoJacoco_nemLoi() {
         assertThatThrownBy(() -> collector.collect("<testsuite/>".getBytes(StandardCharsets.UTF_8)))

@@ -217,6 +217,22 @@ class SurefireResultCollectorTest {
                 .hasMessageContaining("khong co testcase");
     }
 
+    /**
+     * Artifact là dữ liệu KHÔNG tin cậy: từ giai đoạn D nó do analyzer chạy trên repo người dùng
+     * upload sinh ra. Thiếu thuộc tính bắt buộc phải cho lỗi ĐỌC ĐƯỢC (→ run FAILED kèm lý do),
+     * không phải NullPointerException (→ 500 và một stack trace vô nghĩa).
+     */
+    @Test
+    void collect_testcaseThieuThuocTinhBatBuoc_nemLoiDocDuocChuKhongNpe() {
+        byte[] thieuClassname = suiteWith("<testcase name=\"a\" time=\"0.1\"/>");
+        byte[] thieuName = suiteWith("<testcase classname=\"vn.hust.app.FooTest\" time=\"0.1\"/>");
+
+        assertThatThrownBy(() -> collector.collect(thieuClassname))
+                .isInstanceOf(InvalidArtifactException.class)
+                .hasMessageContaining("thieu thuoc tinh bat buoc");
+        assertThatThrownBy(() -> collector.collect(thieuName)).isInstanceOf(InvalidArtifactException.class);
+    }
+
     @Test
     void collect_khongPhaiBaoCaoSurefire_nemLoi() {
         assertThatThrownBy(() -> collector.collect("<report/>".getBytes(StandardCharsets.UTF_8)))

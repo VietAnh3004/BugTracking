@@ -195,6 +195,41 @@ trong hai, `NimbusJwtEncoder` không chọn được JWK dù thuật toán đã 
 `encode()` (runtime), không lộ lúc khởi động ứng dụng hay lúc biên dịch. Xem
 `core-backend/src/main/java/vn/hust/datn/evidence/config/JwtConfig.java`.
 
+**Bốn cạm bẫy khi parse artifact analyzer (tuần 8-9).** Tất cả đều thuộc loại hỏng-im-lặng: parser
+vẫn chạy xong, vẫn trả về dữ liệu, chỉ là sai hoặc thiếu.
+
+1. **`Element.getElementsByTagName` trong Java là ĐỆ QUY** — tương đương `.//` của XPath, KHÁC
+   `findall` của Python (chỉ lấy con trực tiếp). Trong `spotbugs.xml`, `<SourceLine>` xuất hiện ở
+   **ba tầng lồng nhau** (trong `<Class>`, trong `<Method>`, và con trực tiếp của `<BugInstance>`)
+   mà chỉ con trực tiếp mới là vị trí cảnh báo. Dùng nhầm ra **90 vị trí thay vì 33** và không có
+   gì báo lỗi. Dùng `XmlParsers.directChildren`.
+
+2. **`jacoco.xml` KHÔNG dùng được `disallow-doctype-decl=true`** — cách chống XXE mặc định. File
+   thật có `<!DOCTYPE report ... "report.dtd">` (và `report.dtd` không tồn tại cạnh nó), nên bật cờ
+   đó sẽ **từ chối chính file cần đọc**. Phải có **hai** cấu hình parser: bộ nghiêm ngặt cho
+   SpotBugs/Surefire, bộ nới hơn (`load-external-dtd=false` + tắt external entity, vẫn chấp nhận
+   DOCTYPE) cho JaCoCo. Xem `XmlParsers`.
+
+3. **Regex tách stack frame trong `case-study/summarize.py:25` SAI, đừng chép lại.**
+   `at ([\w.$]+)\.(\w+)\(([\w.]+):(\d+)\)` bỏ sót hai loại frame: `[\w.$]+` không có `/` nên trượt
+   frame mang tiền tố module JPMS (`at java.base/java.lang.reflect.Method.invoke(...)` — mọi trace
+   JUnit đều có), và `:(\d+)` bắt buộc số dòng nên bỏ luôn `(Native Method)`/`(Unknown Source)`.
+   Thêm một bẫy nữa gặp khi tự viết lại: tiền tố **module** dùng MỘT gạch (`java.base/`) còn tiền
+   tố **classloader** dùng HAI (`app//`).
+
+4. **SARIF của Semgrep không có khoá `$schema`** dù đặc tả SARIF khuyến dùng, và viết
+   `"version":"2.1.0"` **không dấu cách**. Hàm nhận dạng định dạng dựa vào hai giả định đó sẽ trượt
+   trên artifact thật. Nhận dạng theo cấu trúc bắt buộc thực sự có (`{` + `"runs":[`).
+   Ngoài ra `result` **không có** `level` và `result.properties` là object **rỗng** — mức nghiêm
+   trọng chỉ lấy được bằng join sang `tool.driver.rules[]` theo `ruleId`.
+
+**Artifact analyzer là dữ liệu KHÔNG TIN CẬY — thiếu thuộc tính phải cho lỗi đọc được, không phải
+NPE.** Từ giai đoạn Docker sandbox, artifact do analyzer chạy trên **repo người dùng upload** sinh
+ra. Gặp thật ở tuần 8-9: `<testcase>` thiếu `@classname` và `<class>` thiếu `@name` đều cho
+`NullPointerException` — tức HTTP 500 kèm một stack trace vô nghĩa, thay vì một `analysis_run`
+FAILED kèm lý do người vận hành đọc được. Mọi `XmlParsers.attr(...)` trả về `null` được dùng tiếp
+đều phải kiểm.
+
 **`No qualifying bean of type 'XMapper'` có thể xảy ra NGAY CẢ SAU `mvn clean verify`** — không
 chỉ do build tăng tiến như đã ghi ở trên. Gặp thật: `target/generated-sources/annotations/.../XMapperImpl.java`
 bị **IDE background compiler (Eclipse JDT)** ghi đè — file đó có comment
@@ -202,10 +237,17 @@ bị **IDE background compiler (Eclipse JDT)** ghi đè — file đó có commen
 cờ `-Amapstruct.defaultComponentModel=spring` chỉ khai trong `pom.xml`. Đây là tranh chấp giữa
 IDE (chạy nền, tự biên dịch để lấy diagnostics) và tiến trình `mvn` — cả hai cùng ghi vào
 `target/`. Triệu chứng: `mvn clean verify` đỏ với lỗi thiếu bean dù `mvn clean verify` lần **trước
-đó hoặc sau đó** xanh với cùng một bộ code không đổi. Cách xử lý: chạy lại `mvn clean verify` một
-lần nữa — nếu xanh, lần đỏ trước là do trúng đúng lúc IDE ghi đè giữa chừng, không phải lỗi code.
-Cân nhắc: kiểm tra `date`/`compiler` trong comment của file `*Impl.java` bị nghi ngờ trước khi tốn
-thời gian debug logic mapper.
+đó hoặc sau đó** xanh với cùng một bộ code không đổi.
+
+**Đã sửa tận gốc (tuần 8-9) — không cần chạy lại nữa.** Cách xử lý cũ ghi ở đây là "chạy lại một
+lần nữa"; lần gặp ở tuần 8-9 chạy lại **hai** lần vẫn đỏ, vì vừa thêm 9 file Java nên IDE biên dịch
+lại liên tục. Nguyên nhân gốc: 4 mapper khai `@Mapper` trần. Nay đã khai tường minh
+`@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)` nên **cả Maven lẫn IDE đều sinh
+`@Component`**. Cờ trong `pom.xml` vẫn giữ để bảo vệ mapper nào sau này quên khai.
+
+Nếu vẫn gặp lại triệu chứng này với một mapper mới: kiểm ngay `grep -c "@Component"
+target/generated-sources/annotations/**/XMapperImpl.java` — ra 0 nghĩa là mapper đó thiếu
+`componentModel` trên annotation, không phải lỗi ngẫu nhiên theo thời điểm.
 
 **`@Transactional` mặc định ROLLBACK khi có unchecked exception thoát ra khỏi method — kể cả khi
 exception đó là thứ BẠN CHỦ Ý ném ra sau khi đã ghi dữ liệu quan trọng (vd thu hồi refresh token

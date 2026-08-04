@@ -26,8 +26,9 @@
 | **Tuần 3** — Unified Evidence Model | ✅ Xong (xem §D2) |
 | **Tuần 4** — API contract + OpenAPI | ✅ Xong (xem §E2) |
 | **Tuần 5-7** — core backend CRUD + JWT auth + frontend routing | ✅ Xong (xem §G) |
+| **Tuần 8-9** — parser analyzer → Evidence Store + Docker sandbox | 🔄 Đang làm: giai đoạn A xong (xem §H) |
 
-### §G — Tuần 5-7: tiến độ chi tiết (đang làm)
+### §G — Tuần 5-7: tiến độ chi tiết (đã xong)
 
 Kế hoạch thực thi đầy đủ (18 hạng mục A→E) nằm ở
 `C:\Users\Admin\.claude\plans\ti-p-t-c-i-nh-calm-pony.md`. Tóm tắt trạng thái từng hạng mục:
@@ -144,6 +145,72 @@ Xem `git log --oneline -10` để biết commit cụ thể đã xong; message gh
 - Case study `vulnshop` **đảo từ tuần 5–7 lên tuần 2** để thiết kế Evidence Model dựa trên
   artifact thật. Xem §7bis.
 - Bộ rule Semgrep được vendor vào `case-study/semgrep-rules/` để phân tích tái lập và chạy offline.
+
+---
+
+### §H — Tuần 8-9: tiến độ chi tiết (đang làm)
+
+Kế hoạch thực thi đầy đủ ở `C:\Users\Admin\.claude\plans\ti-p-t-c-i-nh-calm-pony.md`. Bốn giai
+đoạn A→D; **sandbox xếp CUỐI có chủ đích** vì nó rủi ro nhất mà lại không phải đóng góp của luận
+văn — nếu nó trượt, mọi thứ khác vẫn xong và vẫn demo được.
+
+| # | Hạng mục | Trạng thái |
+|---|---|---|
+| A1 | `check-evidence-model.py` đối chiếu hai chiều **theo từng bảng**, đọc mọi file migration | ✅ Xong |
+| A2 | Sửa nguyên tắc chuẩn hoá path Semgrep trong `evidence-model.md`; V3 → V5 | ✅ Xong |
+| A3 | **Migration V5**: 5 bảng thô + `unresolved_location_count` + 5 entity + 4 enum + provenance | ✅ Xong |
+| A4 | `SnapshotPathResolver` — khớp hậu tố dài nhất, duy nhất | ✅ Xong |
+| A5 | `SpotbugsXmlAdapter` + `XmlParsers` | ✅ Xong |
+| A6 | `SemgrepSarifAdapter` | ✅ Xong |
+| A7 | `SurefireResultCollector` + `StackTraceParser` | ✅ Xong |
+| A8 | `JacocoCoverageCollector` | ✅ Xong |
+| B1 | `EvidenceMaterializer` cấp `seq_in_run`, ghi batch | ⬜ Chưa |
+| B2 | `POST /snapshots/{id}/analysis-runs` nạp artifact | ⬜ Chưa |
+| B3 | Endpoint danh sách analysis run + cảnh báo cho UI | ⬜ Chưa |
+| C | Màn hình danh sách cảnh báo (frontend) | ⬜ Chưa |
+| D | Docker sandbox (7 commit, mở đầu bằng spike SpotBugs CLI) | ⬜ Chưa |
+
+Sau A: **216 test xanh**, 4 parser đọc được đủ 4 artifact thật, 75 dòng provenance cho 7 bảng khớp
+hai chiều với SQL.
+
+#### Hai chỗ kế hoạch gốc ghi sai, đã sửa
+
+- **Số hiệu migration**: kế hoạch ghi `V3__evidence_model_v3.sql`, nhưng tuần 5-7 đã dùng mất V3
+  và V4 → số thật là **`V5`**. `docs/evidence-model.md` và ADR 0004 đã có ghi chú đối chiếu.
+- **"≥60 warning"**: vulnshop thật chỉ có **33** (28 SpotBugs + 5 Semgrep). Con số ≥60 không có
+  căn cứ; tiêu chí đổi thành *khớp `case-study/vulnshop/expected-analysis.json`*, vốn là nguồn sự
+  thật duy nhất và đã được CI đối chiếu sẵn.
+
+#### Ba lỗi tồn đọng mà giai đoạn A lộ ra
+
+Đều là lỗi có sẵn trong repo, không phải do đợt này gây ra:
+
+1. **Một cột chưa từng được kiểm.** `evidence_record.analysis_run_id` (V2 dòng 68) chỉ có *một*
+   dấu cách sau tên cột, mà regex của `check-evidence-model.py` đòi ≥2 — nên nó chưa bao giờ được
+   trích ra khỏi SQL. Kiểm một chiều cũ (chỉ báo khi cột SQL thiếu provenance) không thể lộ ra.
+2. **`resolve_semgrep` là stub**: bỏ qua tham số, luôn trả `results[0].ruleId` → mọi dòng
+   provenance Semgrep "khớp" một cách vô nghĩa.
+3. **`evidence_link.method` ghi sai trong tài liệu**: giá trị `COVERAGE` chưa bao giờ tồn tại
+   trong CHECK của V2 lẫn enum `EvidenceLinkMethod`; giá trị đúng là `METHOD_AGGREGATE`.
+
+#### Sai lệch có chủ đích so với kế hoạch
+
+- **`EvidenceDraft.summary()` dùng đường dẫn NGUYÊN VĂN**, không phải đường dẫn đã chuẩn hoá. Kế
+  hoạch mô tả summary hiển thị "(chưa đối chiếu được với snapshot)" khi path NULL, nhưng điều đó
+  buộc parser phải biết kết quả chuẩn hoá — tức là hết thuần hàm và hết unit-test được bằng
+  artifact thật. Trạng thái đối chiếu nằm ở `content.path_match_kind` và UI hiển thị thành nhãn
+  riêng (giai đoạn C).
+- **`PathMatchKind` không lên DB thành cột riêng** — sẽ phải thêm một CHECK + một method
+  `EnumCheckConstraintTest` cho thứ chưa có consumer. Nó nằm trong `content`, đủ để tuần 15 đo tỉ
+  lệ "chỉ khớp được bằng tên file".
+
+#### Nợ kỹ thuật của giai đoạn A (trả ở B1)
+
+- `SnapshotFileRepository.findFilePathsBySnapshotId` đã viết nhưng **chưa có caller và chưa có
+  test** — B1 là nơi dùng nó.
+- `TestFixtures` **chưa có builder** cho `test_case`/`stack_frame`/`coverage_*`; test tích hợp của
+  B1 sẽ cần.
+- Chưa có registry chọn adapter/collector theo enum — hai `@Component` hiện chưa ai inject.
 
 ---
 
@@ -554,7 +621,7 @@ mô tả. Chuẩn bị form + kịch bản từ tuần 14, không để đến t
 | 3 | 10/08–16/08 | Thiết kế Unified Evidence Model **dựa trên artifact thật**; V2 migration, JPA entity, ERD, ADR 0004 | `docs/evidence-model.md`; V2 chạy trên DB thật; entity map đúng schema |
 | 4 | 17/08–23/08 | API contract: DTO, Evidence Tool API khung, OpenAPI ổn định, FE sinh client TypeScript, integration test Testcontainers | Swagger UI đầy đủ; `npm run api:generate` ra type dùng được; test tích hợp xanh |
 | 5–7 | 24/08–13/09 | Core backend (project/repo/snapshot CRUD, upload zip + clone git, JWT auth); frontend (routing, repo browser, warning list, source viewer) — **không còn phải chia thời gian cho case study** | Upload repo → xem file/dòng trên web; **FE chạy cross-origin thật với BE** |
-| 8–9 | 14/09–27/09 | StaticAnalysisAdapter (Semgrep SARIF + SpotBugs XML → chuẩn hoá); TestEvidenceCollector (Surefire XML, JaCoCo XML); chạy analyzer trong Docker sandbox; **`V3__evidence_model_v3.sql`** — 5 bảng thô đã thiết kế sẵn ở tuần 3 (`docs/evidence-model.md` mục 7): `test_case`, `stack_frame`, `coverage_line`, `coverage_method`, `warning_location` | 1 lệnh → ra ≥60 warning + kết quả test trong DB; V3 migration chạy được, entity map đúng |
+| 8–9 | 14/09–27/09 | StaticAnalysisAdapter (Semgrep SARIF + SpotBugs XML → chuẩn hoá); TestEvidenceCollector (Surefire XML, JaCoCo XML); chạy analyzer trong Docker sandbox; **`V5__evidence_raw_tables.sql`** — 5 bảng thô đã thiết kế sẵn ở tuần 3 (`docs/evidence-model.md` mục 7): `test_case`, `stack_frame`, `coverage_line`, `coverage_method`, `warning_location` | 1 lệnh → warning + kết quả test trong DB, **số liệu khớp `case-study/vulnshop/expected-analysis.json`**; migration chạy được, entity map đúng |
 | 10–11 | 28/09–11/10 | EvidenceLinker 3 tầng (§3); CODE_CONTEXT qua JavaParser; embedding + pgvector; Evidence Tool API; Evidence Explorer UI | Mở 1 warning → thấy code context + test liên quan + coverage |
 | 12–13 | 12/10–25/10 | Agent Service: LlmProvider, agent loop, 5 tool, structured output, CitationValidator; chat UI + SSE streaming + click Evidence ID → nhảy tới nguồn | Hỏi "test nào liên quan?" → trả lời có citation click được |
 | 14 | 26/10–01/11 | Human Review (Accept/Reject/Uncertain/Insufficient), dashboard, export report; chuẩn bị form user study | Luồng end-to-end hoàn chỉnh, demo được |
