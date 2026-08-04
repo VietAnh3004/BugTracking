@@ -48,6 +48,33 @@ public final class SampleArtifacts {
         }
     }
 
+    /** Đọc một file báo cáo trả về từ {@link #surefireReports()}. */
+    public static byte[] bytesOf(Path path) {
+        return read(path);
+    }
+
+    /**
+     * Mọi đường dẫn file của vulnshop, tương đối gốc {@code case-study/vulnshop/} — chính là dạng
+     * mà {@code snapshot_file.path} có sau khi người dùng nén thư mục đó và upload.
+     *
+     * <p>Dùng cây nguồn THẬT thay vì một danh sách bịa: bốn analyzer khai đường dẫn theo bốn định
+     * dạng khác nhau và chỉ cây thật mới chứng minh được thuật toán khớp hậu tố đưa cả bốn về
+     * cùng một chỉ mục. {@code target/} bị loại vì nó là sản phẩm biên dịch, không nằm trong repo
+     * người dùng upload.
+     */
+    public static List<String> vulnshopSourcePaths() {
+        Path root = repoRoot().resolve("case-study").resolve("vulnshop");
+        try (var stream = Files.walk(root)) {
+            return stream.filter(Files::isRegularFile)
+                    .map(path -> root.relativize(path).toString().replace('\\', '/'))
+                    .filter(path -> !path.startsWith("target/"))
+                    .sorted()
+                    .toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Khong duyet duoc cay nguon " + root, e);
+        }
+    }
+
     /**
      * Con số kỳ vọng của vulnshop. Đọc từ {@code expected-analysis.json} thay vì hard-code trong
      * test: file đó là nguồn sự thật duy nhất và đã được CI đối chiếu qua

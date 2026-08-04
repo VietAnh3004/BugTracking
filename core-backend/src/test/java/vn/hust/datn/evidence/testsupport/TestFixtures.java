@@ -133,6 +133,18 @@ public class TestFixtures {
         return analysisRunRepository.saveAndFlush(run);
     }
 
+    /**
+     * Đọc lại một run TỪ DB, không trả về entity đã cache.
+     *
+     * <p>Cần thiết khi phần được kiểm ghi bằng {@code JdbcTemplate} (materializer) chứ không qua
+     * Hibernate: entity trong persistence context sẽ không thấy thay đổi đó, và một assert dựa
+     * vào nó xanh giả.
+     */
+    public AnalysisRun reloadRun(UUID runId) {
+        analysisRunRepository.flush();
+        return analysisRunRepository.findById(runId).orElseThrow();
+    }
+
     public EvidenceRecord evidenceRecord(AnalysisRun run, EvidenceType type, EvidenceSource source, String filePath, Integer startLine) {
         EvidenceRecord record = new EvidenceRecord();
         record.setSeqInRun(seqCounter.incrementAndGet());
