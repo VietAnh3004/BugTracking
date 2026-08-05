@@ -1,6 +1,9 @@
 package vn.hust.datn.evidence.testsupport;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +42,7 @@ import vn.hust.datn.evidence.repository.RepositorySnapshotRepository;
 import vn.hust.datn.evidence.repository.SnapshotFileRepository;
 import vn.hust.datn.evidence.repository.UserRepository;
 import vn.hust.datn.evidence.repository.WarningRepository;
+import vn.hust.datn.evidence.storage.ObjectStorageClient;
 
 /**
  * Builder dữ liệu test dùng chung: project → snapshot → run → evidence → warning → link.
@@ -74,6 +78,9 @@ public class TestFixtures {
 
     @Autowired
     private SnapshotFileRepository snapshotFileRepository;
+
+    @Autowired
+    private ObjectStorageClient storageClient;
 
     @Autowired
     private UserRepository userRepository;
@@ -178,6 +185,79 @@ public class TestFixtures {
         snapshotFileRepository.saveAll(rows);
         snapshotFileRepository.flush();
         return snapshot;
+    }
+
+    /**
+     * Như {@link #readySnapshotWithFiles} nhưng có NỘI DUNG THẬT trong object storage và sha256
+     * tính từ chính nội dung đó.
+     *
+     * <p>Cần thiết cho {@code SourceTreeBuilder}: nó đọc object rồi đối chiếu sha256, nên fixture
+     * chỉ có metadata sẽ đỏ ở bước đối chiếu chứ không kiểm được thứ cần kiểm.
+     */
+    public RepositorySnapshot readySnapshotWithContent(Project project, Map<String, String> pathToContent) {
+        RepositorySnapshot snapshot = snapshot(project);
+        snapshot.setStatus(SnapshotStatus.READY);
+        snapshot.setFileCount(pathToContent.size());
+        snapshotRepository.saveAndFlush(snapshot);
+
+        OffsetDateTime now = OffsetDateTime.now();
+        List<SnapshotFile> rows = new ArrayList<>(pathToContent.size());
+        pathToContent.forEach((path, content) -> {
+            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+            String storageKey = snapshot.getStorageKey() + path;
+            storageClient.putObject(storageKey, bytes, "text/plain; charset=utf-8");
+
+            int lastSlash = path.lastIndexOf('/');
+            SnapshotFile row = new SnapshotFile();
+            row.setSnapshotId(snapshot.getId());
+            row.setPath(path);
+            row.setParentPath(lastSlash < 0 ? "" : path.substring(0, lastSlash));
+            row.setName(path.substring(lastSlash + 1));
+            row.setEntryType(SnapshotEntryType.FILE);
+            row.setSizeBytes(bytes.length);
+            row.setBinary(false);
+            row.setStored(true);
+            row.setStorageKey(storageKey);
+            row.setSha256(sha256Hex(bytes));
+            row.setCreatedAt(now);
+            rows.add(row);
+        });
+        snapshotFileRepository.saveAll(rows);
+        snapshotFileRepository.flush();
+        return snapshot;
+    }
+
+    /** Đánh dấu một file là không có nội dung trên object storage (quá lớn lúc upload). */
+    public void markNotStored(RepositorySnapshot snapshot, String path) {
+        SnapshotFile file = snapshotFileRepository
+                .findBySnapshotIdAndPath(snapshot.getId(), path)
+                .orElseThrow();
+        file.setStored(false);
+        file.setStorageKey(null);
+        file.setSha256(null);
+        snapshotFileRepository.saveAndFlush(file);
+    }
+
+    /** Làm sha256 trong chỉ mục lệch khỏi nội dung thật — mô phỏng DB và object storage trôi khỏi nhau. */
+    public void corruptSha256(RepositorySnapshot snapshot, String path) {
+        SnapshotFile file = snapshotFileRepository
+                .findBySnapshotIdAndPath(snapshot.getId(), path)
+                .orElseThrow();
+        file.setSha256("0".repeat(64));
+        snapshotFileRepository.saveAndFlush(file);
+    }
+
+    private static String sha256Hex(byte[] content) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(content);
+            StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                hex.append(Character.forDigit((b >> 4) & 0xF, 16)).append(Character.forDigit(b & 0xF, 16));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     /**

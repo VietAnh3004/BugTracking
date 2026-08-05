@@ -6,3 +6,9 @@
 # api-types.ts được openapi-typescript sinh ra và đối chiếu bằng `git diff --exit-code` trong CI
 # (job frontend) — cùng lý do như *.json ở trên.
 frontend/src/shared/lib/api-types.ts text eol=lf
+
+# Script chạy BÊN TRONG container Linux: CRLF làm shebang thành `#!/usr/bin/env bash\r` và kernel
+# báo "bash\r: No such file or directory" — một thông điệp không hề nhắc tới xuống dòng. Đã vấp
+# thật khi một script Python ghi lại file (Python mở text mode tự đổi \n -> \r\n trên Windows).
+*.sh text eol=lf
+Dockerfile text eol=lf

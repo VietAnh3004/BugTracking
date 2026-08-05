@@ -28,7 +28,7 @@ IMAGE_SEMGREP=evidence/analyzer-semgrep:latest
 # Git Bash có HAI cái bẫy đường dẫn NGƯỢC CHIỀU nhau khi gọi docker, và chỉ tắt path conversion
 # thì hỏng cái còn lại:
 #
-#   - Đường dẫn TRONG CONTAINER (`/work`, `name:/work/src`) bị MSYS biến thành
+#   - Đường dẫn TRONG CONTAINER (`/work`, `name:/work/repo`) bị MSYS biến thành
 #     `C:/Program Files/Git/work` → phải MSYS_NO_PATHCONV=1.
 #   - Đường dẫn TRÊN HOST (build context, nguồn của `docker cp`) ở dạng `/d/study/...` thì daemon
 #     Windows không hiểu → phải chuyển sang `D:/study/...` bằng `cygpath -m`.
@@ -78,9 +78,9 @@ trap cleanup EXIT
 # Cây nguồn gửi vào sandbox: chỉ những gì có trong repo người dùng, KHÔNG có target/ (nó là sản
 # phẩm biên dịch của máy phát triển; để lẫn vào sẽ khiến sandbox "thành công" nhờ class có sẵn
 # thay vì nhờ chính nó biên dịch được).
-mkdir -p "$WORK_TMP/src"
+mkdir -p "$WORK_TMP/repo"
 ( cd "$REPO_ROOT/case-study/vulnshop" \
-  && find . -type f -not -path './target/*' -exec cp --parents {} "$WORK_TMP/src/" \; )
+  && find . -type f -not -path './target/*' -exec cp --parents {} "$WORK_TMP/repo/" \; )
 
 VOLUME="evidence-verify-$$"
 docker_ volume create "$VOLUME" >/dev/null
@@ -94,7 +94,7 @@ run_java_phase() {
         --cap-drop=ALL --security-opt=no-new-privileges \
         --pids-limit=512 --memory=2g --memory-swap=2g --cpus=2 \
         -v "$VOLUME:/work" \
-        "$IMAGE_JAVA" /opt/analyze.sh "$phase" /work/src >/dev/null
+        "$IMAGE_JAVA" /opt/analyze.sh "$phase" /work/repo >/dev/null
 
     # Chỉ pha đầu mới cần đẩy nguồn vào; pha sau dùng lại volume.
     if [ "$phase" = "resolve" ]; then
@@ -105,10 +105,10 @@ run_java_phase() {
         #
         # Cach dung: tu dung tar voi uid/gid CUA USER TRONG IMAGE roi dua qua stdin (`docker cp -`
         # giu nguyen uid/gid trong tar). DockerSandboxRunner o D6 dung y het co che nay.
-        # Đích là `/work` chứ không phải `/work/src`, và tar mang sẵn tiền tố `src/`: `docker cp -`
-        # đòi thư mục ĐÍCH phải tồn tại sẵn, mà volume mới chỉ có `/work`.
+        # Dich la `/work` chu khong phai `/work/repo`, va tar mang san tien to `repo/`:
+        # `docker cp -` doi thu muc DICH phai ton tai san, ma volume moi chi co `/work`.
         tar --owner=10001 --group=10001 --numeric-owner \
-            -cf - -C "$WORK_TMP" src \
+            -cf - -C "$WORK_TMP" repo \
             | docker_ cp - "$name:/work"
     fi
     docker_ start -a "$name"
@@ -129,7 +129,7 @@ docker_ create --name "$SEMGREP_NAME" \
     --network=none --cap-drop=ALL --security-opt=no-new-privileges \
     --pids-limit=512 --memory=2g --memory-swap=2g \
     -v "$VOLUME:/work" \
-    "$IMAGE_SEMGREP" /work/src >/dev/null
+    "$IMAGE_SEMGREP" /work/repo >/dev/null
 docker_ start -a "$SEMGREP_NAME" || true
 
 echo "--- thu artifact ---"

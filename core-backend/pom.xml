@@ -22,6 +22,7 @@
     <springdoc.version>2.8.6</springdoc.version>
     <spotless.version>2.44.4</spotless.version>
     <minio.version>8.5.17</minio.version>
+    <commons-compress.version>1.27.1</commons-compress.version>
     <!-- Ghi đè bản Testcontainers mà Spring Boot 3.5.0 quản lý (1.21.0): bản đó không đọc được
          response /info của Docker Desktop 29.x trên Windows named pipe lẫn TCP (BadRequestException
          400 với body rỗng bất kể transport) — lỗi tương thích docker-java, không phải cấu hình sai. -->
@@ -72,6 +73,19 @@
       <groupId>io.minio</groupId>
       <artifactId>minio</artifactId>
       <version>${minio.version}</version>
+    </dependency>
+
+    <!--
+        Dựng tar để đẩy cây mã nguồn vào container sandbox (ADR 0008: không bind mount).
+
+        KHÔNG tự viết một bộ ghi tar tối giản: định dạng ustar giới hạn tên 100 ký tự và cắt âm
+        thầm phần thừa, mà đường dẫn Java kiểu src/main/java/vn/hust/datn/casestudy/... vượt mốc
+        đó rất dễ. commons-compress tự chuyển sang PAX khi cần.
+    -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>${commons-compress.version}</version>
     </dependency>
 
     <!-- Migration: schema chỉ thay đổi qua Flyway, ddl-auto luôn là 'validate'. -->

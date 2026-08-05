@@ -88,6 +88,13 @@ context, nguồn của `docker cp`) ở dạng `/d/study/...` thì daemon Window
 cho mọi lệnh docker **và** chuyển tay mọi đường dẫn host bằng `cygpath -m`. Xem
 `infra/analyzer/build.sh`.
 
+**Script `.sh` chạy trong container Linux phải giữ LF — CRLF làm shebang thành `bash\r`.** Thông
+điệp lỗi là `/usr/bin/env: 'bash\r': No such file or directory`, **không hề nhắc tới xuống dòng**.
+Gặp thật khi một script Python sửa hộ file: `io.open(path, 'w')` trên Windows mặc định đổi `\n`
+thành `\r\n`, nên một lần chỉnh sửa tự động là đủ làm hỏng. Đã chặn tận gốc bằng
+`*.sh text eol=lf` trong `.gitattributes`; khi sửa file bằng Python luôn mở dạng nhị phân
+(`open(p,'rb')` / `open(p,'wb')`) hoặc truyền `newline='\n'`.
+
 **`docker cp <thư mục>` gán quyền ROOT cho file chép vào, kể cả khi container chạy non-root.**
 Triệu chứng gặp thật: Maven trong container chết với
 `Cannot create resource output directory: /work/src/target/classes` — một lỗi *về trình biên dịch*,
@@ -191,6 +198,15 @@ trong khi log ghi rõ `BUILD FAILURE` và `EXIT=1`. Cách làm đúng đã dùng
 `grep -E "BUILD|^EXIT|Tests run:.*Failures" verify.log`. Đừng bao giờ kết luận "build xanh" từ
 thông báo của harness. (Ghi chú liên quan: `mvn ... | tail -N; echo $?` cũng sai — đó là exit code
 của `tail`, không phải của `mvn`.)
+
+**Dạng thứ BA của tranh chấp `target/`: `.class` hỏng, báo bằng `ClassFormatError: Extra bytes at
+the end of class file`.** Gặp thật ở tuần 8-9 ngay sau một lần `mvn clean verify`: Spring không nạp
+được `GlobalExceptionHandler` với *"problem with class file or dependent class"*, và **mọi** test
+tích hợp đỏ hàng loạt với `ApplicationContext failure threshold (1) exceeded` — một thông điệp
+hoàn toàn không gợi ý gì về nguyên nhân. Phải lần tới `Caused by` thứ hai mới thấy `ClassFormatError`.
+Nguyên nhân giống hai dạng kia (IDE background compiler ghi đè file trong `target/` giữa lúc `mvn`
+đang đọc), cách xử lý cũng giống: chạy lại y nguyên lệnh đó. Mẹo khoanh vùng: `grep -n "Caused by"`
+trên log và đọc cái CUỐI CÙNG, đừng dừng ở cái đầu tiên.
 
 **Lỗi khoá file trên Windows khi `mvn clean` tái diễn thường xuyên, và có HAI dạng khác nhau:**
 `Failed to delete ...\target\test-classes` (hỏng ở goal `clean`) và

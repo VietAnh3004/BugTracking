@@ -22,4 +22,4 @@ ENTRYPOINT ["semgrep", "scan", \
             "--config=/opt/semgrep-rules/p-java.yaml", \
             "--sarif", "--output=/work/.analysis/semgrep.sarif", \
             "--metrics=off"]
-CMD ["/work/src"]
+CMD ["/work/repo"]

@@ -15,7 +15,7 @@
 set -euo pipefail
 
 MODE="${1:-}"
-SOURCE_ROOT="${2:-/work/src}"
+SOURCE_ROOT="${2:-/work/repo}"
 
 OUT_DIR=/work/.analysis
 LOCAL_REPO=/work/.m2

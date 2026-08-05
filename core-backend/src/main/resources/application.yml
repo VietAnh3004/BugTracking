@@ -87,6 +87,20 @@ app:
     base-url: ${AGENT_SERVICE_URL}
     # Agent gọi LLM nhiều vòng nên một lượt suy luận có thể kéo dài hàng chục giây.
     timeout: ${AGENT_TIMEOUT:PT120S}
+  sandbox:
+    # TẮT mặc định có chủ đích: deploy lên môi trường không có Docker daemon vẫn khởi động bình
+    # thường, và đường nạp artifact thủ công không phụ thuộc gì vào sandbox. Bật bằng
+    # ANALYSIS_RUNNER=docker (xem docs/adr/0008-chay-analyzer-trong-docker-sandbox.md).
+    runner: ${ANALYSIS_RUNNER:disabled}
+    java-image: ${ANALYZER_JAVA_IMAGE:evidence/analyzer-java:latest}
+    semgrep-image: ${ANALYZER_SEMGREP_IMAGE:evidence/analyzer-semgrep:latest}
+    # Hàng rào thời gian tường cho MỖI pha. `mvn test` trên repo lớn có thể lâu, nhưng vô hạn thì
+    # một test treo giữ container sống mãi.
+    timeout: ${SANDBOX_TIMEOUT:PT15M}
+    memory-bytes: ${SANDBOX_MEMORY_BYTES:2147483648}
+    # Chặn fork bomb. Timeout KHÔNG chặn được kiểu này: máy chết trước khi timeout kịp nổ.
+    pids-limit: ${SANDBOX_PIDS_LIMIT:512}
+    cpus: ${SANDBOX_CPUS:2}
 
 logging:
   level:
