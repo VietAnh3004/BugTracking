@@ -72,8 +72,29 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION:-PT15M}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-P14D}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Docker sandbox — TAT mac dinh (ADR 0008). Bat bang ANALYSIS_RUNNER=docker trong .env, va
+      # khi do PHAI go comment mount socket o duoi.
+      ANALYSIS_RUNNER: ${ANALYSIS_RUNNER:-disabled}
+      ANALYZER_JAVA_IMAGE: ${ANALYZER_JAVA_IMAGE:-evidence/analyzer-java:latest}
+      ANALYZER_SEMGREP_IMAGE: ${ANALYZER_SEMGREP_IMAGE:-evidence/analyzer-semgrep:latest}
+      SANDBOX_TIMEOUT: ${SANDBOX_TIMEOUT:-PT15M}
     ports:
       - "${CORE_BACKEND_PORT:-8080}:8080"
+    # ==========================================================================================
+    # MOUNT DOCKER SOCKET = CAP QUYEN ROOT TREN MAY CHU cho core-backend.
+    #
+    # Ai goi duoc socket nay deu co the chay mot container voi `--privileged -v /:/host`, tuc la
+    # doc/ghi toan bo filesystem cua host. Do KHONG phai leo thang dac quyen do loi cau hinh — do
+    # la thiet ke cua Docker API.
+    #
+    # Vi vay dong duoi day de COMMENT: bat sandbox la mot quyet dinh van hanh co y thuc, khong
+    # phai thu bat duoc bang cach doi mot bien moi truong. Xem muc "Rui ro con lai" cua ADR 0008:
+    # container KHONG phai ranh gioi bao mat truoc lo hong kernel, va he thong nay chi nhan repo
+    # tu nguoi dung DA XAC THUC.
+    #
+    # volumes:
+    #   - /var/run/docker.sock:/var/run/docker.sock
+    # ==========================================================================================
     depends_on:
       postgres:
         condition: service_healthy

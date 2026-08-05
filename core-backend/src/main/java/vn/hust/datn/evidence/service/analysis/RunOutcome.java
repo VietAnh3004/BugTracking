@@ -24,17 +24,28 @@ public record RunOutcome(
         String cleanAckNote,
         String errorMessage,
         MaterializationResult result,
-        Map<String, String> toolVersions) {
+        Map<String, String> toolVersions,
+        SandboxInfo sandbox) {
 
     public static RunOutcome succeeded(MaterializationResult result, Map<String, String> toolVersions) {
-        return new RunOutcome(AnalysisRunStatus.SUCCEEDED, null, null, result, toolVersions);
+        return new RunOutcome(AnalysisRunStatus.SUCCEEDED, null, null, result, toolVersions, null);
     }
 
     public static RunOutcome clean(String cleanAckNote, MaterializationResult result, Map<String, String> toolVersions) {
-        return new RunOutcome(AnalysisRunStatus.SUCCEEDED_CLEAN, cleanAckNote, null, result, toolVersions);
+        return new RunOutcome(AnalysisRunStatus.SUCCEEDED_CLEAN, cleanAckNote, null, result, toolVersions, null);
     }
 
     public static RunOutcome failed(String errorMessage, MaterializationResult result, Map<String, String> toolVersions) {
-        return new RunOutcome(AnalysisRunStatus.FAILED, null, errorMessage, result, toolVersions);
+        return new RunOutcome(AnalysisRunStatus.FAILED, null, errorMessage, result, toolVersions, null);
+    }
+
+    /**
+     * Gắn dấu vết sandbox vào một kết cục ĐÃ quyết định xong, giữ nguyên mọi thứ khác.
+     *
+     * <p>Tách khỏi các factory ở trên để giữ nguyên thứ tự "quyết định trạng thái trước, ghi sau":
+     * dấu vết sandbox là dữ liệu đi kèm, không được tham gia vào việc chọn trạng thái.
+     */
+    public RunOutcome withSandbox(SandboxInfo info) {
+        return new RunOutcome(status, cleanAckNote, errorMessage, result, toolVersions, info);
     }
 }

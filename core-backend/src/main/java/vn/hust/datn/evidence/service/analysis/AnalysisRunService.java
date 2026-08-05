@@ -5,15 +5,26 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import vn.hust.datn.evidence.domain.AnalysisRun;
+import vn.hust.datn.evidence.domain.ArtifactSource;
 import vn.hust.datn.evidence.domain.WarningTool;
+import vn.hust.datn.evidence.exception.SandboxUnavailableException;
 import vn.hust.datn.evidence.repository.SnapshotFileRepository;
 import vn.hust.datn.evidence.service.SnapshotQueryService;
+import vn.hust.datn.evidence.service.analysis.sandbox.AnalyzerSanityChecker;
+import vn.hust.datn.evidence.service.analysis.sandbox.SandboxRequest;
+import vn.hust.datn.evidence.service.analysis.sandbox.SandboxResult;
+import vn.hust.datn.evidence.service.analysis.sandbox.SandboxRunner;
+import vn.hust.datn.evidence.service.analysis.sandbox.SanityVerdict;
+import vn.hust.datn.evidence.service.analysis.sandbox.SourceTree;
+import vn.hust.datn.evidence.service.analysis.sandbox.SourceTreeBuilder;
 
 /**
  * Điều phối một lần phân tích: nhận dạng artifact → parse → materialize → quyết định trạng thái.
@@ -52,6 +63,10 @@ public class AnalysisRunService {
     private final SurefireArchiveReader surefireArchiveReader;
     private final EvidenceMaterializer materializer;
     private final AnalysisRunPersistenceService persistence;
+    private final SandboxRunner sandboxRunner;
+    private final SourceTreeBuilder sourceTreeBuilder;
+    private final AnalyzerSanityChecker sanityChecker;
+    private final Executor sandboxExecutor;
 
     public AnalysisRunService(
             SnapshotQueryService snapshotQueryService,
@@ -59,13 +74,100 @@ public class AnalysisRunService {
             AnalyzerRegistry registry,
             SurefireArchiveReader surefireArchiveReader,
             EvidenceMaterializer materializer,
-            AnalysisRunPersistenceService persistence) {
+            AnalysisRunPersistenceService persistence,
+            SandboxRunner sandboxRunner,
+            SourceTreeBuilder sourceTreeBuilder,
+            AnalyzerSanityChecker sanityChecker,
+            @Qualifier("sandboxExecutor") Executor sandboxExecutor) {
         this.snapshotQueryService = snapshotQueryService;
         this.snapshotFileRepository = snapshotFileRepository;
         this.registry = registry;
         this.surefireArchiveReader = surefireArchiveReader;
         this.materializer = materializer;
         this.persistence = persistence;
+        this.sandboxRunner = sandboxRunner;
+        this.sourceTreeBuilder = sourceTreeBuilder;
+        this.sanityChecker = sanityChecker;
+        this.sandboxExecutor = sandboxExecutor;
+    }
+
+    /**
+     * Chạy analyzer trong sandbox — BẤT ĐỒNG BỘ.
+     *
+     * <p>Trả về ngay một run {@code RUNNING}; FE theo dõi bằng {@code GET /analysis-runs/{id}}.
+     * Một lần phân tích thật mất vài phút, giữ HTTP connection suốt thời gian đó là cách chắc chắn
+     * để gặp timeout ở proxy/ingress mà không ai biết run vẫn đang chạy.
+     *
+     * <p>Ba phép kiểm chạy ĐỒNG BỘ, TRƯỚC khi tạo hàng nào — cùng nguyên tắc với đường nạp tay:
+     * không để lại bia mộ cho một việc còn chưa bắt đầu được.
+     *
+     * <p>Đẩy việc bằng {@code Executor} tường minh chứ KHÔNG dùng {@code @Async}: {@code @Async}
+     * chỉ có tác dụng khi lời gọi đi qua proxy Spring, nên gọi từ chính lớp này (self-invocation)
+     * sẽ chạy ĐỒNG BỘ mà không báo gì — cùng họ cạm bẫy với {@code REQUIRES_NEW} đã ghi ở
+     * {@link AnalysisRunPersistenceService}.
+     */
+    public AnalysisRun startSandboxRun(UUID snapshotId, UUID ownerId) {
+        snapshotQueryService.getReady(snapshotId, ownerId);
+        if (!sandboxRunner.isAvailable()) {
+            throw new SandboxUnavailableException(
+                    "Sandbox khong dung duoc luc nay (app.sandbox.runner hoac Docker daemon). "
+                            + "Van co the nap artifact thu cong qua POST /api/v1/snapshots/{id}/analysis-runs.");
+        }
+        // Dựng cây nguồn ĐỒNG BỘ: bốn phép từ chối của nó (không pom, không java, nhiều module,
+        // sha256 lệch) là lỗi của YÊU CẦU, phải trả 409 ngay chứ không thành một run FAILED mà
+        // người dùng phải đợi vài phút mới biết.
+        SourceTree sourceTree = sourceTreeBuilder.build(snapshotId);
+
+        AnalysisRun run = persistence.createRunning(snapshotId, ArtifactSource.DOCKER_SANDBOX);
+        UUID runId = run.getId();
+        sandboxExecutor.execute(() -> runSandboxSafely(runId, snapshotId, sourceTree));
+        return run;
+    }
+
+    /**
+     * Chạy trên luồng nền, nên KHÔNG được để ngoại lệ nào thoát ra: không ai bắt nó, và run sẽ
+     * treo mãi ở {@code RUNNING}.
+     */
+    private void runSandboxSafely(UUID runId, UUID snapshotId, SourceTree sourceTree) {
+        try {
+            SandboxResult sandboxResult =
+                    sandboxRunner.run(new SandboxRequest(runId, sourceTree.tar(), sourceTree.sourceRoot()));
+
+            SanityVerdict verdict = sanityChecker.check(sandboxResult.artifacts());
+            SandboxInfo info = new SandboxInfo(
+                    sandboxResult.imageDigest(),
+                    sourceTree.sourceRoot(),
+                    verdict.canaryOk(),
+                    verdict.canaryFindingCount(),
+                    sandboxResult.durationMs());
+
+            if (!verdict.ok()) {
+                // Bốn tầng kiểm nói KHÔNG: dừng ở đây, KHÔNG materialize. Ghi bằng chứng từ một
+                // lần chạy không đáng tin còn tệ hơn không ghi gì — nó trông y hệt dữ liệu thật.
+                persistence.finalizeRun(
+                        runId, RunOutcome.failed(shorten(verdict.reason()), null, null).withSandbox(info));
+                return;
+            }
+
+            List<DetectedArtifact> detected = detectAll(toNamedArtifacts(sandboxResult.artifacts()));
+            persistence.finalizeRun(runId, analyze(snapshotId, runId, detected).withSandbox(info));
+        } catch (RuntimeException e) {
+            log.error("Sandbox run {} hong", runId, e);
+            persistence.finalizeRun(runId, RunOutcome.failed(shorten(messageOf(e)), null, null));
+        }
+    }
+
+    private List<NamedArtifact> toNamedArtifacts(Map<String, byte[]> artifacts) {
+        List<NamedArtifact> named = new ArrayList<>();
+        artifacts.forEach((name, content) -> {
+            // Bỏ log và file phụ trợ mà analyze.sh ghi cạnh artifact: chúng không phải đầu vào của
+            // parser nào, và AnalyzerRegistry sẽ từ chối chúng (đúng, nhưng làm hỏng cả run).
+            if (name.endsWith(".log") || name.endsWith(".txt") || name.equals("effective-pom.xml")) {
+                return;
+            }
+            named.add(new NamedArtifact(name, content));
+        });
+        return named;
     }
 
     public AnalysisRun ingest(UUID snapshotId, UUID ownerId, List<NamedArtifact> artifacts) {
@@ -122,7 +224,14 @@ public class AnalysisRunService {
         for (DetectedArtifact item : detected) {
             byte[] content = item.artifact().content();
             try {
-                drafts.addAll(item.analyzer().parse(content));
+                // Loại bằng chứng của mã canary NGAY tại đây. Không chỉ vì finding_count sẽ sai:
+                // đường dẫn evidence/canary/Canary.java không có trong snapshot người dùng, nên
+                // mỗi finding canary còn cộng một điểm vào unresolved_location_count và làm bẩn
+                // chính chỉ số đo sức khoẻ chuẩn hoá đường dẫn. Với run nạp tay bộ lọc này không
+                // loại gì — ở đó không có canary.
+                item.analyzer().parse(content).stream()
+                        .filter(draft -> !AnalyzerSanityChecker.isCanaryEvidence(draft))
+                        .forEach(drafts::add);
                 String version = item.analyzer().toolVersion(content);
                 if (version != null) {
                     // JaCoCo không khai phiên bản — khoá vắng mặt là bình thường, không phải thiếu

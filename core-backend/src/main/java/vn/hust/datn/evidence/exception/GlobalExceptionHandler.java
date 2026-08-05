@@ -177,6 +177,26 @@ public class GlobalExceptionHandler {
         return problem(HttpStatus.BAD_REQUEST, "invalid-artifact", "Artifact analyzer không hợp lệ", ex.getMessage(), request);
     }
 
+    /**
+     * Cây mã nguồn không phân tích được bằng sandbox (không pom, không .java, multi-module,
+     * sha256 lệch).
+     *
+     * <p>409 chứ KHÔNG phải một {@code analysis_run} với 0 cảnh báo: một repo Gradle chạy qua
+     * sandbox Maven sẽ cho ra 0 class, 0 cảnh báo, exit 0 — trông y hệt một dự án sạch.
+     */
+    @ExceptionHandler(UnsupportedSourceTreeException.class)
+    public ProblemDetail handleUnsupportedSourceTree(UnsupportedSourceTreeException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.CONFLICT, "unsupported-source-tree", "Cây mã nguồn không phân tích được", ex.getMessage(), request);
+    }
+
+    /** Sandbox tắt hoặc Docker daemon không trả lời — trạng thái tạm thời của hạ tầng, không phải lỗi code. */
+    @ExceptionHandler(SandboxUnavailableException.class)
+    public ProblemDetail handleSandboxUnavailable(SandboxUnavailableException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.SERVICE_UNAVAILABLE, "sandbox-unavailable", "Sandbox không dùng được", ex.getMessage(), request);
+    }
+
     /** Snapshot đang giải nén hoặc đã FAILED — cây file rỗng lúc này vô nghĩa. */
     @ExceptionHandler(SnapshotNotReadyException.class)
     public ProblemDetail handleSnapshotNotReady(SnapshotNotReadyException ex, HttpServletRequest request) {

@@ -257,6 +257,34 @@
         }
       }
     },
+    "/api/v1/snapshots/{snapshotId}/analysis-runs/sandbox" : {
+      "post" : {
+        "tags" : [ "analysis-runs" ],
+        "summary" : "Chạy analyzer trong Docker sandbox trên mã nguồn đã upload",
+        "operationId" : "runInSandbox",
+        "parameters" : [ {
+          "name" : "snapshotId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnalysisRunResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects" : {
       "get" : {
         "tags" : [ "projects" ],

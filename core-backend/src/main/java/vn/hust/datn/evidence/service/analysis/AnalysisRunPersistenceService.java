@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import vn.hust.datn.evidence.domain.AnalysisRun;
 import vn.hust.datn.evidence.domain.AnalysisRunStatus;
+import vn.hust.datn.evidence.domain.ArtifactSource;
 import vn.hust.datn.evidence.repository.AnalysisRunRepository;
 
 /**
@@ -39,9 +40,15 @@ public class AnalysisRunPersistenceService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public AnalysisRun createRunning(UUID snapshotId) {
+        return createRunning(snapshotId, ArtifactSource.MANUAL_UPLOAD);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public AnalysisRun createRunning(UUID snapshotId, ArtifactSource artifactSource) {
         AnalysisRun run = new AnalysisRun();
         run.setSnapshotId(snapshotId);
         run.setStatus(AnalysisRunStatus.RUNNING);
+        run.setArtifactSource(artifactSource);
         run.setStartedAt(OffsetDateTime.now());
         return analysisRunRepository.saveAndFlush(run);
     }
@@ -73,6 +80,16 @@ public class AnalysisRunPersistenceService {
         }
         if (outcome.toolVersions() != null && !outcome.toolVersions().isEmpty()) {
             run.setToolVersions(new LinkedHashMap<String, Object>(outcome.toolVersions()));
+        }
+        SandboxInfo sandbox = outcome.sandbox();
+        if (sandbox != null) {
+            run.setAnalyzerImageDigest(sandbox.imageDigest());
+            run.setSourceRoot(sandbox.sourceRoot());
+            // ck_run_sandbox_needs_canary đòi TRUE cho run SUCCEEDED sinh từ sandbox — ghi ở đây
+            // chứ không suy ở tầng nào khác, để chỉ có MỘT chỗ quyết định giá trị này.
+            run.setCanaryOk(sandbox.canaryOk());
+            run.setCanaryFindingCount(sandbox.canaryFindingCount());
+            run.setSandboxDurationMs(sandbox.durationMs());
         }
         return run;
     }

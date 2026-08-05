@@ -26,7 +26,7 @@
 | **Tuần 3** — Unified Evidence Model | ✅ Xong (xem §D2) |
 | **Tuần 4** — API contract + OpenAPI | ✅ Xong (xem §E2) |
 | **Tuần 5-7** — core backend CRUD + JWT auth + frontend routing | ✅ Xong (xem §G) |
-| **Tuần 8-9** — parser analyzer → Evidence Store + Docker sandbox | 🔄 Đang làm: A, B, C xong; còn D (xem §H) |
+| **Tuần 8-9** — parser analyzer → Evidence Store + Docker sandbox | ✅ Xong: A, B, C, D (xem §H) |
 
 ### §G — Tuần 5-7: tiến độ chi tiết (đã xong)
 
@@ -148,7 +148,7 @@ Xem `git log --oneline -10` để biết commit cụ thể đã xong; message gh
 
 ---
 
-### §H — Tuần 8-9: tiến độ chi tiết (đang làm)
+### §H — Tuần 8-9: tiến độ chi tiết (đã xong)
 
 Kế hoạch thực thi đầy đủ ở `C:\Users\Admin\.claude\plans\ti-p-t-c-i-nh-calm-pony.md`. Bốn giai
 đoạn A→D; **sandbox xếp CUỐI có chủ đích** vì nó rủi ro nhất mà lại không phải đóng góp của luận
@@ -175,8 +175,8 @@ văn — nếu nó trượt, mọi thứ khác vẫn xong và vẫn demo đượ
 | D3 | V6: cột sandbox + ràng buộc canary cho `analysis_run` | ✅ Xong |
 | D4 | Cổng `SandboxRunner` + dựng cây mã nguồn thành tar | ✅ Xong |
 | D5 | Kiểm tính tỉnh táo của analyzer + canary (phía backend) | ✅ Xong |
-| D6 | `DockerSandboxRunner` trên `docker-java` | ⬜ Chưa |
-| D7 | Điều phối chạy phân tích bất đồng bộ + gắn Docker socket | ⬜ Chưa |
+| D6 | `DockerSandboxRunner` trên `docker-java` | ✅ Xong |
+| D7 | Điều phối chạy phân tích bất đồng bộ + gắn Docker socket | ✅ Xong |
 
 Sau A: **216 test xanh**, 4 parser đọc được đủ 4 artifact thật, 75 dòng provenance cho 7 bảng khớp
 hai chiều với SQL.
@@ -284,11 +284,27 @@ sửa test trong cùng commit với migration. Không đỏ: `ck_run_sandbox_nee
 `DOCKER_SANDBOX`, và `artifact_source` mặc định `MANUAL_UPLOAD`, nên mọi hàng có sẵn từ trước V6
 vẫn hợp lệ. Đã thêm một test canh đúng điều đó thay vì sửa test cũ.
 
-**Còn lại của giai đoạn D** (D4-D7): cổng `SandboxRunner` + dựng cây mã nguồn thành tar · kiểm
-tính tỉnh táo phía backend (bốn tầng, hiện mới có bản shell trong `check_sandbox_output.py`) ·
-`DockerSandboxRunner` trên `docker-java` · điều phối bất đồng bộ + gắn Docker socket vào
-`docker-compose`. Cơ chế cp-vào/cp-ra và toàn bộ số liệu đã được kiểm chứng bằng `build.sh`, nên
-D6 là chuyển ngữ chứ không phải khám phá.
+**Ba lỗi mà chỉ test chạy container thật bắt được** (D6) — cả ba đều lọt qua toàn bộ unit test:
+
+1. **Tar thiếu entry thư mục.** Không có chúng thì `copyArchiveToContainer` để Docker tự tạo thư
+   mục trung gian, và Docker tạo chúng thuộc về **root**; container non-root không tạo được
+   `target/` và Maven chết với *"Cannot create resource output directory"*. Phép kiểm "tar có đủ
+   file không" **vẫn xanh** suốt thời gian lỗi tồn tại: danh sách file đúng, chỉ thiếu thứ không
+   ai nghĩ tới.
+2. **tmpfs mặc định của Docker thuộc root với mode 0755**, nên container non-root không ghi được
+   vào chính thư mục vừa được mount cho nó. Phải khai `mode=1777`, và phải khai cho HOME của **cả
+   hai** image.
+3. **Tôi tự làm một lỗ hổng đúng loại đang chống.** Semgrep trả exit code khác 0 khi *có* finding
+   nên tôi nới lỏng exit code cho nó — và lần nới lỏng đó nuốt luôn một lần Semgrep **crash** vì
+   `--read-only`. Cả pipeline "thành công" với đủ artifact của SpotBugs, chỉ thiếu `semgrep.sarif`.
+   Bài học chung: **mỗi lần nới lỏng một phép kiểm phải bù bằng một phép kiểm khác**, không được
+   bỏ trống.
+
+**Kết thúc giai đoạn D**: `POST /api/v1/snapshots/{id}/analysis-runs/sandbox` trả 202 kèm run
+`RUNNING`; FE theo dõi qua `GET /analysis-runs/{id}`. Sandbox **tắt mặc định** và mount Docker
+socket để **comment** trong `docker-compose.yml` — bật sandbox là một quyết định vận hành có ý
+thức, không phải thứ bật được bằng cách đổi một biến môi trường, vì mount socket đó tương đương
+cấp quyền root trên máy chủ.
 
 #### Sai lệch có chủ đích ở giai đoạn B-C
 

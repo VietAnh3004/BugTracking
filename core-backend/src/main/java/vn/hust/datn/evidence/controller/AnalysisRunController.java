@@ -111,6 +111,26 @@ public class AnalysisRunController {
                 .body(analysisRunMapper.toResponse(run));
     }
 
+    /**
+     * Chạy analyzer trong sandbox — BẤT ĐỒNG BỘ, trả 202 kèm run {@code RUNNING}.
+     *
+     * <p>202 chứ không phải 201: công việc mới được CHẤP NHẬN chứ chưa xong. FE theo dõi bằng
+     * {@code GET /analysis-runs/{id}} (polling 2 giây) — endpoint đó cố ý đọc được cả run
+     * {@code RUNNING} lẫn {@code FAILED}.
+     *
+     * <p>503 khi sandbox tắt hoặc daemon không trả lời, 409 khi cây mã nguồn không phân tích được
+     * — cả hai ném TRƯỚC khi tạo hàng nào.
+     */
+    @PostMapping("/snapshots/{snapshotId}/analysis-runs/sandbox")
+    @Operation(summary = "Chạy analyzer trong Docker sandbox trên mã nguồn đã upload")
+    public ResponseEntity<AnalysisRunResponse> runInSandbox(
+            @PathVariable UUID snapshotId, @AuthenticationPrincipal CurrentUser currentUser) {
+        AnalysisRun run = analysisRunService.startSandboxRun(snapshotId, currentUser.id());
+        return ResponseEntity.accepted()
+                .location(URI.create("/api/v1/analysis-runs/" + run.getId()))
+                .body(analysisRunMapper.toResponse(run));
+    }
+
     private List<NamedArtifact> toNamedArtifacts(List<MultipartFile> files) {
         List<NamedArtifact> artifacts = new ArrayList<>(files.size());
         for (MultipartFile file : files) {
