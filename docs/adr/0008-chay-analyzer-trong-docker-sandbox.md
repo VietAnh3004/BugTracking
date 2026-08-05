@@ -83,13 +83,40 @@ Spike cũng cho một bằng chứng cụ thể rằng bốn tầng không thừ
 cả tầng 2 lẫn tầng 3** (canary nằm trong image nên không phụ thuộc classpath của người dùng), chỉ
 tầng 1 bắt được — và chỉ bắt được nếu tầng 1 bao gồm cả lệnh chuẩn bị, không chỉ lệnh analyzer.
 
+### 4bis. HAI PHA: `resolve` có mạng, `analyze` không mạng
+
+Kế hoạch ban đầu ghi `--network=none` cho mọi thứ kèm `mvn -o`. **Điều đó không sống sót khi viết
+image**: Maven offline chỉ chạy được nếu MỌI plugin và phụ thuộc của repo người dùng đã nằm sẵn
+trong seed. Với một repo bất kỳ điều đó là bất khả — và hậu quả không phải "chậm" mà là *không
+chạy được gì cả*.
+
+Chia làm hai lần chạy container, với hai mức đặc quyền khác nhau:
+
+| Pha | Mạng | Chạy gì | Vì sao mức này chấp nhận được |
+|---|---|---|---|
+| `resolve` | **Có** | `mvn -B dependency:go-offline` + `dependency:build-classpath` | Chỉ phân giải phụ thuộc; KHÔNG chạy vòng đời build của người dùng, nên không thực thi test hay plugin ở phase `validate` |
+| `analyze` | **`--network=none`** | `mvn -o test` (Surefire + JaCoCo) → SpotBugs CLI → Semgrep | Đây mới là pha thực thi mã của người lạ, và nó bị cắt mạng hoàn toàn |
+
+Ranh giới quan trọng: **pha nguy hiểm là pha không có mạng**. `mvn test` chạy code trong repo, nên
+nó không bao giờ được nói chuyện ra ngoài. Pha `resolve` có mạng nhưng chỉ đọc pom và tải jar.
+
+Đây không phải là chỗ hở tuyệt đối — một pom độc hại vẫn có thể khai `<extensions>` để Maven nạp
+code lúc phân giải. Nhưng khoảng cách giữa "nạp extension lúc resolve" và "chạy toàn bộ test suite"
+là rất lớn, và mọi biện pháp ở mục 5 (non-root, cap-drop, pids-limit, read-only) vẫn áp cho **cả
+hai** pha.
+
+Seed `.m2` chỉ đọc trong image vẫn giữ nguyên tác dụng: nó làm pha `resolve` gần như tức thời cho
+dự án Spring Boot điển hình, và là **phương án dự phòng** khi máy chủ không có mạng ra ngoài —
+khi đó repo trùng seed vẫn phân tích được, repo khác thì `resolve` hỏng và run `FAILED` **kèm lý
+do đọc được**, không phải một lần quét thiếu phụ thuộc trông như thành công.
+
 ### 5. Bảo mật — nói thẳng
 
 Áp **tất cả**, không chọn lọc:
 
 | Biện pháp | Chặn cái gì |
 |---|---|
-| `--network=none` + `mvn -o` | Rò dữ liệu ra ngoài, tải payload về |
+| `--network=none` + `mvn -o` **ở pha `analyze`** (xem 4bis) | Rò dữ liệu ra ngoài, tải payload về |
 | non-root + `--cap-drop=ALL` + `no-new-privileges` | Leo thang đặc quyền trong container |
 | `--pids-limit=512` | Fork bomb — **timeout không chặn được vì máy chết trước** |
 | `--memory=2g` **kèm `--memory-swap` bằng nhau** | Quên `--memory-swap` là swap không giới hạn |

@@ -80,6 +80,30 @@ docker tag  mirror.gcr.io/pgvector/pgvector:pg16 pgvector/pgvector:pg16
 
 **Mount Docker từ Git Bash**: cần `MSYS_NO_PATHCONV=1` và đường dẫn dạng `//d/study/...`.
 
+**Git Bash + Docker có HAI cái bẫy đường dẫn NGƯỢC CHIỀU nhau — chỉ tắt path conversion là hỏng
+cái còn lại.** Đường dẫn **trong container** (`/work`, `name:/work/src`) bị MSYS biến thành
+`C:/Program Files/Git/work` nên cần `MSYS_NO_PATHCONV=1`; nhưng đường dẫn **trên host** (build
+context, nguồn của `docker cp`) ở dạng `/d/study/...` thì daemon Windows không hiểu và báo
+`unable to prepare context: path "/d/study/..." not found`. Cách dùng được: bật `MSYS_NO_PATHCONV`
+cho mọi lệnh docker **và** chuyển tay mọi đường dẫn host bằng `cygpath -m`. Xem
+`infra/analyzer/build.sh`.
+
+**`docker cp <thư mục>` gán quyền ROOT cho file chép vào, kể cả khi container chạy non-root.**
+Triệu chứng gặp thật: Maven trong container chết với
+`Cannot create resource output directory: /work/src/target/classes` — một lỗi *về trình biên dịch*,
+không hề nhắc tới quyền, nên rất dễ đi sửa nhầm chỗ. Cách đúng: tự dựng tar mang uid/gid của user
+trong image rồi đưa qua stdin (`docker cp -` giữ nguyên uid/gid trong tar):
+`tar --owner=10001 --group=10001 --numeric-owner -cf - -C "$W" src | docker cp - "$c:/work"`.
+Đích phải là thư mục **đã tồn tại**, nên tar mang sẵn tiền tố `src/`.
+
+**`mvn dependency:go-offline` KHÔNG kéo provider của Surefire.** Surefire phân giải
+`surefire-junit-platform` *lúc chạy*, sau khi dò được khung test đang dùng, nên nó không nằm trong
+đồ thị phụ thuộc mà `go-offline` biết — và nó còn kéo tiếp `junit-platform-launcher`. Hậu quả khi
+chạy offline: mất **toàn bộ** test + độ phủ, trong khi SpotBugs vẫn chạy xong và script vẫn exit 0.
+`mvn test -Dtest=<lớp không tồn tại>` **không** ép được nó phân giải (thoát trước bước đó). Cách
+dùng được: đọc phiên bản từ `help:effective-pom` rồi `dependency:get` thẳng. Xem
+`infra/analyzer/java/analyze.sh`.
+
 **Testcontainers (core-backend) không tự kết nối được Docker Desktop trên máy này.** Cả named
 pipe mặc định lẫn `docker info` qua CLI đều OK, nhưng `docker-java` (thư viện Testcontainers dùng)
 nhận về `BadRequestException 400` với body rỗng — lỗi tương thích giữa Testcontainers 1.21.0 và
