@@ -68,13 +68,35 @@ class SourceTreeBuilderTest extends AbstractIntegrationTest {
 
         assertThat(tree.sourceRoot()).isEqualTo("repo");
         assertThat(tree.fileCount()).isEqualTo(4);
-        assertThat(entriesOf(tree.tar()))
-                .extracting(TarArchiveEntry::getName)
+        assertThat(entriesOf(tree.tar()).stream()
+                        .filter(entry -> !entry.isDirectory())
+                        .map(TarArchiveEntry::getName))
                 .containsExactlyInAnyOrder(
                         "repo/pom.xml",
                         "repo/README.md",
                         "repo/src/main/java/vn/hust/App.java",
                         "repo/src/test/java/vn/hust/AppTest.java");
+    }
+
+    /**
+     * Hồi quy cho một lỗi mà CHỈ test chạy container thật bắt được ({@code DockerSandboxRunnerTest}).
+     *
+     * <p>Tar chỉ có entry file thì {@code copyArchiveToContainer} để Docker tự tạo các thư mục
+     * trung gian, và Docker tạo chúng thuộc về ROOT. Container non-root sau đó không tạo được
+     * {@code target/} và Maven chết với {@code Cannot create resource output directory}.
+     *
+     * <p>Đáng ghi nhớ: phép kiểm "tar có đủ file không" vẫn XANH trong suốt thời gian lỗi này tồn
+     * tại — danh sách file đúng, chỉ thiếu thứ không ai nghĩ tới.
+     */
+    @Test
+    void build_coEntryThuMucChoMoiCapCha_voiCungUid() throws Exception {
+        List<TarArchiveEntry> entries = entriesOf(builder.build(snapshotOf(duAnMauMotModule()).getId()).tar());
+
+        assertThat(entries.stream().filter(TarArchiveEntry::isDirectory).map(TarArchiveEntry::getName))
+                .contains("repo/", "repo/src/", "repo/src/main/", "repo/src/main/java/", "repo/src/main/java/vn/");
+        assertThat(entries).allSatisfy(entry -> assertThat(entry.getLongUserId())
+                .as(entry.getName())
+                .isEqualTo(10001L));
     }
 
     /**

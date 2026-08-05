@@ -23,6 +23,9 @@
     <spotless.version>2.44.4</spotless.version>
     <minio.version>8.5.17</minio.version>
     <commons-compress.version>1.27.1</commons-compress.version>
+    <commons-io.version>2.18.0</commons-io.version>
+    <!-- Phải khớp phiên bản Testcontainers ${testcontainers.version} kéo về — xem chú thích ở dependency. -->
+    <docker-java.version>3.4.2</docker-java.version>
     <!-- Ghi đè bản Testcontainers mà Spring Boot 3.5.0 quản lý (1.21.0): bản đó không đọc được
          response /info của Docker Desktop 29.x trên Windows named pipe lẫn TCP (BadRequestException
          400 với body rỗng bất kể transport) — lỗi tương thích docker-java, không phải cấu hình sai. -->
@@ -76,6 +79,29 @@
     </dependency>
 
     <!--
+        Điều khiển Docker daemon để chạy analyzer trong sandbox (ADR 0008).
+
+        GHIM ĐÚNG phiên bản mà Testcontainers 1.21.4 kéo về (3.4.2), không để Spring Boot hay
+        Testcontainers tự quyết: máy phát triển này đã có sẹo với đúng cặp thư viện đó —
+        Testcontainers 1.21.0 (docker-java cũ hơn) nhận BadRequestException 400 với body rỗng từ
+        Docker Desktop 29.x. Ghim ở một chỗ để test tích hợp và mã production KHÔNG BAO GIỜ chạy
+        trên hai phiên bản khác nhau; nếu lệch, một bên xanh còn bên kia hỏng ở môi trường thật.
+
+        transport-zerodep: không kéo theo Netty/Apache HttpClient, và là transport mà
+        Testcontainers dùng — tức là transport đã được kiểm chứng trên máy này.
+    -->
+    <dependency>
+      <groupId>com.github.docker-java</groupId>
+      <artifactId>docker-java-core</artifactId>
+      <version>${docker-java.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.docker-java</groupId>
+      <artifactId>docker-java-transport-zerodep</artifactId>
+      <version>${docker-java.version}</version>
+    </dependency>
+
+    <!--
         Dựng tar để đẩy cây mã nguồn vào container sandbox (ADR 0008: không bind mount).
 
         KHÔNG tự viết một bộ ghi tar tối giản: định dạng ustar giới hạn tên 100 ký tự và cắt âm
@@ -86,6 +112,17 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
       <version>${commons-compress.version}</version>
+    </dependency>
+    <!--
+        Nâng commons-io lên tường minh: một phụ thuộc khác kéo về 2.13.0, mà commons-compress
+        1.27 gọi FileTimes.toUnixTime(FileTime) chỉ có từ 2.16. Hậu quả là NoSuchMethodError LÚC
+        CHẠY, không phải lúc biên dịch — và chỉ nổ ở đúng nhánh code chạm tới thời gian của entry
+        tar, nên hoàn toàn có thể lọt qua một phần bộ test rồi mới lộ ra.
+    -->
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>${commons-io.version}</version>
     </dependency>
 
     <!-- Migration: schema chỉ thay đổi qua Flyway, ddl-auto luôn là 'validate'. -->

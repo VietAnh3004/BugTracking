@@ -8,7 +8,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -176,6 +178,7 @@ public class SourceTreeBuilder {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         int packed = 0;
         long totalBytes = 0;
+        Set<String> writtenDirs = new HashSet<>();
 
         try (TarArchiveOutputStream tar = new TarArchiveOutputStream(buffer)) {
             // PAX cho tên dài: ustar cắt tên ở 100 ký tự và cắt ÂM THẦM, mà đường dẫn kiểu
@@ -199,7 +202,10 @@ public class SourceTreeBuilder {
                                     .formatted(limits.maxUncompressedBytes()));
                 }
 
-                TarArchiveEntry entry = new TarArchiveEntry(TAR_PREFIX + "/" + file.getPath());
+                String entryName = TAR_PREFIX + "/" + file.getPath();
+                writeParentDirs(tar, entryName, writtenDirs);
+
+                TarArchiveEntry entry = new TarArchiveEntry(entryName);
                 entry.setSize(content.length);
                 entry.setMode(0_644);
                 // uid/gid CỦA USER TRONG IMAGE — xem Javadoc lớp.
@@ -217,6 +223,34 @@ public class SourceTreeBuilder {
         String sourceRoot = sourceRootDir.isEmpty() ? TAR_PREFIX : TAR_PREFIX + "/" + sourceRootDir;
         log.info("Dong goi {} file ({} byte) cho sandbox, goc du an = {}", packed, totalBytes, sourceRoot);
         return new SourceTree(buffer.toByteArray(), sourceRoot, packed, totalBytes);
+    }
+
+    /**
+     * Ghi entry THƯ MỤC cho mọi cấp cha, với đúng uid/gid của user trong image.
+     *
+     * <p>Bắt buộc, không phải cho gọn: tar chỉ có entry file thì {@code copyArchiveToContainer}
+     * để Docker tự tạo các thư mục trung gian, và Docker tạo chúng thuộc về <b>root</b>. Container
+     * non-root sau đó không tạo được {@code target/} và Maven chết với
+     * {@code Cannot create resource output directory} — một lỗi <i>về trình biên dịch</i>.
+     *
+     * <p>Đây là biến thể thứ hai của cùng cạm bẫy đã vấp ở D2, và <b>unit test không bắt được</b>:
+     * kiểm tra danh sách entry trong tar vẫn xanh vì các file đều có mặt. Chỉ test chạy container
+     * thật mới lộ ra.
+     */
+    private void writeParentDirs(TarArchiveOutputStream tar, String entryName, Set<String> written) throws IOException {
+        int slash = entryName.indexOf('/');
+        while (slash >= 0) {
+            String dir = entryName.substring(0, slash);
+            if (written.add(dir)) {
+                TarArchiveEntry entry = new TarArchiveEntry(dir + "/");
+                entry.setMode(0_755);
+                entry.setUserId(ANALYZER_UID);
+                entry.setGroupId(ANALYZER_UID);
+                tar.putArchiveEntry(entry);
+                tar.closeArchiveEntry();
+            }
+            slash = entryName.indexOf('/', slash + 1);
+        }
     }
 
     /**

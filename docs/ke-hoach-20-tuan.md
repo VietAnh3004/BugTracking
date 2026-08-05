@@ -173,8 +173,8 @@ văn — nếu nó trượt, mọi thứ khác vẫn xong và vẫn demo đượ
 | D1 | Spike SpotBugs CLI + **ADR 0008** | ✅ Xong |
 | D2 | Hai image analyzer + script dựng-và-đối-chiếu | ✅ Xong |
 | D3 | V6: cột sandbox + ràng buộc canary cho `analysis_run` | ✅ Xong |
-| D4 | Cổng `SandboxRunner` + dựng cây mã nguồn thành tar | ⬜ Chưa |
-| D5 | Kiểm tính tỉnh táo của analyzer + canary (phía backend) | ⬜ Chưa |
+| D4 | Cổng `SandboxRunner` + dựng cây mã nguồn thành tar | ✅ Xong |
+| D5 | Kiểm tính tỉnh táo của analyzer + canary (phía backend) | ✅ Xong |
 | D6 | `DockerSandboxRunner` trên `docker-java` | ⬜ Chưa |
 | D7 | Điều phối chạy phân tích bất đồng bộ + gắn Docker socket | ⬜ Chưa |
 
