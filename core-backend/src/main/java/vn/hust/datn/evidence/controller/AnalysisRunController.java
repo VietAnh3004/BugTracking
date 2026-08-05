@@ -6,9 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,8 +20,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import vn.hust.datn.evidence.config.security.CurrentUser;
 import vn.hust.datn.evidence.domain.AnalysisRun;
+import vn.hust.datn.evidence.domain.WarningSeverity;
+import vn.hust.datn.evidence.domain.WarningTool;
 import vn.hust.datn.evidence.dto.AnalysisRunResponse;
+import vn.hust.datn.evidence.dto.PageResponse;
+import vn.hust.datn.evidence.dto.WarningView;
 import vn.hust.datn.evidence.mapper.AnalysisRunMapper;
+import vn.hust.datn.evidence.service.analysis.AnalysisRunQueryService;
 import vn.hust.datn.evidence.service.analysis.AnalysisRunService;
 import vn.hust.datn.evidence.service.analysis.InvalidArtifactException;
 import vn.hust.datn.evidence.service.analysis.NamedArtifact;
@@ -42,7 +49,44 @@ import lombok.RequiredArgsConstructor;
 public class AnalysisRunController {
 
     private final AnalysisRunService analysisRunService;
+    private final AnalysisRunQueryService analysisRunQueryService;
     private final AnalysisRunMapper analysisRunMapper;
+
+    @GetMapping("/snapshots/{snapshotId}/analysis-runs")
+    @Operation(summary = "Các lần phân tích của một snapshot, mới nhất trước")
+    public PageResponse<AnalysisRunResponse> listBySnapshot(
+            @PathVariable UUID snapshotId, Pageable pageable, @AuthenticationPrincipal CurrentUser currentUser) {
+        return PageResponse.from(analysisRunQueryService
+                .listBySnapshot(snapshotId, currentUser.id(), pageable)
+                .map(analysisRunMapper::toResponse));
+    }
+
+    /** Đọc được cả run {@code RUNNING}/{@code FAILED} — đây chính là chỗ FE lấy lý do hỏng. */
+    @GetMapping("/analysis-runs/{runId}")
+    @Operation(summary = "Một lần phân tích, kể cả khi đang chạy hoặc đã hỏng")
+    public AnalysisRunResponse get(@PathVariable UUID runId, @AuthenticationPrincipal CurrentUser currentUser) {
+        return analysisRunMapper.toResponse(analysisRunQueryService.get(runId, currentUser.id()));
+    }
+
+    /**
+     * Danh sách cảnh báo, đã sắp theo mức nghiêm trọng ở tầng SQL.
+     *
+     * <p>KHÔNG nhận tham số {@code sort}: thứ tự cố định theo {@code warning.severity_rank}. Cho
+     * client tự sort sẽ mở lại đúng cái bẫy mà cột generated đó sinh ra để chặn —
+     * {@code severity_normalized} là TEXT nên sắp chữ cái ra HIGH, INFO, LOW, MEDIUM.
+     */
+    @GetMapping("/analysis-runs/{runId}/warnings")
+    @Operation(summary = "Cảnh báo tĩnh của một lần phân tích, sắp theo mức nghiêm trọng")
+    public PageResponse<WarningView> listWarnings(
+            @PathVariable UUID runId,
+            @RequestParam(required = false) WarningTool tool,
+            @RequestParam(required = false) WarningSeverity severity,
+            @RequestParam(required = false) String filePath,
+            Pageable pageable,
+            @AuthenticationPrincipal CurrentUser currentUser) {
+        return PageResponse.from(
+                analysisRunQueryService.listWarnings(runId, currentUser.id(), tool, severity, filePath, pageable));
+    }
 
     /**
      * MỘT trường lặp {@code artifacts} thay vì bốn trường có tên (spotbugs/semgrep/surefire/jacoco).

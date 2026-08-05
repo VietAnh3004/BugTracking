@@ -91,7 +91,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Các lần phân tích của một snapshot, mới nhất trước */
+        get: operations["listBySnapshot"];
         put?: never;
         /** Nạp artifact analyzer và tạo một lần phân tích */
         post: operations["ingest"];
@@ -269,6 +270,40 @@ export interface paths {
             cookie?: never;
         };
         get: operations["me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis-runs/{runId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Một lần phân tích, kể cả khi đang chạy hoặc đã hỏng */
+        get: operations["get_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis-runs/{runId}/warnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cảnh báo tĩnh của một lần phân tích, sắp theo mức nghiêm trọng */
+        get: operations["listWarnings"];
         put?: never;
         post?: never;
         delete?: never;
@@ -509,6 +544,15 @@ export interface components {
             size?: number;
             sort?: string[];
         };
+        PageResponseAnalysisRunResponse: {
+            items: components["schemas"]["AnalysisRunResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            total: number;
+        };
         PageResponseProjectResponse: {
             items: components["schemas"]["ProjectResponse"][];
             /** Format: int32 */
@@ -526,6 +570,39 @@ export interface components {
             size: number;
             /** Format: int64 */
             total: number;
+        };
+        PageResponseWarningView: {
+            items: components["schemas"]["WarningView"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            total: number;
+        };
+        WarningView: {
+            /** Format: uuid */
+            evidenceId: string;
+            shortId: string;
+            /** Format: uuid */
+            analysisRunId: string;
+            /** @description NULL khi không đối chiếu được với snapshot — cảnh báo vẫn hợp lệ, chỉ là không bấm được */
+            filePath?: string;
+            /** Format: int32 */
+            startLine?: number;
+            /** Format: int32 */
+            endLine?: number;
+            symbol?: string;
+            summary: string;
+            /** @enum {string} */
+            tool: "spotbugs" | "semgrep";
+            ruleId: string;
+            ruleIdNormalized: string;
+            severityRaw?: string;
+            /** @enum {string} */
+            severityNormalized: "HIGH" | "MEDIUM" | "LOW" | "INFO";
+            /** @description false khi tool không tự đánh dấu vị trí chính và parser phải tự chọn */
+            hasPrimaryLocation: boolean;
         };
     };
     responses: never;
@@ -652,6 +729,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ItemsResult"];
+                };
+            };
+        };
+    };
+    listBySnapshot: {
+        parameters: {
+            query: {
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path: {
+                snapshotId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseAnalysisRunResponse"];
                 };
             };
         };
@@ -991,6 +1092,55 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    get_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnalysisRunResponse"];
+                };
+            };
+        };
+    };
+    listWarnings: {
+        parameters: {
+            query: {
+                tool?: "spotbugs" | "semgrep";
+                severity?: "HIGH" | "MEDIUM" | "LOW" | "INFO";
+                filePath?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseWarningView"];
                 };
             };
         };

@@ -5,6 +5,8 @@ import java.util.UUID;
 import vn.hust.datn.evidence.domain.WarningSeverity;
 import vn.hust.datn.evidence.domain.WarningTool;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * Read model phẳng cho {@code warning} — sinh bằng JPQL constructor projection, KHÔNG bằng
  * MapStruct từ entity {@code Warning}.
@@ -18,17 +20,23 @@ import vn.hust.datn.evidence.domain.WarningTool;
  * expression sạch được. Endpoint detail cần nó thì query riêng.
  */
 public record WarningView(
-        UUID evidenceId,
-        String shortId,
-        UUID analysisRunId,
-        String filePath,
-        Integer startLine,
-        Integer endLine,
-        String symbol,
-        String summary,
-        WarningTool tool,
-        String ruleId,
-        String ruleIdNormalized,
-        String severityRaw,
-        WarningSeverity severityNormalized,
-        boolean hasPrimaryLocation) {}
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID evidenceId,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String shortId,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID analysisRunId,
+        @Schema(
+                        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+                        description = "NULL khi không đối chiếu được với snapshot — cảnh báo vẫn hợp lệ, chỉ là không bấm được")
+                String filePath,
+        @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) Integer startLine,
+        @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) Integer endLine,
+        @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) String symbol,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String summary,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) WarningTool tool,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String ruleId,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String ruleIdNormalized,
+        @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) String severityRaw,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) WarningSeverity severityNormalized,
+        @Schema(
+                        requiredMode = Schema.RequiredMode.REQUIRED,
+                        description = "false khi tool không tự đánh dấu vị trí chính và parser phải tự chọn")
+                boolean hasPrimaryLocation) {}

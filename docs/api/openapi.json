@@ -178,6 +178,39 @@
       }
     },
     "/api/v1/snapshots/{snapshotId}/analysis-runs" : {
+      "get" : {
+        "tags" : [ "analysis-runs" ],
+        "summary" : "Các lần phân tích của một snapshot, mới nhất trước",
+        "operationId" : "listBySnapshot",
+        "parameters" : [ {
+          "name" : "snapshotId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "pageable",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/Pageable"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponseAnalysisRunResponse"
+                }
+              }
+            }
+          }
+        }
+      },
       "post" : {
         "tags" : [ "analysis-runs" ],
         "summary" : "Nạp artifact analyzer và tạo một lần phân tích",
@@ -628,6 +661,92 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-runs/{runId}" : {
+      "get" : {
+        "tags" : [ "analysis-runs" ],
+        "summary" : "Một lần phân tích, kể cả khi đang chạy hoặc đã hỏng",
+        "operationId" : "get_2",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnalysisRunResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-runs/{runId}/warnings" : {
+      "get" : {
+        "tags" : [ "analysis-runs" ],
+        "summary" : "Cảnh báo tĩnh của một lần phân tích, sắp theo mức nghiêm trọng",
+        "operationId" : "listWarnings",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "tool",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "spotbugs", "semgrep" ]
+          }
+        }, {
+          "name" : "severity",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "HIGH", "MEDIUM", "LOW", "INFO" ]
+          }
+        }, {
+          "name" : "filePath",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "pageable",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/Pageable"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponseWarningView"
                 }
               }
             }
@@ -1194,6 +1313,30 @@
           }
         }
       },
+      "PageResponseAnalysisRunResponse" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AnalysisRunResponse"
+            }
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "items", "page", "size", "total" ]
+      },
       "PageResponseProjectResponse" : {
         "type" : "object",
         "properties" : {
@@ -1241,6 +1384,86 @@
           }
         },
         "required" : [ "items", "page", "size", "total" ]
+      },
+      "PageResponseWarningView" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/WarningView"
+            }
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "items", "page", "size", "total" ]
+      },
+      "WarningView" : {
+        "type" : "object",
+        "properties" : {
+          "evidenceId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "shortId" : {
+            "type" : "string"
+          },
+          "analysisRunId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "filePath" : {
+            "type" : "string",
+            "description" : "NULL khi không đối chiếu được với snapshot — cảnh báo vẫn hợp lệ, chỉ là không bấm được"
+          },
+          "startLine" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "endLine" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "symbol" : {
+            "type" : "string"
+          },
+          "summary" : {
+            "type" : "string"
+          },
+          "tool" : {
+            "type" : "string",
+            "enum" : [ "spotbugs", "semgrep" ]
+          },
+          "ruleId" : {
+            "type" : "string"
+          },
+          "ruleIdNormalized" : {
+            "type" : "string"
+          },
+          "severityRaw" : {
+            "type" : "string"
+          },
+          "severityNormalized" : {
+            "type" : "string",
+            "enum" : [ "HIGH", "MEDIUM", "LOW", "INFO" ]
+          },
+          "hasPrimaryLocation" : {
+            "type" : "boolean",
+            "description" : "false khi tool không tự đánh dấu vị trí chính và parser phải tự chọn"
+          }
+        },
+        "required" : [ "analysisRunId", "evidenceId", "hasPrimaryLocation", "ruleId", "ruleIdNormalized", "severityNormalized", "shortId", "summary", "tool" ]
       }
     },
     "securitySchemes" : {

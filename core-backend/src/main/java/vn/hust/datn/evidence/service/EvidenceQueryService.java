@@ -187,7 +187,12 @@ public class EvidenceQueryService {
         }
     }
 
-    private AnalysisRun ensureRunQueryable(UUID runId) {
+    /**
+     * Public để đường UI ({@code AnalysisRunQueryService}) dùng chung ĐÚNG một định nghĩa "run đã
+     * truy vấn được" với đường tool. Hai định nghĩa song song sớm muộn cũng lệch, và lệch theo
+     * hướng nới lỏng thì không ai thấy.
+     */
+    public AnalysisRun ensureRunQueryable(UUID runId) {
         AnalysisRun run =
                 analysisRunRepository.findById(runId).orElseThrow(() -> new ResourceNotFoundException("analysis_run", runId));
         if (run.getStatus() != AnalysisRunStatus.SUCCEEDED && run.getStatus() != AnalysisRunStatus.SUCCEEDED_CLEAN) {
