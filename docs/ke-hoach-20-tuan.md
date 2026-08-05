@@ -300,6 +300,27 @@ vẫn hợp lệ. Đã thêm một test canh đúng điều đó thay vì sửa 
    Bài học chung: **mỗi lần nới lỏng một phép kiểm phải bù bằng một phép kiểm khác**, không được
    bỏ trống.
 
+#### Rà soát cuối tuần 8-9 — một khiếm khuyết thật, và bốn món còn nợ
+
+Rà bằng cách đối chiếu tài liệu với mã nguồn, không dựa vào trí nhớ:
+
+**`SandboxReaper` được nhắc trong 3 chỗ code + ADR nhưng KHÔNG tồn tại.** Nhãn `evidence.run-id`
+vẫn được gắn đầy đủ, nhưng không có gì đọc chúng: nếu JVM bị giết giữa chừng (deploy lại, OOM),
+container + volume rò **vĩnh viễn** — mỗi lần một container 2 GB và một volume chứa cả cây mã
+nguồn người dùng. Khối `finally` của `DockerSandboxRunner` chỉ chạy khi tiến trình còn sống. **Đã
+hiện thực**, kèm hai test chạy Docker thật; điểm khó không phải "dọn được rác" mà là "dọn rác cũ
+mà KHÔNG đụng vào run đang chạy" — vốn mang đúng cùng một nhãn. Phân biệt bằng thời gian ân hạn
+1 giờ + bỏ qua container `running`.
+
+Bốn món còn nợ, đều **có chủ đích**, không phải quên:
+
+| Món | Vì sao hoãn |
+|---|---|
+| Chưa có nút "chạy sandbox" trên UI | Endpoint và kiểu TypeScript đã có; nút bấm chỉ có nghĩa khi vận hành đã bật socket, mà đó là quyết định của người vận hành chứ không phải mặc định |
+| Chưa có job CI cho sandbox | Job đó phải dựng hai image (~5 phút) và cần Docker trên runner. Thêm một file YAML **không chạy thử được** vào repo là tự tạo một thứ "trông như đang kiểm" — đúng loại hỏng-im-lặng đang chống. `./infra/analyzer/build.sh` đã tự đối chiếu, chạy tay được ngay |
+| `AnalyzerRegistry.adapterFor`/`collectorFor` chỉ có caller trong test | Mã production chọn parser bằng `detect()` (theo nội dung). Giữ lại vì giai đoạn D có thể cần chọn theo enum; nếu tới tuần 12 vẫn không ai gọi thì xoá |
+| `check-evidence-model.py` không phủ `analysis_run` | Phạm vi của nó là bảy bảng **bằng chứng**; cột của `analysis_run` không đến từ artifact analyzer. Năm cột V6 nay được ghi ở mục 12bis của `evidence-model.md` |
+
 **Kết thúc giai đoạn D**: `POST /api/v1/snapshots/{id}/analysis-runs/sandbox` trả 202 kèm run
 `RUNNING`; FE theo dõi qua `GET /analysis-runs/{id}`. Sandbox **tắt mặc định** và mount Docker
 socket để **comment** trong `docker-compose.yml` — bật sandbox là một quyết định vận hành có ý

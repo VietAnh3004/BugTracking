@@ -80,3 +80,60 @@ Nếu cách này cũng không ổn (mirror bị chặn ở mạng của bạn), 
 2. Đổi sang mạng khác hoặc giờ mạng ổn định hơn — image chỉ cần tải một lần.
 3. Phương án cuối: cài PostgreSQL trực tiếp trên máy và tự cài extension pgvector. Chấp nhận
    đánh đổi mất tính "dựng lại được trong 30 phút" của dự án.
+
+---
+
+## Chạy analyzer trong Docker sandbox (tuần 8-9)
+
+Xem [ADR 0008](../docs/adr/0008-chay-analyzer-trong-docker-sandbox.md) cho quyết định kiến trúc và
+[infra/analyzer/README.md](analyzer/README.md) cho chi tiết hai image.
+
+### Mặc định là TẮT, và đó là chủ đích
+
+`ANALYSIS_RUNNER=disabled` trong `application.yml`. Ứng dụng khởi động bình thường trên máy chủ
+không có Docker daemon, và **toàn bộ chức năng khác không phụ thuộc gì vào sandbox** — đường nạp
+artifact thủ công (`POST /api/v1/snapshots/{id}/analysis-runs`) vẫn chạy. Gọi endpoint sandbox khi
+đang tắt trả **503 kèm lý do đọc được**, không phải 500.
+
+### Bật lên — hai bước, và bước thứ hai là một quyết định vận hành
+
+```bash
+# 1. Dựng hai image (script tự đối chiếu với expected-analysis.json, hỏng thì dừng)
+./infra/analyzer/build.sh
+
+# 2. Trong infra/.env
+ANALYSIS_RUNNER=docker
+```
+
+Rồi **gỡ comment** mount socket trong `docker-compose.yml`:
+
+```yaml
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+```
+
+### ⚠️ Mount socket đó = cấp quyền root trên máy chủ
+
+Ai gọi được `/var/run/docker.sock` đều có thể chạy một container với `--privileged -v /:/host`,
+tức **đọc và ghi toàn bộ filesystem của host**. Đó không phải leo thang đặc quyền do lỗi cấu hình
+— đó là thiết kế của Docker API.
+
+Vì vậy dòng mount để **comment** chứ không đặt sau một biến môi trường: bật sandbox phải là việc ai
+đó cố ý làm và biết mình đang làm gì.
+
+Đọc thêm mục **"Rủi ro còn lại"** của ADR 0008: container **không phải** ranh giới bảo mật trước lỗ
+hổng kernel, và hệ thống này chỉ nhận repo từ **người dùng đã xác thực** — không phải dịch vụ công
+cộng ẩn danh.
+
+### Tài nguyên và dọn rác
+
+Mỗi lần chạy chiếm 2 GB RAM + 2 CPU (`SANDBOX_MEMORY_BYTES`, `SANDBOX_CPUS`) và chạy **tuần tự** —
+executor đúng một luồng. Container và volume mang nhãn `evidence.run-id`; `SandboxReaper` dọn đồ mồ
+côi lúc khởi động và mỗi 30 phút, với thời gian ân hạn 1 giờ để không đụng vào run đang chạy.
+
+Kiểm rác còn sót bằng tay:
+
+```bash
+docker ps -a --filter label=evidence.run-id
+docker volume ls --filter label=evidence.run-id
+```

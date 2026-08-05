@@ -357,6 +357,25 @@ Ví dụ dùng chung: method đầu tiên của `OrderStatusChecker` (`isShipped
 artifact được. `first_line` **không có** `end_line` đi kèm vì JaCoCo không cung cấp — đó cũng là lý
 do bảng này không có FK nào sang `coverage_line`.
 
+## 12bis. `analysis_run` — cột dấu vết của sandbox (V6)
+
+Năm cột này **không có trong bảng provenance** ở trên, và đó là chủ đích: chúng không đến từ
+artifact analyzer mà từ **cách một lần phân tích được thực hiện**. `check-evidence-model.py` cũng
+không phủ `analysis_run` vì cùng lý do — phạm vi của nó là bảy bảng bằng chứng.
+
+| Cột | Ý nghĩa | Vì sao cần |
+|---|---|---|
+| `artifact_source` | `MANUAL_UPLOAD` \| `DOCKER_SANDBOX` | Hai mức đáng tin khác nhau. Không có cột này thì hai run cho cùng số liệu nhưng khác hẳn về độ tin cậy, mà không ai phân biệt được |
+| `analyzer_image_digest` | Digest image ĐÃ chạy | Tag `:latest` trỏ tới image khác nhau sau mỗi lần dựng lại; ghi tag thì tuần 15-16 chỉ nói được "cùng một cái tên" |
+| `source_root` | Thư mục gốc dự án trong cây upload | Câu hỏi đầu tiên khi số liệu lệch: sandbox đã coi đâu là gốc |
+| `canary_ok` | Canary ra đủ finding cả hai bộ rule | **NULL** với run nạp tay — ở đó không có canary để kiểm, khác hẳn `false` |
+| `canary_finding_count` | Số finding của mã canary, đã LOẠI khỏi `finding_count` | Canary đỏ thì đọc được "ra mấy cái" chứ không chỉ true/false |
+
+Ba ràng buộc đi kèm, xem `V6__analysis_run_sandbox.sql`:
+`ck_run_sandbox_needs_canary` (run sandbox `SUCCEEDED` mà canary không XANH bị từ chối — NULL cũng
+bị từ chối, "không kiểm" không phải là "coi như đạt") · `ck_run_canary_only_from_sandbox` (run nạp
+tay khai `canary_ok` là một lời khai không có gì chống lưng) · `ck_run_canary_count_nonneg`.
+
 ## 13. Kiểm chứng tự động
 
 ```bash
