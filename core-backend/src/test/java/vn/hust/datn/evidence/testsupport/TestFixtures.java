@@ -2,6 +2,8 @@ package vn.hust.datn.evidence.testsupport;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,6 +23,9 @@ import vn.hust.datn.evidence.domain.EvidenceStatus;
 import vn.hust.datn.evidence.domain.EvidenceType;
 import vn.hust.datn.evidence.domain.Project;
 import vn.hust.datn.evidence.domain.RepositorySnapshot;
+import vn.hust.datn.evidence.domain.SnapshotEntryType;
+import vn.hust.datn.evidence.domain.SnapshotFile;
+import vn.hust.datn.evidence.domain.SnapshotStatus;
 import vn.hust.datn.evidence.domain.User;
 import vn.hust.datn.evidence.domain.UserRole;
 import vn.hust.datn.evidence.domain.Warning;
@@ -31,6 +36,7 @@ import vn.hust.datn.evidence.repository.EvidenceLinkRepository;
 import vn.hust.datn.evidence.repository.EvidenceRecordRepository;
 import vn.hust.datn.evidence.repository.ProjectRepository;
 import vn.hust.datn.evidence.repository.RepositorySnapshotRepository;
+import vn.hust.datn.evidence.repository.SnapshotFileRepository;
 import vn.hust.datn.evidence.repository.UserRepository;
 import vn.hust.datn.evidence.repository.WarningRepository;
 
@@ -65,6 +71,9 @@ public class TestFixtures {
 
     @Autowired
     private EvidenceLinkRepository evidenceLinkRepository;
+
+    @Autowired
+    private SnapshotFileRepository snapshotFileRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -131,6 +140,44 @@ public class TestFixtures {
             run.setFinishedAt(OffsetDateTime.now());
         }
         return analysisRunRepository.saveAndFlush(run);
+    }
+
+    /**
+     * Snapshot {@code READY} kèm chỉ mục {@code snapshot_file} — điều kiện để
+     * {@code SnapshotPathResolver} có gì mà đối chiếu.
+     *
+     * <p>Chỉ tạo hàng {@code FILE}, không tạo hàng thư mục: truy vấn
+     * {@code findFilePathsBySnapshotId} lọc theo {@code entryType = 'FILE'}, nên thư mục không ảnh
+     * hưởng gì tới việc đối chiếu đường dẫn.
+     */
+    public RepositorySnapshot readySnapshotWithFiles(Project project, List<String> filePaths) {
+        RepositorySnapshot snapshot = snapshot(project);
+        snapshot.setStatus(SnapshotStatus.READY);
+        snapshot.setFileCount(filePaths.size());
+        snapshotRepository.saveAndFlush(snapshot);
+
+        OffsetDateTime now = OffsetDateTime.now();
+        List<SnapshotFile> rows = new ArrayList<>(filePaths.size());
+        for (String path : filePaths) {
+            int lastSlash = path.lastIndexOf('/');
+            SnapshotFile row = new SnapshotFile();
+            row.setSnapshotId(snapshot.getId());
+            row.setPath(path);
+            row.setParentPath(lastSlash < 0 ? "" : path.substring(0, lastSlash));
+            row.setName(path.substring(lastSlash + 1));
+            row.setEntryType(SnapshotEntryType.FILE);
+            row.setSizeBytes(1);
+            row.setBinary(false);
+            row.setStored(true);
+            row.setStorageKey(snapshot.getStorageKey() + path);
+            // ck_snapshot_file_stored_has_object doi CA storage_key LAN sha256 khi stored=true.
+            row.setSha256("0".repeat(64));
+            row.setCreatedAt(now);
+            rows.add(row);
+        }
+        snapshotFileRepository.saveAll(rows);
+        snapshotFileRepository.flush();
+        return snapshot;
     }
 
     /**

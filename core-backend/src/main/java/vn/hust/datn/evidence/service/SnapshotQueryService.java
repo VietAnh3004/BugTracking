@@ -78,6 +78,18 @@ public class SnapshotQueryService {
                 .orElseThrow(() -> new ResourceNotFoundException("snapshot", snapshotId));
     }
 
+    /**
+     * Như {@link #get}, nhưng ĐÒI {@code READY} — dùng cho mọi thao tác cần cây file đã lập chỉ
+     * mục xong (nạp artifact phân tích, và ở giai đoạn D là dựng lại cây nguồn cho sandbox).
+     *
+     * <p>Tồn tại để {@code AnalysisRunService} không phải chép lại cặp kiểm quyền-sở-hữu + kiểm
+     * trạng thái: chép là sớm muộn cũng lệch, mà lệch theo hướng nới lỏng thì không ai thấy.
+     */
+    @Transactional(readOnly = true)
+    public RepositorySnapshot getReady(UUID snapshotId, UUID ownerId) {
+        return requireReady(snapshotId, ownerId);
+    }
+
     @Transactional(readOnly = true)
     public List<SnapshotFile> listFiles(UUID snapshotId, UUID ownerId) {
         requireReady(snapshotId, ownerId);
