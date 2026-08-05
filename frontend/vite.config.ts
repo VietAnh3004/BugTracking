@@ -32,6 +32,16 @@ export default defineConfig({
     // jsdom, rất dễ đi sửa nhầm chỗ (đã mất thời gian thử đổi pool forks/threads trước khi khoanh
     // được vùng bằng cách chạy vitest với config tối giản).
     environment: 'happy-dom',
+    // Trần số worker. Mặc định Vitest mở ~(số core - 1) tiến trình cùng lúc; trên máy 16 core này
+    // 15 worker khởi động đồng thời đều vượt ngưỡng 60 giây và TOÀN BỘ test đỏ với
+    // "[vitest-pool]: Failed to start forks worker ... Timeout waiting for worker to respond" —
+    // đúng thông điệp mà happy-dom đã dựng lên để tránh (xem ghi chú ở trên), nên rất dễ tưởng
+    // đã quay lại lỗi cũ. Nguyên nhân khác hẳn: không phải chi phí nạp jsdom mà là tranh chấp
+    // I/O khi 15 tiến trình cùng nạp module graph và cùng bị Windows Defender quét.
+    //
+    // Đo trên máy này: 15 worker ĐỎ · 8 worker xanh trong 26s · 4 worker xanh trong 49s · 2
+    // worker xanh trong 118s. Dùng '50%' thay vì một con số cứng để nó co giãn theo máy chạy CI.
+    maxWorkers: '50%',
     setupFiles: ['./src/test/setup.ts'],
     // Không xử lý CSS trong test: component test kiểm hành vi và nội dung, không kiểm màu sắc.
     // Bật lên chỉ tốn thời gian biên dịch Tailwind cho mỗi lần chạy test.

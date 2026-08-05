@@ -13,6 +13,7 @@ import { FileTree } from '@/features/snapshots/components/FileTree';
 import { useSnapshot, useSnapshotFiles } from '@/features/snapshots/hooks/useSnapshots';
 import { buildFileTree } from '@/features/snapshots/lib/buildFileTree';
 import { fromRouteParam } from '@/features/snapshots/lib/filePathUrl';
+import { useAnalysisRuns } from '@/features/warnings/hooks/useWarnings';
 import { ApiError } from '@/shared/lib/apiClient';
 import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
@@ -44,7 +45,8 @@ export function SnapshotBrowserLayout() {
         <Link to={`/projects/${snapshot.data.projectId}`} className="text-brand text-sm">
           ← Về dự án
         </Link>
-        <span className="text-ink-muted text-sm">
+        <span className="text-ink-muted flex items-center gap-3 text-sm">
+          <LatestRunLink snapshotId={snapshotId} />
           {snapshot.data.fileCount} file · {snapshot.data.sourceRef ?? snapshot.data.id}
         </span>
       </div>
@@ -63,6 +65,26 @@ export function SnapshotBrowserLayout() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Lối vào màn hình cảnh báo. Không render gì khi snapshot chưa có lần phân tích nào — một link
+ * dẫn tới danh sách rỗng còn khó hiểu hơn là không có link.
+ *
+ * Lấy run MỚI NHẤT (backend đã sắp `started_at DESC`) chứ không bắt người dùng chọn: đợt này mỗi
+ * snapshot thường chỉ có một run, và một màn hình chọn run cho một phần tử là nghi thức thừa.
+ */
+function LatestRunLink({ snapshotId }: { snapshotId: string }) {
+  const runs = useAnalysisRuns(snapshotId);
+  const latest = runs.data?.items[0];
+  if (latest === undefined) {
+    return null;
+  }
+  return (
+    <Link to={`/snapshots/${snapshotId}/runs/${latest.id}/warnings`} className="text-brand">
+      Cảnh báo ({latest.findingCount})
+    </Link>
   );
 }
 

@@ -57,6 +57,18 @@ export const routes: RouteObject[] = [
           { path: 'projects', element: <ProjectsPage /> },
           { path: 'projects/:projectId', element: <ProjectDetailPage /> },
           {
+            // Đặt NGOÀI `snapshots/:snapshotId` (khung duyệt mã nguồn) dù URL lồng nhau: màn hình
+            // cảnh báo là một bảng chiếm toàn bộ bề ngang, không cần cây file bên trái. Vẫn giữ
+            // `snapshotId` trên URL để dựng được link sang source viewer mà không phải hỏi backend
+            // "run này thuộc snapshot nào".
+            path: 'snapshots/:snapshotId/runs/:runId/warnings',
+            lazy: async () => {
+              const { WarningsPage } = await import('@/features/warnings/pages/WarningsPage');
+              return { Component: WarningsPage };
+            },
+            errorElement: <RouteErrorBoundary />,
+          },
+          {
             // `lazy` theo route: phần duyệt mã nguồn là mảng nặng nhất của ứng dụng (cây file +
             // source viewer) nhưng người dùng chỉ mở nó sau khi đã đăng nhập và chọn snapshot —
             // không nên nằm trong bundle đầu tiên của màn hình đăng nhập.
