@@ -111,6 +111,17 @@ y hệt (đúng 60.0s), rất dễ đi sửa nhầm chỗ. Cách khoanh vùng nh
 `npx vitest run --config <config tối giản>` với `environment: 'node'` (xanh trong 3s) rồi đổi sang
 `'jsdom'` (đỏ sau 60s) — biến số duy nhất khác nhau chính là thủ phạm.
 
+**Cùng thông điệp lỗi đó còn có nguyên nhân THỨ HAI: quá nhiều worker chạy song song.** Gặp ở
+tuần 8-9, khi bộ test frontend lên 13 file: `npm test` đỏ toàn bộ với đúng chuỗi
+`Failed to start forks worker ... Timeout waiting for worker to respond` **dù đang dùng
+happy-dom** — rất dễ tưởng đã quay lại lỗi jsdom cũ và đi sửa nhầm chỗ lần nữa. Nguyên nhân khác
+hẳn: mặc định Vitest mở ~(số core − 1) tiến trình cùng lúc, máy này 16 core nên 15 tiến trình
+đồng thời nạp module graph và cùng bị Windows Defender quét, tất cả vượt ngưỡng 60 giây.
+Đo được: **15 worker ĐỎ · 8 worker xanh trong 26s · 4 worker xanh trong 49s · 2 worker xanh trong
+118s**. Đã chặn tận gốc bằng `maxWorkers: '50%'` trong `frontend/vite.config.ts` (dùng phần trăm
+để co giãn theo máy chạy CI, không hardcode số). Cách phân biệt nhanh hai nguyên nhân: chạy lại
+với `npx vitest run --maxWorkers=2` — xanh nghĩa là lỗi tải, vẫn đỏ nghĩa là lỗi environment.
+
 **`UrlBasedCorsConfigurationSource` chỉ áp cho ĐÚNG các mẫu đường dẫn đã đăng ký — endpoint ngoài
 mẫu không có header CORS nào.** Gặp thật: `CorsConfig` đăng ký `/api/**`, nhưng frontend gọi
 `/actuator/health` ngay ở màn hình đầu tiên (`useBackendHealth`) nên bị trình duyệt chặn với

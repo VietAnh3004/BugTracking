@@ -26,7 +26,7 @@
 | **Tuần 3** — Unified Evidence Model | ✅ Xong (xem §D2) |
 | **Tuần 4** — API contract + OpenAPI | ✅ Xong (xem §E2) |
 | **Tuần 5-7** — core backend CRUD + JWT auth + frontend routing | ✅ Xong (xem §G) |
-| **Tuần 8-9** — parser analyzer → Evidence Store + Docker sandbox | 🔄 Đang làm: giai đoạn A xong (xem §H) |
+| **Tuần 8-9** — parser analyzer → Evidence Store + Docker sandbox | 🔄 Đang làm: A, B, C xong; còn D (xem §H) |
 
 ### §G — Tuần 5-7: tiến độ chi tiết (đã xong)
 
@@ -164,14 +164,29 @@ văn — nếu nó trượt, mọi thứ khác vẫn xong và vẫn demo đượ
 | A6 | `SemgrepSarifAdapter` | ✅ Xong |
 | A7 | `SurefireResultCollector` + `StackTraceParser` | ✅ Xong |
 | A8 | `JacocoCoverageCollector` | ✅ Xong |
-| B1 | `EvidenceMaterializer` cấp `seq_in_run`, ghi batch | ⬜ Chưa |
-| B2 | `POST /snapshots/{id}/analysis-runs` nạp artifact | ⬜ Chưa |
-| B3 | Endpoint danh sách analysis run + cảnh báo cho UI | ⬜ Chưa |
-| C | Màn hình danh sách cảnh báo (frontend) | ⬜ Chưa |
+| B1 | `EvidenceMaterializer` cấp `seq_in_run`, ghi batch bảy bảng | ✅ Xong |
+| B2 | `AnalyzerRegistry` nhận dạng theo nội dung + `SurefireArchiveReader` | ✅ Xong |
+| B3 | `AnalysisRunService` + `AnalysisRunPersistenceService` (quyết định trạng thái) | ✅ Xong |
+| B4 | `POST /snapshots/{id}/analysis-runs` nạp artifact | ✅ Xong |
+| B5 | Endpoint đọc analysis run + danh sách cảnh báo cho UI | ✅ Xong |
+| C | Màn hình danh sách cảnh báo (frontend) | ✅ Xong |
 | D | Docker sandbox (7 commit, mở đầu bằng spike SpotBugs CLI) | ⬜ Chưa |
 
 Sau A: **216 test xanh**, 4 parser đọc được đủ 4 artifact thật, 75 dòng provenance cho 7 bảng khớp
 hai chiều với SQL.
+
+Sau B: **270 test backend xanh**. Một lệnh `POST` với 4 artifact thật của vulnshop cho ra đúng
+**90 `evidence_record`** = 28 warning SpotBugs + 5 Semgrep + 33 `test_case` + 5 `STACK_TRACE` + 19
+coverage, kèm 33 `warning` · 38 `warning_location` · 44 `stack_frame` · 171 `coverage_line` · 73
+`coverage_method`, và **`unresolved_location_count = 0`** trên cây nguồn thật.
+
+Sau C: **88 test frontend xanh**. Deliverable gốc của tuần 8-9 — *"1 lệnh → ra warning + kết quả
+test trong DB"* — đã đạt, và nhìn thấy được bằng mắt.
+
+**Kế hoạch gốc chia giai đoạn B thành 3 commit; thực tế thành 5.** Tách thêm hai chỗ vì mỗi chỗ
+giải quyết một rủi ro riêng biệt, gộp vào sẽ không kiểm được độc lập: (B2) nhận dạng parser theo
+NỘI DUNG chứ không theo tên file + chốt thứ tự nạp, và (B3) tầng điều phối quyết định trạng thái
+run trước khi chạm DB.
 
 #### Hai chỗ kế hoạch gốc ghi sai, đã sửa
 
@@ -204,13 +219,42 @@ hai chiều với SQL.
   `EnumCheckConstraintTest` cho thứ chưa có consumer. Nó nằm trong `content`, đủ để tuần 15 đo tỉ
   lệ "chỉ khớp được bằng tên file".
 
-#### Nợ kỹ thuật của giai đoạn A (trả ở B1)
+#### Nợ kỹ thuật của giai đoạn A — **đã trả xong**
 
-- `SnapshotFileRepository.findFilePathsBySnapshotId` đã viết nhưng **chưa có caller và chưa có
-  test** — B1 là nơi dùng nó.
-- `TestFixtures` **chưa có builder** cho `test_case`/`stack_frame`/`coverage_*`; test tích hợp của
-  B1 sẽ cần.
-- Chưa có registry chọn adapter/collector theo enum — hai `@Component` hiện chưa ai inject.
+- ~~`SnapshotFileRepository.findFilePathsBySnapshotId` chưa có caller~~ → `AnalysisRunService` là
+  caller đầu tiên (B3), có test.
+- ~~`TestFixtures` chưa có builder cho bảng mới~~ → thêm `readySnapshotWithFiles` và `reloadRun`
+  (B1/B3). Không thêm builder cho `test_case`/`stack_frame`/`coverage_*` vì hoá ra không cần: test
+  materialize dữ liệu THẬT rồi đọc lại, không dựng hàng giả.
+- ~~Chưa có registry chọn adapter/collector~~ → `AnalyzerRegistry` (B2).
+- Ngoài ra `EvidenceQueryService.requireRunOwnedBy` (viết từ tuần 5-7, chưa từng có caller) nay đã
+  có caller đầu tiên là `AnalysisRunQueryService` — đúng như Javadoc của nó dự liệu.
+
+#### Bốn phát hiện của giai đoạn B-C
+
+1. **`short_id` KHÔNG tái lập được giữa hai run**, vì ký tự cuối băm từ UUID ngẫu nhiên của từng
+   hàng. Đó là thiết kế chống LLM bịa ID, không phải khiếm khuyết — nhưng nó có nghĩa là thí
+   nghiệm tái lập ở tuần 15-16 phải so theo `seq_in_run` + nội dung bằng chứng, **không so theo
+   Evidence ID**. Ghi thành comment trong `EvidenceMaterializerTest`.
+2. **`ZipExtractor` không dùng lại được cho zip báo cáo Surefire**: nó lọc bỏ mọi entry dưới thư
+   mục tên `target`, mà báo cáo Surefire nằm đúng ở `target/surefire-reports/`. Dùng lại sẽ cho ra
+   "0 test" không kèm lỗi nào. Đã tách `SurefireArchiveReader` riêng, dùng chung giới hạn
+   chống zip-bomb của `UploadProperties`.
+3. **Nhánh `SUCCEEDED_CLEAN` hiện chưa chạm tới được**, vì `SpotbugsXmlAdapter` từ chối artifact
+   0 cảnh báo ngay ở tầng parser. Nhánh đó dành cho **giai đoạn D**, nơi bốn tầng kiểm tính tỉnh
+   táo (canary, tổng số class đã quét, phiên bản JDK, plugin đã nạp) mới đủ dữ kiện phân biệt "dự
+   án sạch thật" với "analyzer im lặng hỏng" — điều mà một artifact do người dùng tự tải lên không
+   cho biết. Đã ghi thành một test có tên nói rõ điều này.
+4. **Vitest đỏ toàn bộ vì quá nhiều worker**, với ĐÚNG thông điệp lỗi mà happy-dom đã dựng lên để
+   tránh — chi tiết và cách phân biệt hai nguyên nhân ghi ở `CLAUDE.md`.
+
+#### Sai lệch có chủ đích ở giai đoạn B-C
+
+- **Endpoint nạp artifact dùng MỘT trường lặp `artifacts`**, không phải bốn trường có tên
+  `spotbugs`/`semgrep`/`surefire`/`jacoco` như kế hoạch mô tả. Vì việc chọn parser hoàn toàn dựa
+  vào nội dung file, bốn trường có tên sẽ là một lời hứa sai.
+- **Route màn hình cảnh báo đặt NGOÀI `snapshots/:snapshotId`** dù URL lồng nhau: bảng cảnh báo
+  chiếm toàn bộ bề ngang, không cần cây file bên trái.
 
 ---
 
