@@ -172,7 +172,7 @@ văn — nếu nó trượt, mọi thứ khác vẫn xong và vẫn demo đượ
 | C | Màn hình danh sách cảnh báo (frontend) | ✅ Xong |
 | D1 | Spike SpotBugs CLI + **ADR 0008** | ✅ Xong |
 | D2 | Hai image analyzer + script dựng-và-đối-chiếu | ✅ Xong |
-| D3 | V6: cột sandbox + ràng buộc canary cho `analysis_run` | ⬜ Chưa |
+| D3 | V6: cột sandbox + ràng buộc canary cho `analysis_run` | ✅ Xong |
 | D4 | Cổng `SandboxRunner` + dựng cây mã nguồn thành tar | ⬜ Chưa |
 | D5 | Kiểm tính tỉnh táo của analyzer + canary (phía backend) | ⬜ Chưa |
 | D6 | `DockerSandboxRunner` trên `docker-java` | ⬜ Chưa |
@@ -277,6 +277,18 @@ mạng**.
 
 Năm cạm bẫy khi dựng image ghi ở [infra/analyzer/README.md](../infra/analyzer/README.md); bốn cái
 chung nhất đã đưa vào `CLAUDE.md`.
+
+**Một dự đoán của kế hoạch KHÔNG xảy ra.** Kế hoạch cảnh báo V6 sẽ làm đỏ
+`AnalysisRunNotSilentlyEmptyTest` (test đó insert `SUCCEEDED_CLEAN` không có `canary_ok`) và dặn
+sửa test trong cùng commit với migration. Không đỏ: `ck_run_sandbox_needs_canary` chỉ áp cho
+`DOCKER_SANDBOX`, và `artifact_source` mặc định `MANUAL_UPLOAD`, nên mọi hàng có sẵn từ trước V6
+vẫn hợp lệ. Đã thêm một test canh đúng điều đó thay vì sửa test cũ.
+
+**Còn lại của giai đoạn D** (D4-D7): cổng `SandboxRunner` + dựng cây mã nguồn thành tar · kiểm
+tính tỉnh táo phía backend (bốn tầng, hiện mới có bản shell trong `check_sandbox_output.py`) ·
+`DockerSandboxRunner` trên `docker-java` · điều phối bất đồng bộ + gắn Docker socket vào
+`docker-compose`. Cơ chế cp-vào/cp-ra và toàn bộ số liệu đã được kiểm chứng bằng `build.sh`, nên
+D6 là chuyển ngữ chứ không phải khám phá.
 
 #### Sai lệch có chủ đích ở giai đoạn B-C
 
