@@ -1,10 +1,12 @@
 package vn.hust.datn.evidence.service;
 
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,21 @@ import vn.hust.datn.evidence.repository.WarningRepository;
 @Service
 @Transactional(readOnly = true)
 public class EvidenceQueryService {
+
+    /** Bằng chứng sinh từ một lần chạy test — xem Javadoc {@link #getRelatedTests}. */
+    private static final Set<EvidenceType> TEST_EVIDENCE_TYPES =
+            Set.of(EvidenceType.TEST_RESULT, EvidenceType.FAILED_TEST, EvidenceType.STACK_TRACE);
+
+    /**
+     * Thứ tự tất định cho mọi danh sách item: relation → weight GIẢM DẦN → short_id.
+     *
+     * <p>{@code short_id} là bộ phá hoà cuối cùng và nó luôn duy nhất trong một run, nên hai lần
+     * chạy trên cùng dữ liệu không bao giờ cho hai thứ tự khác nhau.
+     */
+    private static final Comparator<Map.Entry<EvidenceLink, EvidenceRecord>> ITEM_ORDER = Comparator.comparing(
+                    (Map.Entry<EvidenceLink, EvidenceRecord> entry) -> entry.getKey().getRelation())
+            .thenComparing(entry -> entry.getKey().getWeight(), Comparator.reverseOrder())
+            .thenComparing(entry -> entry.getValue().getShortId());
 
     private final AnalysisRunRepository analysisRunRepository;
     private final EvidenceRecordRepository evidenceRecordRepository;
@@ -91,18 +108,28 @@ public class EvidenceQueryService {
                 .toList();
     }
 
+    /**
+     * "Test liên quan" phải là bằng chứng VỀ TEST, không phải bất kỳ evidence nào tình cờ mang
+     * quan hệ SUPPORTS/CONTRADICTS. Không lọc type thì một bằng chứng độ phủ mang SUPPORTS
+     * (EvidenceLinker tầng 2 sinh ra thật, method {@code METHOD_AGGREGATE}) cũng lọt vào đây, và
+     * LLM đọc xong sẽ nói "có test ủng hộ" trong khi không có test nào.
+     *
+     * <p>{@code STACK_TRACE} nằm trong bộ lọc dù link tầng 3 trỏ về evidence {@code FAILED_TEST}:
+     * nó vẫn là bằng chứng sinh từ một lần chạy test, và nếu về sau có tầng nào liên kết thẳng
+     * stack trace thì loại bằng chứng THUYẾT PHỤC NHẤT không bị lặng lẽ rơi khỏi danh sách.
+     */
     public List<ToolEvidenceItem> getRelatedTests(UUID runId, String shortId, Set<EvidenceLinkRelation> relations) {
         ensureRunQueryable(runId);
         EvidenceRecord anchor = requireEvidenceInRun(runId, shortId);
         Set<EvidenceLinkRelation> effective =
                 (relations == null || relations.isEmpty()) ? Set.of(EvidenceLinkRelation.SUPPORTS, EvidenceLinkRelation.CONTRADICTS) : relations;
-        return relatedEvidence(anchor, effective, null);
+        return relatedEvidence(anchor, effective, TEST_EVIDENCE_TYPES);
     }
 
     public List<ToolEvidenceItem> getCoverage(UUID runId, String shortId) {
         ensureRunQueryable(runId);
         EvidenceRecord anchor = requireEvidenceInRun(runId, shortId);
-        return relatedEvidence(anchor, Set.of(EvidenceLinkRelation.COVERS), EvidenceType.COVERAGE_INFORMATION);
+        return relatedEvidence(anchor, Set.of(EvidenceLinkRelation.COVERS), Set.of(EvidenceType.COVERAGE_INFORMATION));
     }
 
     public List<EvidenceRecord> searchEvidence(UUID runId, String query, Set<EvidenceType> types, String filePath, int limit) {
@@ -114,8 +141,22 @@ public class EvidenceQueryService {
         return results.stream().filter(e -> types.contains(e.getType())).toList();
     }
 
+    /**
+     * Đơn vị trả về là MỘT LINK, không phải một evidence.
+     *
+     * <p>Bản trước gom vào {@code Map<UUID, EvidenceLink>} khoá theo evidence phía đối diện. Vì
+     * {@code UNIQUE (from_evidence_id, to_evidence_id, relation)} cho phép CÙNG một cặp mang nhiều
+     * quan hệ, {@code put} sau đè {@code put} trước và một quan hệ biến mất IM LẶNG. Tình huống
+     * này có thật ngay khi EvidenceLinker chạy: một test vừa phủ dòng cảnh báo (CONTRADICTS) vừa
+     * có stack frame trỏ đúng dòng đó (SUPPORTS).
+     *
+     * <p>Thứ tự TẤT ĐỊNH: {@code relation}, rồi {@code weight} giảm dần (bằng chứng mạnh lên
+     * trước), rồi {@code short_id} để phá hoà hoàn toàn. Đây là dữ liệu đi thẳng vào prompt LLM —
+     * thứ tự đổi giữa hai lần chạy thì thí nghiệm tái lập tuần 15-16 mất căn cứ, mà lỗi đó không
+     * có triệu chứng nào.
+     */
     private List<ToolEvidenceItem> relatedEvidence(
-            EvidenceRecord anchor, Set<EvidenceLinkRelation> relations, EvidenceType typeFilter) {
+            EvidenceRecord anchor, Set<EvidenceLinkRelation> relations, Set<EvidenceType> typeFilter) {
         List<EvidenceLink> links = evidenceLinkRepository
                 .findByFromEvidenceIdOrToEvidenceId(anchor.getId(), anchor.getId())
                 .stream()
@@ -127,20 +168,21 @@ public class EvidenceQueryService {
 
         // EvidenceLink lưu UUID trần, không @ManyToOne -> không join JPQL được. Hai bước: gom id
         // phía đối diện, rồi findAllById (xem EvidenceLinkRepository).
-        Map<UUID, EvidenceLink> linkByOppositeId = new HashMap<>();
-        for (EvidenceLink link : links) {
-            UUID oppositeId =
-                    link.getFromEvidenceId().equals(anchor.getId()) ? link.getToEvidenceId() : link.getFromEvidenceId();
-            linkByOppositeId.put(oppositeId, link);
-        }
+        Set<UUID> oppositeIds = links.stream().map(l -> oppositeIdOf(l, anchor.getId())).collect(Collectors.toSet());
+        Map<UUID, EvidenceRecord> recordById = evidenceRecordRepository.findAllById(oppositeIds).stream()
+                .collect(Collectors.toMap(EvidenceRecord::getId, Function.identity()));
 
-        return evidenceRecordRepository.findAllById(linkByOppositeId.keySet()).stream()
-                .filter(e -> typeFilter == null || e.getType() == typeFilter)
-                .map(e -> {
-                    EvidenceLink link = linkByOppositeId.get(e.getId());
-                    return toItem(e, link.getRelation(), link);
-                })
+        return links.stream()
+                .map(link -> Map.entry(link, recordById.get(oppositeIdOf(link, anchor.getId()))))
+                .filter(entry -> entry.getValue() != null)
+                .filter(entry -> typeFilter == null || typeFilter.contains(entry.getValue().getType()))
+                .sorted(ITEM_ORDER)
+                .map(entry -> toItem(entry.getValue(), entry.getKey().getRelation(), entry.getKey()))
                 .toList();
+    }
+
+    private static UUID oppositeIdOf(EvidenceLink link, UUID anchorId) {
+        return link.getFromEvidenceId().equals(anchorId) ? link.getToEvidenceId() : link.getFromEvidenceId();
     }
 
     private ToolEvidenceItem toItem(EvidenceRecord record, EvidenceLinkRelation relation, EvidenceLink link) {

@@ -125,6 +125,84 @@ class EvidenceQueryServiceTest extends AbstractIntegrationTest {
         assertThat(items.getFirst().shortId()).isEqualTo(failedTest.getShortId());
     }
 
+    /**
+     * Hồi quy: một CẶP evidence có thể có NHIỀU link khác {@code relation} —
+     * {@code UNIQUE (from, to, relation)} cho phép đúng điều đó, và EvidenceLinker tuần 10-11 sinh
+     * ra tình huống này thật (một test vừa được stack frame ủng hộ, vừa phủ dòng cảnh báo).
+     *
+     * <p>Bản trước gom link vào {@code Map<UUID, EvidenceLink>} khoá theo evidence phía đối diện,
+     * nên link sau ĐÈ link trước và một quan hệ biến mất IM LẶNG. Đơn vị trả về phải là MỘT LINK,
+     * không phải một evidence.
+     */
+    @Test
+    void getRelatedTests_motCapCoHaiQuanHe_traVeCaHai() {
+        Project project = fixtures.project("p-" + System.nanoTime());
+        RepositorySnapshot snapshot = fixtures.snapshot(project);
+        AnalysisRun run = fixtures.succeededRun(snapshot, 2);
+
+        Warning warning = fixtures.warning(run, "SQL_INJECTION_SPRING_JDBC", WarningTool.spotbugs, "UserRepository.java", 35);
+        EvidenceRecord test = fixtures.evidenceRecord(run, EvidenceType.TEST_RESULT, EvidenceSource.surefire, "UserRepositoryTest.java", 20);
+
+        fixtures.link(test, warning.getEvidenceRecord(), EvidenceLinkRelation.SUPPORTS, EvidenceLinkMethod.STACK_FRAME, 1.0);
+        fixtures.link(test, warning.getEvidenceRecord(), EvidenceLinkRelation.CONTRADICTS, EvidenceLinkMethod.NAMING_CONVENTION, 0.25);
+
+        var items = service.getRelatedTests(run.getId(), warning.getEvidenceRecord().getShortId(), null);
+
+        assertThat(items).hasSize(2);
+        assertThat(items).extracting(item -> item.relation())
+                .containsExactlyInAnyOrder(EvidenceLinkRelation.SUPPORTS, EvidenceLinkRelation.CONTRADICTS);
+        assertThat(items).extracting(item -> item.method())
+                .containsExactlyInAnyOrder(EvidenceLinkMethod.STACK_FRAME, EvidenceLinkMethod.NAMING_CONVENTION);
+    }
+
+    /**
+     * Thứ tự phải TẤT ĐỊNH: đây là dữ liệu đi thẳng vào prompt LLM. Thứ tự đổi giữa hai lần chạy
+     * thì thí nghiệm tái lập ở tuần 15-16 mất căn cứ — mà lỗi đó không có triệu chứng nào.
+     *
+     * <p>Sắp theo {@code relation}, rồi {@code weight} GIẢM DẦN (bằng chứng mạnh lên trước),
+     * rồi {@code short_id} để phá hoà hoàn toàn.
+     */
+    @Test
+    void getRelatedTests_sapTatDinhTheoWeightGiamDan() {
+        Project project = fixtures.project("p-" + System.nanoTime());
+        RepositorySnapshot snapshot = fixtures.snapshot(project);
+        AnalysisRun run = fixtures.succeededRun(snapshot, 2);
+
+        Warning warning = fixtures.warning(run, "NP_NULL_ON_SOME_PATH", WarningTool.spotbugs, "UserService.java", 27);
+        EvidenceRecord yeu = fixtures.evidenceRecord(run, EvidenceType.FAILED_TEST, EvidenceSource.surefire, "ATest.java", 1);
+        EvidenceRecord manh = fixtures.evidenceRecord(run, EvidenceType.FAILED_TEST, EvidenceSource.surefire, "BTest.java", 2);
+
+        fixtures.link(yeu, warning.getEvidenceRecord(), EvidenceLinkRelation.SUPPORTS, EvidenceLinkMethod.NAMING_CONVENTION, 0.3);
+        fixtures.link(manh, warning.getEvidenceRecord(), EvidenceLinkRelation.SUPPORTS, EvidenceLinkMethod.STACK_FRAME, 1.0);
+
+        var items = service.getRelatedTests(run.getId(), warning.getEvidenceRecord().getShortId(), null);
+
+        assertThat(items).extracting(item -> item.shortId()).containsExactly(manh.getShortId(), yeu.getShortId());
+    }
+
+    /**
+     * "Test liên quan" phải là TEST, không phải bất kỳ evidence nào tình cờ mang quan hệ SUPPORTS.
+     * Bản trước truyền {@code typeFilter = null} nên một bằng chứng độ phủ mang SUPPORTS cũng lọt
+     * vào danh sách test — LLM đọc xong sẽ nói "có test ủng hộ" trong khi không có test nào.
+     */
+    @Test
+    void getRelatedTests_loaiEvidenceKhongPhaiTest() {
+        Project project = fixtures.project("p-" + System.nanoTime());
+        RepositorySnapshot snapshot = fixtures.snapshot(project);
+        AnalysisRun run = fixtures.succeededRun(snapshot, 2);
+
+        Warning warning = fixtures.warning(run, "DM_CONVERT_CASE", WarningTool.spotbugs, "TextNormalizer.java", 10);
+        EvidenceRecord test = fixtures.evidenceRecord(run, EvidenceType.FAILED_TEST, EvidenceSource.surefire, "TextNormalizerTest.java", 12);
+        EvidenceRecord coverage = fixtures.evidenceRecord(run, EvidenceType.COVERAGE_INFORMATION, EvidenceSource.jacoco, "TextNormalizer.java", 10);
+
+        fixtures.link(test, warning.getEvidenceRecord(), EvidenceLinkRelation.SUPPORTS, EvidenceLinkMethod.STACK_FRAME, 1.0);
+        fixtures.link(coverage, warning.getEvidenceRecord(), EvidenceLinkRelation.SUPPORTS, EvidenceLinkMethod.METHOD_AGGREGATE, 0.6);
+
+        var items = service.getRelatedTests(run.getId(), warning.getEvidenceRecord().getShortId(), null);
+
+        assertThat(items).extracting(item -> item.shortId()).containsExactly(test.getShortId());
+    }
+
     @Test
     void getCoverage_locDungTypeCoverageInformation() {
         Project project = fixtures.project("p-" + System.nanoTime());
