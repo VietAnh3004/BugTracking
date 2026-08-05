@@ -19,7 +19,7 @@ Bảo vệ dự kiến giữa tháng 12/2026.
 |---|---|
 | [docs/ke-hoach-20-tuan.md](docs/ke-hoach-20-tuan.md) | **Lộ trình đầy đủ 20 tuần** + chuẩn code + thiết kế. Đọc trước tiên |
 | [docs/adr/](docs/adr/) | Bốn quyết định kiến trúc lớn và lý do |
-| [docs/evidence-model.md](docs/evidence-model.md) | Schema Unified Evidence Model. **Mục 7 ghi 5 bảng còn nợ** (`test_case`, `stack_frame`, `coverage_line`, `coverage_method`, `warning_location`) — hoãn có chủ đích sang tuần 8-9, không phải quên. Đọc trước khi đụng vào StaticAnalysisAdapter/TestEvidenceCollector |
+| [docs/evidence-model.md](docs/evidence-model.md) | Schema Unified Evidence Model — bảng provenance cho **cả 7 bảng bằng chứng** (V2 + 5 bảng thô của V5), mỗi cột trỏ về đúng chỗ trong artifact thật. Sửa schema thì phải sửa cả tài liệu: `docs/check-evidence-model.py` đối chiếu HAI CHIỀU và CI đỏ nếu lệch. Đọc trước khi đụng vào parser trong `service/analysis/` |
 | [docs/spike-tuan-1.md](docs/spike-tuan-1.md) | Xác thực rủi ro: 3 nguồn bằng chứng khớp `file:line` |
 | [docs/huong-dan-test-frontend.md](docs/huong-dan-test-frontend.md) | Giải thích snapshot/cảnh báo/severity/sandbox + các bước nghiệm thu bằng trình duyệt thật |
 | [case-study/vulnshop/SEEDED.md](case-study/vulnshop/SEEDED.md) | Danh mục lỗi gieo có chủ đích + phát hiện ảnh hưởng thiết kế |

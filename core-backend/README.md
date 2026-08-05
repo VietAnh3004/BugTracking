@@ -14,15 +14,17 @@ LLM. Xem [ADR 0001](../docs/adr/0001-tach-agent-service-khoi-core-backend.md).
 ## Cấu trúc
 
 ```
-controller/   Nhận request, validate DTO, gọi service. Không logic nghiệp vụ.
-service/      Toàn bộ logic nghiệp vụ. Không biết gì về HTTP.
-repository/   Truy cập dữ liệu (Spring Data JPA).
-domain/       Entity, value object, enum.
-dto/          Record request/response, tách biệt entity.
-mapper/       MapStruct, entity <-> DTO.
-config/       Bean, security, CORS, OpenAPI. Nhóm cấu hình nằm trong config/properties.
-exception/    Exception nghiệp vụ + @RestControllerAdvice xử lý tập trung.
-storage/      Cổng ra object storage. Là HẠ TẦNG, không phải nghiệp vụ — xem package-info.
+controller/            Nhận request, validate DTO, gọi service. Không logic nghiệp vụ.
+service/               Toàn bộ logic nghiệp vụ. Không biết gì về HTTP.
+  analysis/            Parser artifact analyzer -> bằng chứng, và điều phối một lần phân tích.
+  analysis/sandbox/    Chạy analyzer trong Docker trên mã nguồn người dùng.
+repository/            Truy cập dữ liệu (Spring Data JPA).
+domain/                Entity, value object, enum.
+dto/                   Record request/response, tách biệt entity.
+mapper/                MapStruct, entity <-> DTO.
+config/                Bean, security, CORS, OpenAPI. Nhóm cấu hình nằm trong config/properties.
+exception/             Exception nghiệp vụ + @RestControllerAdvice xử lý tập trung.
+storage/               Cổng ra object storage. Là HẠ TẦNG, không phải nghiệp vụ — xem package-info.
 ```
 
 Quy ước:
@@ -60,6 +62,48 @@ Upload zip → giải nén an toàn (chống zip-slip ba tầng, chống zip-bom
 MinIO (`snapshots/{id}/{path}`) + chỉ mục phẳng trong bảng `snapshot_file`. Postgres là nguồn sự
 thật; object storage được phép có rác. Xem
 [ADR 0007](../docs/adr/0007-luu-snapshot-theo-tung-file-tren-object-storage.md).
+
+## Từ artifact analyzer tới bằng chứng
+
+Bốn parser trong `service/analysis/` biến output thô của công cụ thành `evidence_record` cùng các
+bảng thô đi kèm (`warning`, `warning_location`, `test_case`, `stack_frame`, `coverage_line`,
+`coverage_method`). Từng cột trỏ về đâu trong artifact thật: [docs/evidence-model.md](../docs/evidence-model.md).
+
+| Parser | Đọc | Sinh ra |
+|---|---|---|
+| `SpotbugsXmlAdapter` | `spotbugs.xml` | `STATIC_WARNING` |
+| `SemgrepSarifAdapter` | `semgrep.sarif` | `STATIC_WARNING` |
+| `SurefireResultCollector` (+ `StackTraceParser`) | `TEST-*.xml` | `TEST_RESULT`, `FAILED_TEST`, `STACK_TRACE` |
+| `JacocoCoverageCollector` | `jacoco.xml` | `COVERAGE_INFORMATION` |
+
+Bốn điều dễ làm sai, đều thuộc loại hỏng-im-lặng:
+
+- **Chọn parser theo NỘI DUNG, không theo tên file** (`AnalyzerRegistry.detect`). Vì vậy endpoint
+  nạp artifact dùng một trường lặp `artifacts`, không phải bốn trường có tên sẵn — đặt tên trường
+  là hứa một điều mà hệ thống không kiểm.
+- **Artifact là dữ liệu KHÔNG TIN CẬY**: nó do analyzer chạy trên repo người lạ sinh ra. Thuộc
+  tính thiếu phải thành một run `FAILED` kèm lý do đọc được, không phải `NullPointerException`.
+- **Đường dẫn trong artifact có bốn định dạng, không join thẳng được.** `SnapshotPathResolver`
+  khớp **hậu tố dài nhất và duy nhất** với `snapshot_file.path`; không khớp thì để NULL và cộng
+  vào `analysis_run.unresolved_location_count` — không bao giờ đoán bừa.
+- **Analyzer trả 0 cảnh báo bị coi là lỗi**, ép bằng CHECK constraint trên `analysis_run.status`
+  chứ không chỉ bằng code. Một pipeline "thành công" với Evidence Store rỗng nguy hiểm hơn nhiều
+  so với báo lỗi thẳng.
+
+## Chạy analyzer trong Docker sandbox
+
+`POST /api/v1/snapshots/{id}/analysis-runs/sandbox` dựng cây mã nguồn thành tar, chạy hai image
+analyzer rồi thu artifact về — người dùng không phải tự cài JDK 21 hay tự cấu hình find-sec-bugs.
+Quyết định và rủi ro: [ADR 0008](../docs/adr/0008-chay-analyzer-trong-docker-sandbox.md).
+
+**Mặc định TẮT** (`ANALYSIS_RUNNER=disabled`): ứng dụng khởi động bình thường trên máy chủ không có
+Docker daemon, và gọi endpoint này khi đang tắt trả 503 kèm lý do đọc được chứ không phải 500.
+Bật lên đòi mount `/var/run/docker.sock` — tương đương cấp quyền root trên host, nên đó là một
+quyết định vận hành có ý thức. Cách bật: [infra/README.md](../infra/README.md).
+
+`SandboxReaper` dọn container và volume mồ côi mang nhãn `evidence.run-id` (khối `finally` chỉ
+chạy khi JVM còn sống; deploy lại giữa chừng thì rác nằm lại vĩnh viễn). Nó bỏ qua container
+`running` và có thời gian ân hạn 1 giờ để không đụng vào run đang chạy.
 
 ## Chạy local
 

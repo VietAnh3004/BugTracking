@@ -1,7 +1,8 @@
 # frontend
 
-SPA tĩnh: đăng nhập, quản lý dự án, tải mã nguồn lên, duyệt cây file và xem mã nguồn theo dòng.
-Danh sách cảnh báo, evidence explorer và chat với AI Agent sẽ thêm ở các tuần sau.
+SPA tĩnh: đăng nhập, quản lý dự án, tải mã nguồn lên, duyệt cây file và xem mã nguồn theo dòng,
+xem danh sách cảnh báo đã chuẩn hoá của một lần phân tích. Evidence Explorer và chat với AI Agent
+sẽ thêm ở các tuần sau.
 
 ## Deploy độc lập
 
@@ -20,6 +21,7 @@ src/
 │   ├── auth/       { api/ components/ context/ hooks/ pages/ }
 │   ├── projects/   { components/ hooks/ pages/ }
 │   ├── snapshots/  { api/ components/ hooks/ layouts/ lib/ pages/ }
+│   ├── warnings/   { api/ components/ hooks/ pages/ }
 │   └── system/     { components/ hooks/ }
 ├── shared/
 │   ├── ui/         Thuần trình bày — không gọi API, không biết nghiệp vụ
@@ -72,7 +74,13 @@ npm run build      # bao gồm kiểm tra kiểu
 
 Test dùng **happy-dom**, không phải jsdom: trên máy phát triển Windows, nạp jsdom mất ~11 giây mỗi
 lần khiến mọi worker của Vitest vượt ngưỡng khởi động 60 giây và toàn bộ test đỏ với thông điệp
-không hề nhắc tới jsdom. Xem `CLAUDE.md` ở gốc repo.
+không hề nhắc tới jsdom.
+
+`vite.config.ts` còn đặt `maxWorkers: '50%'`, và đó **không phải tinh chỉnh hiệu năng**: mặc định
+Vitest mở ~(số core − 1) tiến trình, đủ nhiều để tất cả cùng vượt ngưỡng 60 giây và cho ra **đúng
+thông điệp lỗi mà happy-dom đã dựng lên để tránh**. Cách phân biệt hai nguyên nhân: chạy lại với
+`npx vitest run --maxWorkers=2` — xanh nghĩa là lỗi tải, vẫn đỏ nghĩa là lỗi environment. Chi tiết
+và số đo trong `CLAUDE.md` ở gốc repo.
 
 ## Sinh lại kiểu dữ liệu API
 

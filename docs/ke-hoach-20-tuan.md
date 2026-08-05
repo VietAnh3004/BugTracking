@@ -17,7 +17,7 @@
 
 ## Trạng thái tiến độ
 
-*Cập nhật: 30/07/2026*
+*Cập nhật: 05/08/2026*
 
 | Giai đoạn | Trạng thái |
 |---|---|
@@ -27,6 +27,7 @@
 | **Tuần 4** — API contract + OpenAPI | ✅ Xong (xem §E2) |
 | **Tuần 5-7** — core backend CRUD + JWT auth + frontend routing | ✅ Xong (xem §G) |
 | **Tuần 8-9** — parser analyzer → Evidence Store + Docker sandbox | ✅ Xong: A, B, C, D (xem §H) |
+| **Tuần 10-11** — EvidenceLinker 3 tầng, CODE_CONTEXT, pgvector, Evidence Explorer | ⬜ Chưa bắt đầu |
 
 ### §G — Tuần 5-7: tiến độ chi tiết (đã xong)
 

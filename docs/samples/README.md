@@ -28,6 +28,28 @@ Hai công dụng, cả hai đều quan trọng:
 Số liệu kỳ vọng nằm trong [`case-study/vulnshop/expected-analysis.json`](../../case-study/vulnshop/expected-analysis.json)
 — nguồn sự thật duy nhất, CI đối chiếu tự động.
 
+### `vulnshop-sandbox/` — cùng dự án, chạy trong Docker sandbox
+
+Tuần 8-9 (giai đoạn D) thêm thư mục thứ hai: artifact do **core-backend tự chạy analyzer trong
+container** sinh ra, thay vì `run-analysis.sh` chạy trên host. Cùng mã nguồn, khác hoàn toàn cách
+thực hiện — hai image analyzer, `mvn` chạy offline ở pha không có mạng, đường dẫn khác vì cây mã
+nguồn được dựng từ snapshot đã upload.
+
+Hai công dụng:
+
+1. **Đối chiếu** — tiêu chí nghiệm thu của giai đoạn D là hai đường phải cho **trùng khít** số
+   liệu. Lệch nghĩa là sandbox đang thấy một dự án khác với cái ta nghĩ.
+2. **Fixture cho `AnalyzerSanityCheckerTest`** (đường dẫn lấy qua `SampleArtifacts`). Bốn tầng
+   chống "chạy xong nhưng 0 cảnh báo" chỉ kiểm được bằng artifact do **chính sandbox** sinh ra:
+   artifact chạy trên host không có mã canary, mà canary là một trong bốn tầng.
+
+Vì vậy thư mục này chỉ có `spotbugs.xml` và `semgrep.sarif` — đó là hai file mà
+`AnalyzerSanityChecker` đọc (số class đã quét, phiên bản JDK, plugin đã nạp, canary), không phải
+một bản sao đầy đủ của lần chạy.
+
+Xem [infra/analyzer/README.md](../../infra/analyzer/README.md) và
+[ADR 0008](../adr/0008-chay-analyzer-trong-docker-sandbox.md).
+
 ```bash
 python case-study/summarize.py vulnshop            # xem số liệu
 python case-study/summarize.py vulnshop --check    # đối chiếu

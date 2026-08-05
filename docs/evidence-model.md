@@ -5,10 +5,12 @@ không hình dung trước rồi sửa sau. Mỗi trường trong bảng provena
 chỗ trong artifact thật, và `docs/check-evidence-model.py` kiểm chứng tự động điều đó (xem cuối
 tài liệu).
 
-Phạm vi tuần 3 (V2, đã hiện thực): `analysis_run`, `evidence_record`, `warning`, `evidence_link`,
-`claim`, `claim_citation`. Bảng "thô" mirror trực tiếp từng công cụ (`test_case`, `stack_frame`,
-`coverage_line`, `coverage_method`, `warning_location`) **chưa tạo** — xem mục "Thiết kế cho V5"
-ở cuối, kèm 4 phát hiện từ artifact thật làm căn cứ.
+Phạm vi tuần 3 (V2): `analysis_run`, `evidence_record`, `warning`, `evidence_link`, `claim`,
+`claim_citation`. Năm bảng "thô" mirror trực tiếp từng công cụ (`warning_location`, `test_case`,
+`stack_frame`, `coverage_line`, `coverage_method`) hoãn có chủ đích tới tuần 8-9 và **nay đã có**
+trong `V5__evidence_raw_tables.sql`, kèm parser thật cho cả bốn artifact — xem mục 7 trở đi, cùng
+4 phát hiện từ artifact thật làm căn cứ (mục 6). Tuần 8-9 thêm `V6__analysis_run_sandbox.sql`:
+năm cột dấu vết của Docker sandbox trên `analysis_run`, xem mục 12bis.
 
 > **Về số hiệu migration**: tài liệu này và kế hoạch 20 tuần ban đầu đều gọi đợt bảng thô là "V3".
 > Tuần 5-7 đã dùng mất `V3__auth_and_snapshot_files.sql` và `V4__project_owner_not_null.sql`, nên
@@ -17,18 +19,21 @@ Phạm vi tuần 3 (V2, đã hiện thực): `analysis_run`, `evidence_record`, 
 
 ## 1. 6 loại evidence
 
-| Loại | Sinh từ | V2 lưu ở |
+| Loại | Sinh từ | Lưu ở (sau V5) |
 |---|---|---|
-| `STATIC_WARNING` | SpotBugs, Semgrep | `evidence_record` + `warning` |
-| `CODE_CONTEXT` | JavaParser (tuần 10-11) | `evidence_record` (nội dung rỗng ở V2) |
-| `TEST_RESULT` | Surefire | `evidence_record` (V5 mới có `test_case`) |
-| `FAILED_TEST` | Surefire | `evidence_record` (V5 mới có `test_case`) |
-| `STACK_TRACE` | Surefire | `evidence_record` (V5 mới có `stack_frame`) |
-| `COVERAGE_INFORMATION` | JaCoCo | `evidence_record` (V5 mới có `coverage_line`/`coverage_method`) |
+| `STATIC_WARNING` | SpotBugs, Semgrep | `evidence_record` + `warning` + `warning_location` |
+| `CODE_CONTEXT` | JavaParser (tuần 10-11) | `evidence_record` — **chưa có parser nào sinh ra loại này** |
+| `TEST_RESULT` | Surefire | `evidence_record` + `test_case` |
+| `FAILED_TEST` | Surefire | `evidence_record` + `test_case` |
+| `STACK_TRACE` | Surefire | `evidence_record` + `stack_frame` |
+| `COVERAGE_INFORMATION` | JaCoCo | `evidence_record` + `coverage_line` + `coverage_method` |
 
-V2 cho phép mọi loại evidence tồn tại như một `evidence_record` (đơn vị citable), nhưng chỉ
-`STATIC_WARNING` có bảng mở rộng 1:1 (`warning`) lưu metadata riêng ở dạng có ràng buộc SQL;
-4 loại còn lại tạm lưu toàn bộ chi tiết trong `content` JSONB cho tới khi bảng thô V5 ra đời.
+Mọi loại evidence tồn tại như một `evidence_record` — đó là **đơn vị citable**, thứ mà Evidence ID
+trỏ tới. Bảng thô đi kèm giữ chi tiết ở dạng có ràng buộc SQL thay vì chôn trong `content` JSONB,
+để truy vấn và kiểm chứng được.
+
+`CODE_CONTEXT` là loại duy nhất còn trống: nó sinh từ JavaParser ở tuần 10-11, không đến từ
+artifact analyzer nào.
 
 ## 2. Bảng provenance — `evidence_record` (chung cho mọi loại)
 
@@ -220,10 +225,14 @@ erDiagram
    `package/@name + '/' + sourcefile/@name` · Surefire không có path nào, chỉ tên file trần
    trong text thô của stack trace.
 
-## 7. Năm bảng thô (V5, tuần 8-9)
+## 7. Năm bảng thô (V5, tuần 8-9 — đã hiện thực)
 
-Không tạo ở V2 vì không có consumer nào cho tới EvidenceLinker (tuần 10-11) và parser thật
-(tuần 8-9); tạo sớm sẽ là bảng rỗng không parser, không test, không ai biết sai cho tới lúc đó.
+Không tạo ở V2 vì tới lúc đó chưa có consumer nào: parser thật là tuần 8-9, EvidenceLinker là
+tuần 10-11. Tạo sớm sẽ là bảng rỗng không parser, không test, không ai biết sai cho tới lúc đó.
+
+Nay `V5__evidence_raw_tables.sql` đã tạo đủ năm bảng, có entity JPA và parser đọc được cả bốn
+artifact thật của vulnshop. Mục 8-12 dưới đây là bảng provenance của từng bảng, và
+`check-evidence-model.py` đối chiếu hai chiều chúng với SQL (mục 13).
 
 | Bảng | Vì sao cần | Khuôn quan hệ |
 |---|---|---|
