@@ -85,6 +85,33 @@ public class AnalysisRun {
     @Column(name = "tool_versions")
     private Map<String, Object> toolVersions;
 
+    /**
+     * Số {@code evidence_link} EvidenceLinker sinh ra. Cùng lý do tồn tại với
+     * {@link #unresolvedLocationCount}: một liên kết không sinh ra được trông y hệt "không có bằng
+     * chứng liên quan", nên thất bại phải hiện thành số.
+     */
+    @Column(name = "link_count", nullable = false)
+    private int linkCount = 0;
+
+    /** Số evidence loại {@code CODE_CONTEXT} do JavaParser sinh ra. */
+    @Column(name = "code_context_count", nullable = false)
+    private int codeContextCount = 0;
+
+    /**
+     * Số cảnh báo không có liên kết nào. Tách khỏi {@link #linkCount} vì 30/33 cảnh báo trơ trọi
+     * là tín hiệu hoàn toàn khác 0/33, mà một mình {@code linkCount} không phân biệt được.
+     */
+    @Column(name = "unlinked_warning_count", nullable = false)
+    private int unlinkedWarningCount = 0;
+
+    /**
+     * Phân bố link theo {@link EvidenceLinkMethod}, vd {@code {"STACK_FRAME": 7, "NAMING_CONVENTION": 21}}.
+     * Đây là nguồn số liệu "bao nhiêu % liên kết chỉ dựa vào quy ước đặt tên" của tuần 15.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "link_counts_by_method")
+    private Map<String, Object> linkCountsByMethod;
+
     /** Xem {@link ArtifactSource}. Mặc định {@code MANUAL_UPLOAD} khớp DEFAULT của cột. */
     @Enumerated(EnumType.STRING)
     @Column(name = "artifact_source", nullable = false)

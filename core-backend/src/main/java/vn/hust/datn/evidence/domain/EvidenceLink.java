@@ -29,6 +29,16 @@ public class EvidenceLink {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    /**
+     * Run của CẢ HAI đầu link — phi chuẩn hoá có chủ đích (V7).
+     *
+     * <p>Suy được bằng join qua {@code evidence_record}, nhưng giữ ở đây để rebuild xoá link của
+     * đúng một run bằng một lần quét index, và để bất biến "link không vắt qua hai run" trở thành
+     * thứ kiểm được thay vì một lời hứa trong code.
+     */
+    @Column(name = "analysis_run_id", nullable = false)
+    private UUID analysisRunId;
+
     @Column(name = "from_evidence_id", nullable = false)
     private UUID fromEvidenceId;
 

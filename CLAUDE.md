@@ -201,6 +201,14 @@ Triệu chứng thật: `curl :9000/minio/health/live` trả về rỗng/connect
 
 **Comment trong XML không được chứa `--`** (đã làm hỏng pom.xml một lần).
 
+**Flyway thay placeholder CẢ TRONG COMMENT SQL.** Gặp thật ở tuần 10-11: comment trong
+`V7__evidence_embedding_and_linker.sql` viết ra tên một placeholder (dạng đô-la kèm ngoặc nhọn)
+để **giải thích vì sao KHÔNG dùng nó** — Flyway vẫn quét trúng và ứng dụng chết lúc khởi động với
+`No value provided for placeholder`. Triệu chứng ở test là `ApplicationContext failure threshold
+(1) exceeded` trên **mọi** test tích hợp, hoàn toàn không gợi ý gì về SQL; phải lần tới `Caused by`
+cuối cùng mới thấy. Muốn nhắc tên một placeholder trong comment thì gọi nó bằng lời, đừng viết
+đúng cú pháp.
+
 **`mvn verify` báo lỗi giả sau nhiều lần `mvn test`/`spotless:apply` liên tiếp không `clean`.**
 Gặp thật: `ProjectController` báo "No qualifying bean of type ProjectMapper" dù `@Mapper` hoàn
 toàn đúng — nguyên nhân là compile tăng tiến (incremental) của Maven không sinh lại

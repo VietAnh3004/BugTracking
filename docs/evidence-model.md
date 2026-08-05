@@ -385,6 +385,47 @@ Ba ràng buộc đi kèm, xem `V6__analysis_run_sandbox.sql`:
 bị từ chối, "không kiểm" không phải là "coi như đạt") · `ck_run_canary_only_from_sandbox` (run nạp
 tay khai `canary_ok` là một lời khai không có gì chống lưng) · `ck_run_canary_count_nonneg`.
 
+## 12ter. `analysis_run` — bộ đếm của EvidenceLinker, và `evidence_embedding` (V7)
+
+Cùng lý do với mục 12bis, ba nhóm dưới đây **không** có bảng provenance và **không** nằm trong
+`DOCUMENTED_TABLES`: chúng không đến từ artifact analyzer. Bộ đếm sinh từ *việc liên kết*, còn
+embedding sinh từ *một mô hình ngôn ngữ*.
+
+**Bộ đếm của linker trên `analysis_run`:**
+
+| Cột | Ý nghĩa | Vì sao cần |
+|---|---|---|
+| `link_count` | Số `evidence_link` sinh ra | Cùng lý do tồn tại với `unresolved_location_count`: một liên kết không sinh ra được trông **y hệt** "không có bằng chứng liên quan" |
+| `code_context_count` | Số evidence `CODE_CONTEXT` JavaParser sinh ra | Phân biệt "JavaParser không chạy" với "chạy rồi nhưng không nối được" |
+| `unlinked_warning_count` | Số cảnh báo không có liên kết nào | Thất bại **một phần** cũng phải thấy được: 30/33 cảnh báo trơ trọi khác hẳn 0/33, mà `link_count` một mình không phân biệt |
+| `link_counts_by_method` | Phân bố theo `EvidenceLinkMethod` | Nguồn số liệu *"bao nhiêu % liên kết chỉ dựa vào quy ước đặt tên"* của tuần 15 |
+
+Ràng buộc `ck_run_links_not_silently_empty` (`status <> 'SUCCEEDED' OR code_context_count = 0 OR
+link_count > 0`) **không phải phán đoán heuristic** mà là bất biến cấu trúc: một `CODE_CONTEXT`
+chỉ được sinh ra *vì* có vị trí cảnh báo trỏ vào nó, nên có context mà 0 link là tầng 1 của linker
+hỏng. Vế `code_context_count = 0` tránh đỏ giả cho repo không có file Java nào.
+
+**`evidence_link.analysis_run_id`** là phi chuẩn hoá có chủ đích: suy được bằng join, nhưng giữ
+lại để (a) rebuild xoá link của đúng một run bằng một lần quét index, và (b) biến bất biến *"link
+không vắt qua hai run"* thành thứ kiểm được thay vì một lời hứa trong code.
+
+**`evidence_embedding`** — dựng schema trước, sinh vector sau (tuần 12-13):
+
+| Cột | Ghi chú |
+|---|---|
+| `chunk_id` | Khoá **dẫn xuất** `<evidence_record_id>:<chunk_ordinal>`, ép bằng CHECK. Nhờ vậy nhúng lại cùng một đoạn là upsert idempotent, và quy ước thành ràng buộc cấu trúc |
+| `model` | Nằm trong PK để tuần 16 so được **nhiều mô hình** trên cùng tập bằng chứng — đổi mô hình là thêm hàng, không phải ghi đè |
+| `dims` | Số chiều thật của hàng, có CHECK `dims = vector_dims(embedding)`. Cần vì cột vector không khai số chiều nên Postgres không tự chặn việc trộn hai mô hình |
+| `embedding` | Kiểu `vector` **không khai số chiều** (ADR 0004 §6: số chiều do mô hình quyết định, mô hình chỉ chốt ở tuần 12-13) |
+
+Đánh đổi đã đo trên chính Postgres của dự án: cột không khai số chiều **không tạo được index
+HNSW/IVFFlat** (`ERROR: column does not have dimensions`). Chấp nhận vì tuần 10-11 chưa có vector
+nào để tìm kiếm. Tuần 12-13 sau khi chốt mô hình: `ALTER COLUMN embedding TYPE vector(N)` rồi tạo
+HNSW — **không** IVFFlat, vì IVFFlat cần dữ liệu để huấn luyện danh sách và tạo trên bảng rỗng cho
+ra một index vô dụng mà không báo gì. `EvidenceEmbeddingSchemaTest.chuaIndexDuocVectorKhiChuaChotSoChieu`
+canh đúng chỗ này: nó sẽ **đỏ** khi ai đó đổi sang `vector(N)`, nhắc tạo index thay vì để hệ thống
+lặng lẽ quét tuần tự.
+
 ## 13. Kiểm chứng tự động
 
 ```bash

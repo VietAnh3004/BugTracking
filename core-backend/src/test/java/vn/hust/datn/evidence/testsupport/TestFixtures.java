@@ -314,9 +314,20 @@ public class TestFixtures {
         return warningRepository.saveAndFlush(warning);
     }
 
+    /**
+     * {@code analysis_run_id} suy từ {@code from} chứ không nhận thêm tham số — nó là bất biến của
+     * bảng, không phải một lựa chọn. Chặn luôn ở đây khi hai đầu khác run: một fixture lặng lẽ
+     * dựng được thứ mà production không bao giờ dựng ra sẽ cho test xanh giả.
+     */
     public EvidenceLink link(
             EvidenceRecord from, EvidenceRecord to, EvidenceLinkRelation relation, EvidenceLinkMethod method, double weight) {
+        if (!from.getAnalysisRunId().equals(to.getAnalysisRunId())) {
+            throw new IllegalArgumentException(
+                    "Hai dau cua mot evidence_link phai thuoc cung mot run: %s vs %s"
+                            .formatted(from.getAnalysisRunId(), to.getAnalysisRunId()));
+        }
         EvidenceLink link = new EvidenceLink();
+        link.setAnalysisRunId(from.getAnalysisRunId());
         link.setFromEvidenceId(from.getId());
         link.setToEvidenceId(to.getId());
         link.setRelation(relation);
