@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import vn.hust.datn.evidence.domain.AnalysisRunStatus;
+import vn.hust.datn.evidence.domain.ArtifactSource;
 import vn.hust.datn.evidence.domain.ClaimCitationResolution;
 import vn.hust.datn.evidence.domain.ClaimVerdict;
 import vn.hust.datn.evidence.domain.CoverageStatus;
@@ -150,6 +151,11 @@ class EnumCheckConstraintTest extends AbstractIntegrationTest {
     @Test
     void coverageLineStatus() {
         assertCheckMatchesEnum("coverage_line", "status", CoverageStatus.values());
+    }
+
+    @Test
+    void analysisRunArtifactSource() {
+        assertCheckMatchesEnum("analysis_run", "artifact_source", ArtifactSource.values());
     }
 
     private void assertCheckMatchesEnum(String table, String column, Enum<?>[] enumValues) {

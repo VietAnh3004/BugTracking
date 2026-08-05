@@ -170,7 +170,13 @@ văn — nếu nó trượt, mọi thứ khác vẫn xong và vẫn demo đượ
 | B4 | `POST /snapshots/{id}/analysis-runs` nạp artifact | ✅ Xong |
 | B5 | Endpoint đọc analysis run + danh sách cảnh báo cho UI | ✅ Xong |
 | C | Màn hình danh sách cảnh báo (frontend) | ✅ Xong |
-| D | Docker sandbox (7 commit, mở đầu bằng spike SpotBugs CLI) | ⬜ Chưa |
+| D1 | Spike SpotBugs CLI + **ADR 0008** | ✅ Xong |
+| D2 | Hai image analyzer + script dựng-và-đối-chiếu | ✅ Xong |
+| D3 | V6: cột sandbox + ràng buộc canary cho `analysis_run` | ⬜ Chưa |
+| D4 | Cổng `SandboxRunner` + dựng cây mã nguồn thành tar | ⬜ Chưa |
+| D5 | Kiểm tính tỉnh táo của analyzer + canary (phía backend) | ⬜ Chưa |
+| D6 | `DockerSandboxRunner` trên `docker-java` | ⬜ Chưa |
+| D7 | Điều phối chạy phân tích bất đồng bộ + gắn Docker socket | ⬜ Chưa |
 
 Sau A: **216 test xanh**, 4 parser đọc được đủ 4 artifact thật, 75 dòng provenance cho 7 bảng khớp
 hai chiều với SQL.
@@ -247,6 +253,30 @@ run trước khi chạm DB.
    cho biết. Đã ghi thành một test có tên nói rõ điều này.
 4. **Vitest đỏ toàn bộ vì quá nhiều worker**, với ĐÚNG thông điệp lỗi mà happy-dom đã dựng lên để
    tránh — chi tiết và cách phân biệt hai nguyên nhân ghi ở `CLAUDE.md`.
+
+#### Giai đoạn D — hai kết quả đo được, và một chỗ kế hoạch phải sửa
+
+**Spike SpotBugs CLI (D1) thành công dứt khoát.** CLI độc lập cho **28/28** `BugInstance` trùng
+khít Maven plugin — cùng bộ `(type, vị trí)`, cùng `total_classes`, cùng plugin đã nạp. Không cần
+phương án lùi. Chi tiết ở [docs/spike-spotbugs-cli.md](spike-spotbugs-cli.md).
+
+Phát hiện phụ **quan trọng hơn kết quả chính**: bỏ `-auxclasspath` thì SpotBugs mất 3/28 cảnh báo
+mà **vẫn exit 0, XML vẫn hợp lệ, `total_classes` vẫn đúng 20**. Ca này lọt qua cả tầng kiểm số 2
+lẫn canary — bằng chứng cụ thể rằng bốn tầng chống 0-cảnh-báo không thay thế được nhau.
+
+**Sandbox (D2) đạt tiêu chí nghiệm thu**: chạy thật qua `docker create`/`cp`/`start`, không bind
+mount, cho ra `28 SpotBugs · 5 Semgrep · 33 test (5 hỏng) · 82/171 dòng phủ` — **trùng khít**
+`run-analysis.sh` chạy trên host.
+
+**Chỗ ADR 0008 phải sửa ngay sau khi chốt**: kế hoạch ghi `--network=none` cho mọi thứ kèm
+`mvn -o`. Điều đó **không sống sót khi viết image** — Maven offline chỉ chạy được nếu mọi plugin
+và phụ thuộc của repo người dùng đã nằm sẵn trong seed, mà với repo bất kỳ là bất khả. Đổi thành
+**hai pha**: `resolve` có mạng (chỉ phân giải phụ thuộc, không chạy test) và `analyze` không mạng
+(chạy test + SpotBugs). Ranh giới giữ được điều quan trọng nhất: **pha nguy hiểm là pha không có
+mạng**.
+
+Năm cạm bẫy khi dựng image ghi ở [infra/analyzer/README.md](../infra/analyzer/README.md); bốn cái
+chung nhất đã đưa vào `CLAUDE.md`.
 
 #### Sai lệch có chủ đích ở giai đoạn B-C
 

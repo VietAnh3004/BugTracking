@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import vn.hust.datn.evidence.domain.AnalysisRunStatus;
+import vn.hust.datn.evidence.domain.ArtifactSource;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -34,5 +35,14 @@ public record AnalysisRunResponse(
                         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
                         description = "Phiên bản đọc từ chính artifact; khoá 'jacoco' vắng mặt là bình thường")
                 Map<String, Object> toolVersions,
+        @Schema(
+                        requiredMode = Schema.RequiredMode.REQUIRED,
+                        description = "Artifact do người dùng nạp tay hay do sandbox tự chạy — hai mức đáng tin khác nhau")
+                ArtifactSource artifactSource,
+        @Schema(
+                        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+                        description = "NULL với run nạp tay: ở đó không có canary để kiểm, khác hẳn false")
+                Boolean canaryOk,
+        @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) String analyzerImageDigest,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) OffsetDateTime startedAt,
         @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) OffsetDateTime finishedAt) {}

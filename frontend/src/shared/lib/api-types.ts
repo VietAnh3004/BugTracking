@@ -431,6 +431,14 @@ export interface components {
             toolVersions?: {
                 [key: string]: Record<string, never>;
             };
+            /**
+             * @description Artifact do người dùng nạp tay hay do sandbox tự chạy — hai mức đáng tin khác nhau
+             * @enum {string}
+             */
+            artifactSource: "MANUAL_UPLOAD" | "DOCKER_SANDBOX";
+            /** @description NULL với run nạp tay: ở đó không có canary để kiểm, khác hẳn false */
+            canaryOk?: boolean;
+            analyzerImageDigest?: string;
             /** Format: date-time */
             startedAt: string;
             /** Format: date-time */

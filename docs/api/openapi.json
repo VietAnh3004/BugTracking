@@ -1043,6 +1043,18 @@
             },
             "description" : "Phiên bản đọc từ chính artifact; khoá 'jacoco' vắng mặt là bình thường"
           },
+          "artifactSource" : {
+            "type" : "string",
+            "description" : "Artifact do người dùng nạp tay hay do sandbox tự chạy — hai mức đáng tin khác nhau",
+            "enum" : [ "MANUAL_UPLOAD", "DOCKER_SANDBOX" ]
+          },
+          "canaryOk" : {
+            "type" : "boolean",
+            "description" : "NULL với run nạp tay: ở đó không có canary để kiểm, khác hẳn false"
+          },
+          "analyzerImageDigest" : {
+            "type" : "string"
+          },
           "startedAt" : {
             "type" : "string",
             "format" : "date-time"
@@ -1052,7 +1064,7 @@
             "format" : "date-time"
           }
         },
-        "required" : [ "findingCount", "id", "locationCount", "snapshotId", "startedAt", "status", "unresolvedLocationCount" ]
+        "required" : [ "artifactSource", "findingCount", "id", "locationCount", "snapshotId", "startedAt", "status", "unresolvedLocationCount" ]
       },
       "CreateProjectRequest" : {
         "type" : "object",
