@@ -3,6 +3,11 @@
 Dành cho việc nghiệm thu tuần 8-9. Đọc mục 1 trước nếu chưa rõ bốn khái niệm; muốn bắt tay ngay
 thì nhảy tới mục 2.
 
+> **Shell**: máy này mặc định mở **PowerShell**, còn `CLAUDE.md` và phần lớn script trong repo viết
+> cho **Git Bash**. Hai shell không dùng chung cú pháp — PowerShell 5.1 **không hiểu `&&`**, không
+> có `zip`, và `curl` ở đó là alias của `Invoke-WebRequest`. Mọi lệnh dưới đây có bản cho **cả
+> hai**; chọn đúng tab của shell bạn đang dùng.
+
 **Vì sao phải kiểm bằng tay khi đã có 88 test tự động**: test dùng `happy-dom` (không có bố cục
 và cuộn thật), `MemoryRouter` (không có History API thật), mock `fetch` (không có CORS thật) và
 tắt CSS (`css: false`). Bốn thứ đó về mặt cấu trúc không kiểm được bằng test — phần còn lại thì
@@ -104,13 +109,51 @@ trong `CORS_ORIGINS` của `infra/.env`.
 
 ### 2.3. Nén vulnshop thành zip
 
-Nén **nội dung bên trong** `case-study/vulnshop/`, sao cho `pom.xml` nằm ở gốc zip:
+Nén **nội dung bên trong** `case-study/vulnshop/`, sao cho `pom.xml` nằm ở **gốc zip**. Loại
+`target/` là bắt buộc: nó là sản phẩm biên dịch, không thuộc mã nguồn.
+
+<details open>
+<summary><b>PowerShell</b> (mặc định của Windows Terminal / VS Code trên máy này)</summary>
+
+Windows PowerShell 5.1 **không có** lệnh `zip`, và **không hiểu toán tử `&&`** — dùng
+`Compress-Archive`:
+
+```powershell
+$src   = 'D:\study\DATN\Project\case-study\vulnshop'
+$stage = Join-Path $env:TEMP ('vulnshop-stage-' + [guid]::NewGuid().ToString('N').Substring(0,8))
+$zip   = Join-Path $env:TEMP 'vulnshop.zip'
+
+New-Item -ItemType Directory -Force -Path $stage | Out-Null
+Get-ChildItem -Path $src -Exclude 'target' | Copy-Item -Destination $stage -Recurse -Force
+if (Test-Path $zip) { Remove-Item -LiteralPath $zip -Force }
+Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip
+
+"Zip: $zip"
+```
+
+Phải qua thư mục trung gian vì `Compress-Archive` **không có tham số loại trừ**.
+
+Kiểm lại zip đúng hình dạng (48 entry, `pom.xml` ở gốc, không có `target/`):
+
+```powershell
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$z = [System.IO.Compression.ZipFile]::OpenRead($zip)
+"so entry      = $($z.Entries.Count)"
+"pom.xml o goc = $([bool]($z.Entries | Where-Object { $_.FullName -eq 'pom.xml' }))"
+"con target/   = $([bool]($z.Entries | Where-Object { $_.FullName -like 'target/*' }))"
+$z.Dispose()
+```
+
+</details>
+
+<details>
+<summary><b>Git Bash</b></summary>
 
 ```bash
 cd case-study/vulnshop && zip -r /tmp/vulnshop.zip . -x 'target/*' && cd -
 ```
 
-Loại `target/` là bắt buộc: nó là sản phẩm biên dịch, không thuộc mã nguồn.
+</details>
 
 ---
 
@@ -129,7 +172,57 @@ Ghi lại `snapshotId` trên URL (`/snapshots/<ĐÂY>`), bước sau cần.
 ## 4. Nạp cảnh báo vào hệ thống
 
 **Chưa có nút bấm cho việc này** — endpoint đã xong nhưng UI nạp artifact chưa làm (ghi ở §H của
-kế hoạch). Dùng `curl`:
+kế hoạch).
+
+Không cần nén `TEST-*.xml` thành zip: trường `artifacts` lặp được, và backend **nhận dạng theo nội
+dung file** chứ không theo tên.
+
+<details open>
+<summary><b>PowerShell</b></summary>
+
+`Invoke-RestMethod` của PowerShell 5.1 **không gửi được multipart** (tham số `-Form` chỉ có từ
+PowerShell 6.1), nên phần tải file phải dùng `curl.exe` — Windows 10/11 có sẵn ở
+`C:\Windows\System32\curl.exe`.
+
+⚠️ Gõ **`curl.exe`** đầy đủ: `curl` trần trong PowerShell là **alias của `Invoke-WebRequest`**, cú
+pháp hoàn toàn khác và sẽ báo lỗi khó hiểu.
+
+```powershell
+$repo    = 'D:\study\DATN\Project'
+$api     = 'http://localhost:8080'
+$samples = Join-Path $repo 'docs\samples\vulnshop'
+
+# 1. Lấy access token — JSON thuần thì Invoke-RestMethod dùng tốt
+$body  = @{ email = 'BAN_VUA_DANG_KY'; password = 'MAT_KHAU' } | ConvertTo-Json
+$token = (Invoke-RestMethod -Method Post -Uri "$api/api/v1/auth/login" `
+            -ContentType 'application/json' -Body $body).accessToken
+
+# 2. snapshotId lấy từ URL ở bước 3  (/snapshots/<ĐÂY>)
+$snapshotId = '...'
+
+# 3. Dựng danh sách tham số rồi splat sang curl.exe
+$curlArgs = @(
+    '-s', '-X', 'POST', "$api/api/v1/snapshots/$snapshotId/analysis-runs",
+    '-H', "Authorization: Bearer $token",
+    '-F', "artifacts=@$samples\spotbugs.xml",
+    '-F', "artifacts=@$samples\semgrep.sarif",
+    '-F', "artifacts=@$samples\jacoco.xml"
+)
+Get-ChildItem "$samples\surefire-reports\TEST-*.xml" | ForEach-Object {
+    $curlArgs += '-F'; $curlArgs += "artifacts=@$($_.FullName)"
+}
+
+(& curl.exe @curlArgs) | ConvertFrom-Json |
+    Format-List id, status, findingCount, unresolvedLocationCount
+```
+
+Đúng thì có **12 lần `-F`** (3 artifact + 9 báo cáo test). Kiểm nhanh:
+`($curlArgs | Where-Object { $_ -eq '-F' }).Count`
+
+</details>
+
+<details>
+<summary><b>Git Bash</b></summary>
 
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
@@ -147,8 +240,7 @@ curl -X POST "http://localhost:8080/api/v1/snapshots/$SNAPSHOT_ID/analysis-runs"
   $(for f in docs/samples/vulnshop/surefire-reports/TEST-*.xml; do printf -- " -F artifacts=@%s" "$f"; done)
 ```
 
-Không cần nén `TEST-*.xml` thành zip: trường `artifacts` lặp được, và backend **nhận dạng theo nội
-dung file** chứ không theo tên.
+</details>
 
 **Kỳ vọng trong JSON trả về**: `"status":"SUCCEEDED"` · `"findingCount":33` ·
 `"unresolvedLocationCount":0`.

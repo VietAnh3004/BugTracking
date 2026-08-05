@@ -68,6 +68,22 @@ thừa kế đúng — `java -version` và `mvn -v` chạy được ngay, **khô
 dùng `:` làm dấu phân tách PATH, nên `export PATH="$JAVA_HOME/bin:$PATH"` sẽ làm hỏng PATH và
 Maven chết với lỗi `ClassNotFoundException: ...plexus.classworlds.launcher.Launcher`.
 
+**Máy này mặc định mở PowerShell 5.1, nhưng gần như mọi lệnh trong repo viết cho Git Bash.** Khác
+biệt gây vấp nhiều nhất, theo thứ tự đã gặp: PowerShell 5.1 **không hiểu `&&`** (báo
+*"The token '&&' is not a valid statement separator"*, dùng `;` hoặc `if ($?) { }`) · **không có
+`zip`** (dùng `Compress-Archive`, vốn **không có tham số loại trừ** nên phải qua thư mục trung
+gian) · **`curl` là alias của `Invoke-WebRequest`**, phải gõ **`curl.exe`** đầy đủ mới ra curl thật
+· `Invoke-RestMethod` **không gửi được multipart** (tham số `-Form` chỉ có từ PowerShell 6.1).
+Bản PowerShell của các lệnh nghiệm thu nằm ở `docs/huong-dan-test-frontend.md`.
+
+**Sửa file bằng Python một dòng: LUÔN mở dạng nhị phân khi nội dung có dấu `\`.** Đã hỏng thật hai
+lần trong một phiên: `'D:\study\...\vulnshop'` viết trong chuỗi Python bị nuốt `\v` thành ký tự
+điều khiển U+000B, cho ra `case-study<VT>ulnshop` — và trên terminal nó **hiển thị y như đúng** vì
+VT vô hình. Lần thứ hai còn tệ hơn: chuỗi *tìm kiếm* và chuỗi *thay thế* cùng bị nuốt như nhau nên
+`replace` báo thành công mà không đổi gì. Cách chắc chắn: `open(p,'rb')` + so khớp `bytes`, dựng ký
+tự đặc biệt bằng `bytes([92])` thay vì viết `\\`. (Cạm bẫy CRLF của `io.open(p,'w')` ghi riêng ở
+mục script `.sh` phía trên.)
+
 **Python trong Git Bash**: dùng `python` (Python 3.14.4). **`python3` thì hỏng** — nó trúng App
 Execution Alias của Windows và báo "Python was not found". Script nào viết `python3` sẽ chết trên
 máy này.
