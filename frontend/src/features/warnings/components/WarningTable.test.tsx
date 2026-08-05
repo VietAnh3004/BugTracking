@@ -64,6 +64,17 @@ describe('WarningTable', () => {
     );
   });
 
+  /**
+   * Ô vị trí render thư mục và tên file thành hai đoạn để dòng ngắt ở chỗ có nghĩa. Chia như vậy
+   * rất dễ kéo theo cám dỗ cắt bớt cho gọn — nhưng đường dẫn là thứ người dùng đối chiếu với mã
+   * nguồn, mất một đoạn giữa là mất luôn khả năng kiểm chứng. Test này chốt: đủ từng ký tự.
+   */
+  it('hiện đủ đường dẫn dù chia thành hai đoạn để xuống dòng', () => {
+    renderTable([warning()]);
+
+    expect(screen.getByRole('link').textContent).toBe('src/main/java/vn/hust/App.java:42');
+  });
+
   it('hàng không đối chiếu được đường dẫn vẫn hiện ra nhưng KHÔNG bấm được', () => {
     renderTable([warning({ filePath: undefined, startLine: undefined, shortId: 'EV-002B' })]);
 
