@@ -48,6 +48,24 @@ public final class SampleArtifacts {
         }
     }
 
+    /**
+     * Artifact do CHÍNH SANDBOX sinh ra (khác {@link #spotbugsXml()} vốn do
+     * {@code run-analysis.sh} chạy trên host): nó chứa thêm 6 finding của mã canary trong image.
+     *
+     * <p>Sinh lại bằng {@code ./infra/analyzer/build.sh} rồi copy từ {@code /work/.analysis/}.
+     */
+    public static byte[] sandboxSpotbugsXml() {
+        return read(sandboxSamplesDir().resolve("spotbugs.xml"));
+    }
+
+    public static byte[] sandboxSemgrepSarif() {
+        return read(sandboxSamplesDir().resolve("semgrep.sarif"));
+    }
+
+    private static Path sandboxSamplesDir() {
+        return repoRoot().resolve("docs").resolve("samples").resolve("vulnshop-sandbox");
+    }
+
     /** Đọc một file báo cáo trả về từ {@link #surefireReports()}. */
     public static byte[] bytesOf(Path path) {
         return read(path);

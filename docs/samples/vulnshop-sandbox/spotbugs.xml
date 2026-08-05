@@ -1,0 +1,1625 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<BugCollection version="4.9.3" sequence="0" timestamp="1785905961834" analysisTimestamp="1785905970150" release="">
+  <Project projectName="">
+    <Jar>target/classes</Jar>
+    <Jar>/opt/canary/classes</Jar>
+    <AuxClasspathEntry>/work/.m2/org/springframework/boot/spring-boot-starter-web/3.5.0/spring-boot-starter-web-3.5.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/boot/spring-boot-starter/3.5.0/spring-boot-starter-3.5.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/boot/spring-boot/3.5.0/spring-boot-3.5.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/boot/spring-boot-autoconfigure/3.5.0/spring-boot-autoconfigure-3.5.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/boot/spring-boot-starter-logging/3.5.0/spring-boot-starter-logging-3.5.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/ch/qos/logback/logback-classic/1.5.18/logback-classic-1.5.18.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/ch/qos/logback/logback-core/1.5.18/logback-core-1.5.18.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/apache/logging/log4j/log4j-to-slf4j/2.24.3/log4j-to-slf4j-2.24.3.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/apache/logging/log4j/log4j-api/2.24.3/log4j-api-2.24.3.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/slf4j/jul-to-slf4j/2.0.17/jul-to-slf4j-2.0.17.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/yaml/snakeyaml/2.4/snakeyaml-2.4.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/boot/spring-boot-starter-json/3.5.0/spring-boot-starter-json-3.5.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/com/fasterxml/jackson/core/jackson-databind/2.19.0/jackson-databind-2.19.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/com/fasterxml/jackson/core/jackson-annotations/2.19.0/jackson-annotations-2.19.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/com/fasterxml/jackson/core/jackson-core/2.19.0/jackson-core-2.19.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.19.0/jackson-datatype-jdk8-2.19.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.19.0/jackson-datatype-jsr310-2.19.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/com/fasterxml/jackson/module/jackson-module-parameter-names/2.19.0/jackson-module-parameter-names-2.19.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/boot/spring-boot-starter-tomcat/3.5.0/spring-boot-starter-tomcat-3.5.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/apache/tomcat/embed/tomcat-embed-core/10.1.41/tomcat-embed-core-10.1.41.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/apache/tomcat/embed/tomcat-embed-el/10.1.41/tomcat-embed-el-10.1.41.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/apache/tomcat/embed/tomcat-embed-websocket/10.1.41/tomcat-embed-websocket-10.1.41.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/spring-web/6.2.7/spring-web-6.2.7.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/spring-beans/6.2.7/spring-beans-6.2.7.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/io/micrometer/micrometer-observation/1.15.0/micrometer-observation-1.15.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/io/micrometer/micrometer-commons/1.15.0/micrometer-commons-1.15.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/spring-webmvc/6.2.7/spring-webmvc-6.2.7.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/spring-aop/6.2.7/spring-aop-6.2.7.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/spring-context/6.2.7/spring-context-6.2.7.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/spring-expression/6.2.7/spring-expression-6.2.7.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/boot/spring-boot-starter-jdbc/3.5.0/spring-boot-starter-jdbc-3.5.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/com/zaxxer/HikariCP/6.3.0/HikariCP-6.3.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/spring-jdbc/6.2.7/spring-jdbc-6.2.7.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/spring-tx/6.2.7/spring-tx-6.2.7.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/com/h2database/h2/2.3.232/h2-2.3.232.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/boot/spring-boot-starter-test/3.5.0/spring-boot-starter-test-3.5.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/boot/spring-boot-test/3.5.0/spring-boot-test-3.5.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/boot/spring-boot-test-autoconfigure/3.5.0/spring-boot-test-autoconfigure-3.5.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/com/jayway/jsonpath/json-path/2.9.0/json-path-2.9.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/jakarta/xml/bind/jakarta.xml.bind-api/4.0.2/jakarta.xml.bind-api-4.0.2.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/jakarta/activation/jakarta.activation-api/2.1.3/jakarta.activation-api-2.1.3.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/net/minidev/json-smart/2.5.2/json-smart-2.5.2.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/net/minidev/accessors-smart/2.5.2/accessors-smart-2.5.2.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/ow2/asm/asm/9.7.1/asm-9.7.1.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/assertj/assertj-core/3.27.3/assertj-core-3.27.3.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/net/bytebuddy/byte-buddy/1.17.5/byte-buddy-1.17.5.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/awaitility/awaitility/4.3.0/awaitility-4.3.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/hamcrest/hamcrest/3.0/hamcrest-3.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/junit/jupiter/junit-jupiter/5.12.2/junit-jupiter-5.12.2.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/junit/jupiter/junit-jupiter-api/5.12.2/junit-jupiter-api-5.12.2.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/junit/platform/junit-platform-commons/1.12.2/junit-platform-commons-1.12.2.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/junit/jupiter/junit-jupiter-params/5.12.2/junit-jupiter-params-5.12.2.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/junit/jupiter/junit-jupiter-engine/5.12.2/junit-jupiter-engine-5.12.2.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/junit/platform/junit-platform-engine/1.12.2/junit-platform-engine-1.12.2.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/mockito/mockito-core/5.17.0/mockito-core-5.17.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/net/bytebuddy/byte-buddy-agent/1.17.5/byte-buddy-agent-1.17.5.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/objenesis/objenesis/3.3/objenesis-3.3.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/mockito/mockito-junit-jupiter/5.17.0/mockito-junit-jupiter-5.17.0.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/org/skyscreamer/jsonassert/1.5.3/jsonassert-1.5.3.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/opt/m2-seed/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/spring-core/6.2.7/spring-core-6.2.7.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/spring-jcl/6.2.7/spring-jcl-6.2.7.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/springframework/spring-test/6.2.7/spring-test-6.2.7.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>/work/.m2/org/xmlunit/xmlunit-core/2.10.1/xmlunit-core-2.10.1.jar</AuxClasspathEntry>
+    <Plugin id="com.h3xstream.findsecbugs" enabled="true"/>
+  </Project>
+  <BugInstance type="DM_DEFAULT_ENCODING" priority="1" rank="19" abbrev="Dm" category="I18N" instanceHash="21c942bd9d72cd5377a1576d7f9d79a8" instanceOccurrenceNum="0" instanceOccurrenceMax="0">
+    <ShortMessage>Reliance on default encoding</ShortMessage>
+    <LongMessage>Found reliance on default encoding in evidence.canary.Canary.defaultEncoding(byte[]): new String(byte[])</LongMessage>
+    <Class classname="evidence.canary.Canary" primary="true">
+      <SourceLine classname="evidence.canary.Canary" start="36" end="52" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java">
+        <Message>At Canary.java:[lines 36-52]</Message>
+      </SourceLine>
+      <Message>In class evidence.canary.Canary</Message>
+    </Class>
+    <Method classname="evidence.canary.Canary" name="defaultEncoding" signature="([B)Ljava/lang/String;" isStatic="true" primary="true">
+      <SourceLine classname="evidence.canary.Canary" start="52" end="52" startBytecode="0" endBytecode="32" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java"/>
+      <Message>In method evidence.canary.Canary.defaultEncoding(byte[])</Message>
+    </Method>
+    <Method classname="java.lang.String" name="&lt;init&gt;" signature="([B)V" isStatic="false" role="METHOD_CALLED">
+      <SourceLine classname="java.lang.String" start="1464" end="1465" startBytecode="0" endBytecode="67" sourcefile="String.java" sourcepath="java/lang/String.java"/>
+      <Message>Called method new String(byte[])</Message>
+    </Method>
+    <SourceLine classname="evidence.canary.Canary" primary="true" start="52" end="52" startBytecode="5" endBytecode="5" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java">
+      <Message>At Canary.java:[line 52]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="DM_DEFAULT_ENCODING" priority="1" rank="19" abbrev="Dm" category="I18N" instanceHash="c6f49fc9bbd17380abaa641160fb46b8" instanceOccurrenceNum="0" instanceOccurrenceMax="0">
+    <ShortMessage>Reliance on default encoding</ShortMessage>
+    <LongMessage>Found reliance on default encoding in evidence.canary.Canary.weakHash(String): String.getBytes()</LongMessage>
+    <Class classname="evidence.canary.Canary" primary="true">
+      <SourceLine classname="evidence.canary.Canary" start="36" end="52" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java">
+        <Message>At Canary.java:[lines 36-52]</Message>
+      </SourceLine>
+      <Message>In class evidence.canary.Canary</Message>
+    </Class>
+    <Method classname="evidence.canary.Canary" name="weakHash" signature="(Ljava/lang/String;)[B" isStatic="true" primary="true">
+      <SourceLine classname="evidence.canary.Canary" start="40" end="41" startBytecode="0" endBytecode="42" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java"/>
+      <Message>In method evidence.canary.Canary.weakHash(String)</Message>
+    </Method>
+    <Method classname="java.lang.String" name="getBytes" signature="()[B" isStatic="false" role="METHOD_CALLED">
+      <SourceLine classname="java.lang.String" start="1825" end="1825" startBytecode="0" endBytecode="56" sourcefile="String.java" sourcepath="java/lang/String.java"/>
+      <Message>Called method String.getBytes()</Message>
+    </Method>
+    <SourceLine classname="evidence.canary.Canary" primary="true" start="41" end="41" startBytecode="8" endBytecode="8" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java">
+      <Message>At Canary.java:[line 41]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE" priority="2" rank="20" abbrev="OBL" category="EXPERIMENTAL" instanceHash="54078f17c1ef739ef76cc1840e2f07a2" instanceOccurrenceNum="0" instanceOccurrenceMax="0">
+    <ShortMessage>Method may fail to clean up stream or resource on checked exception</ShortMessage>
+    <LongMessage>evidence.canary.Canary.sqlInjection(Connection, String) may fail to clean up java.sql.Statement on checked exception</LongMessage>
+    <Class classname="evidence.canary.Canary" primary="true">
+      <SourceLine classname="evidence.canary.Canary" start="36" end="52" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java">
+        <Message>At Canary.java:[lines 36-52]</Message>
+      </SourceLine>
+      <Message>In class evidence.canary.Canary</Message>
+    </Class>
+    <Method classname="evidence.canary.Canary" name="sqlInjection" signature="(Ljava/sql/Connection;Ljava/lang/String;)Ljava/sql/ResultSet;" isStatic="true" primary="true">
+      <SourceLine classname="evidence.canary.Canary" start="46" end="47" startBytecode="0" endBytecode="47" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java"/>
+      <Message>In method evidence.canary.Canary.sqlInjection(Connection, String)</Message>
+    </Method>
+    <Class classname="java.sql.Statement" role="CLASS_REFTYPE">
+      <SourceLine classname="java.sql.Statement" start="1096" end="1647" sourcefile="Statement.java" sourcepath="java/sql/Statement.java">
+        <Message>At Statement.java:[lines 1096-1647]</Message>
+      </SourceLine>
+      <Message>Reference type java.sql.Statement</Message>
+    </Class>
+    <Int value="1" role="INT_OBLIGATIONS_REMAINING">
+      <Message>1 instances of obligation remaining</Message>
+    </Int>
+    <SourceLine classname="evidence.canary.Canary" primary="true" start="46" end="46" startBytecode="1" endBytecode="1" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java" role="SOURCE_LINE_OBLIGATION_CREATED">
+      <Message>Obligation to clean up resource created at Canary.java:[line 46] is not discharged</Message>
+    </SourceLine>
+    <SourceLine classname="evidence.canary.Canary" start="47" end="47" startBytecode="7" endBytecode="7" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java" role="SOURCE_LINE_PATH_CONTINUES">
+      <Message>Path continues at Canary.java:[line 47]</Message>
+    </SourceLine>
+    <String value="{Statement x 1}" role="STRING_REMAINING_OBLIGATIONS">
+      <Message>Remaining obligations: {Statement x 1}</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="SQL_INJECTION_JDBC" priority="2" rank="12" abbrev="SECSQLIJDBC" category="SECURITY" instanceHash="fe6bf022e0eb511d4161d4dca6f29831" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="89">
+    <ShortMessage>Potential JDBC Injection</ShortMessage>
+    <LongMessage>This use of java/sql/Statement.executeQuery(Ljava/lang/String;)Ljava/sql/ResultSet; can be vulnerable to SQL injection (with JDBC)</LongMessage>
+    <Class classname="evidence.canary.Canary" primary="true">
+      <SourceLine classname="evidence.canary.Canary" start="36" end="52" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java">
+        <Message>At Canary.java:[lines 36-52]</Message>
+      </SourceLine>
+      <Message>In class evidence.canary.Canary</Message>
+    </Class>
+    <Method classname="evidence.canary.Canary" name="sqlInjection" signature="(Ljava/sql/Connection;Ljava/lang/String;)Ljava/sql/ResultSet;" isStatic="true" primary="true">
+      <SourceLine classname="evidence.canary.Canary" start="46" end="47" startBytecode="0" endBytecode="47" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java"/>
+      <Message>In method evidence.canary.Canary.sqlInjection(Connection, String)</Message>
+    </Method>
+    <SourceLine classname="evidence.canary.Canary" primary="true" start="47" end="47" startBytecode="14" endBytecode="14" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java">
+      <Message>At Canary.java:[line 47]</Message>
+    </SourceLine>
+    <String value="java/sql/Statement.executeQuery(Ljava/lang/String;)Ljava/sql/ResultSet;" role="Sink method">
+      <Message>Sink method java/sql/Statement.executeQuery(Ljava/lang/String;)Ljava/sql/ResultSet;</Message>
+    </String>
+    <String value="0" role="Sink parameter">
+      <Message>Sink parameter 0</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE" priority="1" rank="10" abbrev="SQL" category="SECURITY" instanceHash="e28dc2f8cc86ac40ae2d13eb59c48c92" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="89">
+    <ShortMessage>Nonconstant string passed to execute or addBatch method on an SQL statement</ShortMessage>
+    <LongMessage>evidence.canary.Canary.sqlInjection(Connection, String) passes a nonconstant String to an execute or addBatch method on an SQL statement</LongMessage>
+    <Class classname="evidence.canary.Canary" primary="true">
+      <SourceLine classname="evidence.canary.Canary" start="36" end="52" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java">
+        <Message>At Canary.java:[lines 36-52]</Message>
+      </SourceLine>
+      <Message>In class evidence.canary.Canary</Message>
+    </Class>
+    <Method classname="evidence.canary.Canary" name="sqlInjection" signature="(Ljava/sql/Connection;Ljava/lang/String;)Ljava/sql/ResultSet;" isStatic="true" primary="true">
+      <SourceLine classname="evidence.canary.Canary" start="46" end="47" startBytecode="0" endBytecode="7" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java"/>
+      <Message>In method evidence.canary.Canary.sqlInjection(Connection, String)</Message>
+    </Method>
+    <SourceLine classname="evidence.canary.Canary" primary="true" start="47" end="47" startBytecode="14" endBytecode="14" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java">
+      <Message>At Canary.java:[line 47]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="WEAK_MESSAGE_DIGEST_MD5" priority="1" rank="10" abbrev="SECMD5" category="SECURITY" instanceHash="737f8156f9223d6de9c13b956155486" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="328">
+    <ShortMessage>MD2, MD4 and MD5 are weak hash functions</ShortMessage>
+    <LongMessage>This API MD5 (MDX) is not a recommended cryptographic hash function</LongMessage>
+    <Class classname="evidence.canary.Canary" primary="true">
+      <SourceLine classname="evidence.canary.Canary" start="36" end="52" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java">
+        <Message>At Canary.java:[lines 36-52]</Message>
+      </SourceLine>
+      <Message>In class evidence.canary.Canary</Message>
+    </Class>
+    <Method classname="evidence.canary.Canary" name="weakHash" signature="(Ljava/lang/String;)[B" isStatic="true" primary="true">
+      <SourceLine classname="evidence.canary.Canary" start="40" end="41" startBytecode="0" endBytecode="42" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java"/>
+      <Message>In method evidence.canary.Canary.weakHash(String)</Message>
+    </Method>
+    <SourceLine classname="evidence.canary.Canary" primary="true" start="40" end="40" startBytecode="2" endBytecode="2" sourcefile="Canary.java" sourcepath="evidence/canary/Canary.java">
+      <Message>At Canary.java:[line 40]</Message>
+    </SourceLine>
+    <String value="MD5">
+      <Message>Value MD5</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="SPRING_ENDPOINT" priority="3" rank="15" abbrev="SECSC" category="SECURITY" instanceHash="e8f06773e6db6b56c5eed47748096e4" instanceOccurrenceNum="0" instanceOccurrenceMax="0">
+    <ShortMessage>Found Spring endpoint</ShortMessage>
+    <LongMessage>vn.hust.datn.casestudy.vulnshop.auth.AuthController is a Spring endpoint (Controller)</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.auth.AuthController" primary="true" classAnnotationNames="org.springframework.web.bind.annotation.RestController,org.springframework.web.bind.annotation.RequestMapping">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.AuthController" start="20" end="52" sourcefile="AuthController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/AuthController.java">
+        <Message>At AuthController.java:[lines 20-52]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.auth.AuthController</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.auth.AuthController" name="login" signature="(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;" isStatic="false" primary="true" classAnnotationNames="org.springframework.web.bind.annotation.RestController,org.springframework.web.bind.annotation.RequestMapping">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.AuthController" start="33" end="37" startBytecode="0" endBytecode="136" sourcefile="AuthController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/AuthController.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.auth.AuthController.login(String, String)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.AuthController" start="33" end="37" startBytecode="0" endBytecode="136" sourcefile="AuthController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/AuthController.java" synthetic="true">
+      <Message>At AuthController.java:[lines 33-37]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="SPRING_ENDPOINT" priority="3" rank="15" abbrev="SECSC" category="SECURITY" instanceHash="b76f179fd9a26727f2c006db12c051c1" instanceOccurrenceNum="0" instanceOccurrenceMax="0">
+    <ShortMessage>Found Spring endpoint</ShortMessage>
+    <LongMessage>vn.hust.datn.casestudy.vulnshop.auth.AuthController is a Spring endpoint (Controller)</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.auth.AuthController" primary="true" classAnnotationNames="org.springframework.web.bind.annotation.RestController,org.springframework.web.bind.annotation.RequestMapping">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.AuthController" start="20" end="52" sourcefile="AuthController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/AuthController.java">
+        <Message>At AuthController.java:[lines 20-52]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.auth.AuthController</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.auth.AuthController" name="loginRedirect" signature="(Ljava/lang/String;Ljakarta/servlet/http/HttpServletResponse;)V" isStatic="false" primary="true" classAnnotationNames="org.springframework.web.bind.annotation.RestController,org.springframework.web.bind.annotation.RequestMapping">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.AuthController" start="51" end="52" startBytecode="0" endBytecode="73" sourcefile="AuthController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/AuthController.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.auth.AuthController.loginRedirect(String, HttpServletResponse)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.AuthController" start="51" end="52" startBytecode="0" endBytecode="73" sourcefile="AuthController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/AuthController.java" synthetic="true">
+      <Message>At AuthController.java:[lines 51-52]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP2" priority="2" rank="18" abbrev="EI2" category="MALICIOUS_CODE" instanceHash="2d5cc19244496e17bb85a96f942b0612" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="374">
+    <ShortMessage>May expose internal representation by incorporating reference to mutable object</ShortMessage>
+    <LongMessage>new vn.hust.datn.casestudy.vulnshop.auth.AuthService(UserRepository, PasswordHasher) may expose internal representation by storing an externally mutable object into AuthService.userRepository</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.auth.AuthService" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.AuthService" start="15" end="47" sourcefile="AuthService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/AuthService.java">
+        <Message>At AuthService.java:[lines 15-47]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.auth.AuthService</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.auth.AuthService" name="&lt;init&gt;" signature="(Lvn/hust/datn/casestudy/vulnshop/user/UserRepository;Lvn/hust/datn/casestudy/vulnshop/auth/PasswordHasher;)V" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.AuthService" start="15" end="18" startBytecode="0" endBytecode="88" sourcefile="AuthService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/AuthService.java"/>
+      <Message>In method new vn.hust.datn.casestudy.vulnshop.auth.AuthService(UserRepository, PasswordHasher)</Message>
+    </Method>
+    <Field classname="vn.hust.datn.casestudy.vulnshop.auth.AuthService" name="userRepository" signature="Lvn/hust/datn/casestudy/vulnshop/user/UserRepository;" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.AuthService" sourcefile="AuthService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/AuthService.java">
+        <Message>In AuthService.java</Message>
+      </SourceLine>
+      <Message>Field vn.hust.datn.casestudy.vulnshop.auth.AuthService.userRepository</Message>
+    </Field>
+    <LocalVariable name="userRepository" register="1" pc="6" role="LOCAL_VARIABLE_NAMED">
+      <Message>Local variable named userRepository</Message>
+    </LocalVariable>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.AuthService" primary="true" start="16" end="16" startBytecode="6" endBytecode="6" sourcefile="AuthService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/AuthService.java">
+      <Message>At AuthService.java:[line 16]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="UNSAFE_HASH_EQUALS" priority="2" rank="12" abbrev="SECUHE" category="SECURITY" instanceHash="d039391b9201572b9c3d80d9bb97bb0e" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="203">
+    <ShortMessage>Unsafe hash equals</ShortMessage>
+    <LongMessage>Unsafe comparison of hash that are susceptible to timing attack</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" primary="true" classAnnotationNames="org.springframework.stereotype.Component">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" start="17" end="57" sourcefile="PasswordHasher.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java">
+        <Message>At PasswordHasher.java:[lines 17-57]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" name="matches" signature="(Ljava/lang/String;Ljava/lang/String;)Z" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Component">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" start="48" end="48" startBytecode="0" endBytecode="71" sourcefile="PasswordHasher.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher.matches(String, String)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" primary="true" start="48" end="48" startBytecode="6" endBytecode="6" sourcefile="PasswordHasher.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java">
+      <Message>At PasswordHasher.java:[line 48]</Message>
+    </SourceLine>
+    <String value="java/lang/String.equals(Ljava/lang/Object;)Z" role="Sink method">
+      <Message>Sink method java/lang/String.equals(Ljava/lang/Object;)Z</Message>
+    </String>
+    <String value="0" role="Sink parameter">
+      <Message>Sink parameter 0</Message>
+    </String>
+    <String value="vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.matches(Ljava/lang/String;Ljava/lang/String;)Z parameter 0" role="Unknown source">
+      <Message>Unknown source vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.matches(Ljava/lang/String;Ljava/lang/String;)Z parameter 0</Message>
+    </String>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.AuthService" start="32" end="32" startBytecode="38" endBytecode="38" sourcefile="AuthService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/AuthService.java">
+      <Message>At AuthService.java:[line 32]</Message>
+    </SourceLine>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.domain.User" start="4" end="4" startBytecode="1" endBytecode="1" sourcefile="User.java" sourcepath="vn/hust/datn/casestudy/vulnshop/domain/User.java">
+      <Message>At User.java:[line 4]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="WEAK_MESSAGE_DIGEST_MD5" priority="1" rank="10" abbrev="SECMD5" category="SECURITY" instanceHash="84ac1bd56d0ca58b4573aed7657bb350" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="328">
+    <ShortMessage>MD2, MD4 and MD5 are weak hash functions</ShortMessage>
+    <LongMessage>This API MD5 (MDX) is not a recommended cryptographic hash function</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" primary="true" classAnnotationNames="org.springframework.stereotype.Component">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" start="17" end="57" sourcefile="PasswordHasher.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java">
+        <Message>At PasswordHasher.java:[lines 17-57]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" name="checksumForDeduplication" signature="([B)Ljava/lang/String;" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Component">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" start="40" end="43" startBytecode="0" endBytecode="133" sourcefile="PasswordHasher.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher.checksumForDeduplication(byte[])</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" primary="true" start="40" end="40" startBytecode="2" endBytecode="2" sourcefile="PasswordHasher.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java">
+      <Message>At PasswordHasher.java:[line 40]</Message>
+    </SourceLine>
+    <String value="MD5">
+      <Message>Value MD5</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="WEAK_MESSAGE_DIGEST_MD5" priority="1" rank="10" abbrev="SECMD5" category="SECURITY" instanceHash="585dc7db21a532eaa5bb38d10f69c878" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="328">
+    <ShortMessage>MD2, MD4 and MD5 are weak hash functions</ShortMessage>
+    <LongMessage>This API MD5 (MDX) is not a recommended cryptographic hash function</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" primary="true" classAnnotationNames="org.springframework.stereotype.Component">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" start="17" end="57" sourcefile="PasswordHasher.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java">
+        <Message>At PasswordHasher.java:[lines 17-57]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" name="md5Hex" signature="(Ljava/lang/String;)Ljava/lang/String;" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Component">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" start="53" end="57" startBytecode="0" endBytecode="155" sourcefile="PasswordHasher.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher.md5Hex(String)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" primary="true" start="53" end="53" startBytecode="2" endBytecode="2" sourcefile="PasswordHasher.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java">
+      <Message>At PasswordHasher.java:[line 53]</Message>
+    </SourceLine>
+    <String value="MD5">
+      <Message>Value MD5</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="MS_MUTABLE_COLLECTION_PKGPROTECT" priority="2" rank="18" abbrev="MS" category="MALICIOUS_CODE" instanceHash="8c2078efda547eeac737a580514058a0" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="493">
+    <ShortMessage>Field is a mutable collection which should be package protected</ShortMessage>
+    <LongMessage>vn.hust.datn.casestudy.vulnshop.auth.SessionRegistry.ACTIVE_SESSIONS is a mutable collection which should be package protected</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.auth.SessionRegistry" primary="true" classAnnotationNames="org.springframework.stereotype.Component">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.SessionRegistry" start="15" end="35" sourcefile="SessionRegistry.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/SessionRegistry.java">
+        <Message>At SessionRegistry.java:[lines 15-35]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.auth.SessionRegistry</Message>
+    </Class>
+    <Field classname="vn.hust.datn.casestudy.vulnshop.auth.SessionRegistry" name="ACTIVE_SESSIONS" signature="Ljava/util/Map;" isStatic="true" primary="true" classAnnotationNames="org.springframework.stereotype.Component">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.SessionRegistry" sourcefile="SessionRegistry.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/SessionRegistry.java">
+        <Message>In SessionRegistry.java</Message>
+      </SourceLine>
+      <Message>Field vn.hust.datn.casestudy.vulnshop.auth.SessionRegistry.ACTIVE_SESSIONS</Message>
+    </Field>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.auth.SessionRegistry" primary="true" start="24" end="24" startBytecode="7" endBytecode="7" sourcefile="SessionRegistry.java" sourcepath="vn/hust/datn/casestudy/vulnshop/auth/SessionRegistry.java">
+      <Message>At SessionRegistry.java:[line 24]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP2" priority="2" rank="18" abbrev="EI2" category="MALICIOUS_CODE" instanceHash="36d621788f0dfc6a9834b738c7b86e7b" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="374">
+    <ShortMessage>May expose internal representation by incorporating reference to mutable object</ShortMessage>
+    <LongMessage>new vn.hust.datn.casestudy.vulnshop.catalog.ProductController(ProductRepository) may expose internal representation by storing an externally mutable object into ProductController.productRepository</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" primary="true" classAnnotationNames="org.springframework.web.bind.annotation.RestController,org.springframework.web.bind.annotation.RequestMapping">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" start="18" end="38" sourcefile="ProductController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductController.java">
+        <Message>At ProductController.java:[lines 18-38]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.catalog.ProductController</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" name="&lt;init&gt;" signature="(Lvn/hust/datn/casestudy/vulnshop/catalog/ProductRepository;)V" isStatic="false" primary="true" classAnnotationNames="org.springframework.web.bind.annotation.RestController,org.springframework.web.bind.annotation.RequestMapping">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" start="18" end="20" startBytecode="0" endBytecode="69" sourcefile="ProductController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductController.java"/>
+      <Message>In method new vn.hust.datn.casestudy.vulnshop.catalog.ProductController(ProductRepository)</Message>
+    </Method>
+    <Field classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" name="productRepository" signature="Lvn/hust/datn/casestudy/vulnshop/catalog/ProductRepository;" isStatic="false" primary="true" classAnnotationNames="org.springframework.web.bind.annotation.RestController,org.springframework.web.bind.annotation.RequestMapping">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" sourcefile="ProductController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductController.java">
+        <Message>In ProductController.java</Message>
+      </SourceLine>
+      <Message>Field vn.hust.datn.casestudy.vulnshop.catalog.ProductController.productRepository</Message>
+    </Field>
+    <LocalVariable name="productRepository" register="1" pc="6" role="LOCAL_VARIABLE_NAMED">
+      <Message>Local variable named productRepository</Message>
+    </LocalVariable>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" primary="true" start="19" end="19" startBytecode="6" endBytecode="6" sourcefile="ProductController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductController.java">
+      <Message>At ProductController.java:[line 19]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="SPRING_ENDPOINT" priority="3" rank="15" abbrev="SECSC" category="SECURITY" instanceHash="e4d1e37d21b1fbc7d60e8dc871460566" instanceOccurrenceNum="0" instanceOccurrenceMax="0">
+    <ShortMessage>Found Spring endpoint</ShortMessage>
+    <LongMessage>vn.hust.datn.casestudy.vulnshop.catalog.ProductController is a Spring endpoint (Controller)</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" primary="true" classAnnotationNames="org.springframework.web.bind.annotation.RestController,org.springframework.web.bind.annotation.RequestMapping">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" start="18" end="38" sourcefile="ProductController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductController.java">
+        <Message>At ProductController.java:[lines 18-38]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.catalog.ProductController</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" name="list" signature="(Lvn/hust/datn/casestudy/vulnshop/domain/SortField;)Ljava/util/List;" isStatic="false" primary="true" classAnnotationNames="org.springframework.web.bind.annotation.RestController,org.springframework.web.bind.annotation.RequestMapping">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" start="38" end="38" startBytecode="0" endBytecode="60" sourcefile="ProductController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductController.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.catalog.ProductController.list(SortField)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" start="38" end="38" startBytecode="0" endBytecode="60" sourcefile="ProductController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductController.java" synthetic="true">
+      <Message>At ProductController.java:[line 38]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="SPRING_ENDPOINT" priority="3" rank="15" abbrev="SECSC" category="SECURITY" instanceHash="ca469a6e67e051092963afb17874fa98" instanceOccurrenceNum="0" instanceOccurrenceMax="0">
+    <ShortMessage>Found Spring endpoint</ShortMessage>
+    <LongMessage>vn.hust.datn.casestudy.vulnshop.catalog.ProductController is a Spring endpoint (Controller)</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" primary="true" classAnnotationNames="org.springframework.web.bind.annotation.RestController,org.springframework.web.bind.annotation.RequestMapping">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" start="18" end="38" sourcefile="ProductController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductController.java">
+        <Message>At ProductController.java:[lines 18-38]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.catalog.ProductController</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" name="search" signature="(Ljava/lang/String;)Ljava/util/List;" isStatic="false" primary="true" classAnnotationNames="org.springframework.web.bind.annotation.RestController,org.springframework.web.bind.annotation.RequestMapping">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" start="25" end="25" startBytecode="0" endBytecode="60" sourcefile="ProductController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductController.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.catalog.ProductController.search(String)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" start="25" end="25" startBytecode="0" endBytecode="60" sourcefile="ProductController.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductController.java" synthetic="true">
+      <Message>At ProductController.java:[line 25]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP2" priority="2" rank="18" abbrev="EI2" category="MALICIOUS_CODE" instanceHash="d24af7a6133405edba28fa56711deb95" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="374">
+    <ShortMessage>May expose internal representation by incorporating reference to mutable object</ShortMessage>
+    <LongMessage>new vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository(JdbcTemplate) may expose internal representation by storing an externally mutable object into ProductRepository.jdbcTemplate</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" primary="true" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" start="15" end="68" sourcefile="ProductRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java">
+        <Message>At ProductRepository.java:[lines 15-68]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" name="&lt;init&gt;" signature="(Lorg/springframework/jdbc/core/JdbcTemplate;)V" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" start="20" end="22" startBytecode="0" endBytecode="69" sourcefile="ProductRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java"/>
+      <Message>In method new vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository(JdbcTemplate)</Message>
+    </Method>
+    <Field classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" name="jdbcTemplate" signature="Lorg/springframework/jdbc/core/JdbcTemplate;" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" sourcefile="ProductRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java">
+        <Message>In ProductRepository.java</Message>
+      </SourceLine>
+      <Message>Field vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository.jdbcTemplate</Message>
+    </Field>
+    <LocalVariable name="jdbcTemplate" register="1" pc="6" role="LOCAL_VARIABLE_NAMED">
+      <Message>Local variable named jdbcTemplate</Message>
+    </LocalVariable>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" primary="true" start="21" end="21" startBytecode="6" endBytecode="6" sourcefile="ProductRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java">
+      <Message>At ProductRepository.java:[line 21]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="SQL_INJECTION_SPRING_JDBC" priority="2" rank="12" abbrev="SECSQLISPRJDBC" category="SECURITY" instanceHash="415103e40aaad265b5bc3572c20d7e7b" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="89">
+    <ShortMessage>Potential JDBC Injection (Spring JDBC)</ShortMessage>
+    <LongMessage>This use of org/springframework/jdbc/core/JdbcTemplate.query(Ljava/lang/String;Lorg/springframework/jdbc/core/RowMapper;)Ljava/util/List; can be vulnerable to SQL injection (with Spring JDBC)</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" primary="true" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" start="15" end="68" sourcefile="ProductRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java">
+        <Message>At ProductRepository.java:[lines 15-68]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" name="findAllSorted" signature="(Lvn/hust/datn/casestudy/vulnshop/domain/SortField;)Ljava/util/List;" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" start="49" end="50" startBytecode="0" endBytecode="87" sourcefile="ProductRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository.findAllSorted(SortField)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" primary="true" start="50" end="50" startBytecode="18" endBytecode="18" sourcefile="ProductRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java">
+      <Message>At ProductRepository.java:[line 50]</Message>
+    </SourceLine>
+    <String value="org/springframework/jdbc/core/JdbcTemplate.query(Ljava/lang/String;Lorg/springframework/jdbc/core/RowMapper;)Ljava/util/List;" role="Sink method">
+      <Message>Sink method org/springframework/jdbc/core/JdbcTemplate.query(Ljava/lang/String;Lorg/springframework/jdbc/core/RowMapper;)Ljava/util/List;</Message>
+    </String>
+    <String value="1" role="Sink parameter">
+      <Message>Sink parameter 1</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="SQL_INJECTION_SPRING_JDBC" priority="2" rank="12" abbrev="SECSQLISPRJDBC" category="SECURITY" instanceHash="30853eb8371243e3a638dacae6898dc6" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="89">
+    <ShortMessage>Potential JDBC Injection (Spring JDBC)</ShortMessage>
+    <LongMessage>This use of org/springframework/jdbc/core/JdbcTemplate.query(Ljava/lang/String;Lorg/springframework/jdbc/core/RowMapper;)Ljava/util/List; can be vulnerable to SQL injection (with Spring JDBC)</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" primary="true" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" start="15" end="68" sourcefile="ProductRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java">
+        <Message>At ProductRepository.java:[lines 15-68]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" name="searchByKeyword" signature="(Ljava/lang/String;)Ljava/util/List;" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" start="30" end="31" startBytecode="0" endBytecode="84" sourcefile="ProductRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository.searchByKeyword(String)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" primary="true" start="31" end="31" startBytecode="15" endBytecode="15" sourcefile="ProductRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java">
+      <Message>At ProductRepository.java:[line 31]</Message>
+    </SourceLine>
+    <String value="org/springframework/jdbc/core/JdbcTemplate.query(Ljava/lang/String;Lorg/springframework/jdbc/core/RowMapper;)Ljava/util/List;" role="Sink method">
+      <Message>Sink method org/springframework/jdbc/core/JdbcTemplate.query(Ljava/lang/String;Lorg/springframework/jdbc/core/RowMapper;)Ljava/util/List;</Message>
+    </String>
+    <String value="1" role="Sink parameter">
+      <Message>Sink parameter 1</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="HE_EQUALS_USE_HASHCODE" priority="1" rank="14" abbrev="HE" category="BAD_PRACTICE" instanceHash="45f4885371fac4e8cc204e4b39444ab8" instanceOccurrenceNum="0" instanceOccurrenceMax="0">
+    <ShortMessage>Class defines equals() and uses Object.hashCode()</ShortMessage>
+    <LongMessage>vn.hust.datn.casestudy.vulnshop.domain.Product defines equals and uses Object.hashCode()</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.domain.Product" primary="true">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.domain.Product" start="14" end="51" sourcefile="Product.java" sourcepath="vn/hust/datn/casestudy/vulnshop/domain/Product.java">
+        <Message>At Product.java:[lines 14-51]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.domain.Product</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.domain.Product" name="equals" signature="(Ljava/lang/Object;)Z" isStatic="false" primary="true">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.domain.Product" start="45" end="51" startBytecode="0" endBytecode="162" sourcefile="Product.java" sourcepath="vn/hust/datn/casestudy/vulnshop/domain/Product.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.domain.Product.equals(Object)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.domain.Product" start="45" end="51" startBytecode="0" endBytecode="162" sourcefile="Product.java" sourcepath="vn/hust/datn/casestudy/vulnshop/domain/Product.java" synthetic="true">
+      <Message>At Product.java:[lines 45-51]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="ES_COMPARING_PARAMETER_STRING_WITH_EQ" priority="1" rank="14" abbrev="ES" category="BAD_PRACTICE" instanceHash="9462b96398699cfc017bb2d0b0ee14e1" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="597">
+    <ShortMessage>Comparison of String parameter using == or !=</ShortMessage>
+    <LongMessage>Comparison of String parameter using == or != in vn.hust.datn.casestudy.vulnshop.order.OrderStatusChecker.isShipped(String)</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.order.OrderStatusChecker" primary="true">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.order.OrderStatusChecker" start="6" end="27" sourcefile="OrderStatusChecker.java" sourcepath="vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker.java">
+        <Message>At OrderStatusChecker.java:[lines 6-27]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.order.OrderStatusChecker</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.order.OrderStatusChecker" name="isShipped" signature="(Ljava/lang/String;)Z" isStatic="true" primary="true">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.order.OrderStatusChecker" start="18" end="18" startBytecode="0" endBytecode="6" sourcefile="OrderStatusChecker.java" sourcepath="vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.order.OrderStatusChecker.isShipped(String)</Message>
+    </Method>
+    <Type descriptor="Ljava/lang/String;" role="TYPE_FOUND">
+      <SourceLine classname="java.lang.String" start="142" end="4904" sourcefile="String.java" sourcepath="java/lang/String.java">
+        <Message>At String.java:[lines 142-4904]</Message>
+      </SourceLine>
+      <Message>Actual type String</Message>
+    </Type>
+    <String value="SHIPPED" role="STRING_CONSTANT">
+      <Message>String constant &quot;SHIPPED&quot;</Message>
+    </String>
+    <LocalVariable name="status" register="0" pc="1" role="LOCAL_VARIABLE_VALUE_OF">
+      <Message>Value loaded from status</Message>
+    </LocalVariable>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.order.OrderStatusChecker" primary="true" start="18" end="18" startBytecode="3" endBytecode="3" sourcefile="OrderStatusChecker.java" sourcepath="vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker.java">
+      <Message>At OrderStatusChecker.java:[line 18]</Message>
+    </SourceLine>
+    <Property name="edu.umd.cs.findbugs.detect.RefComparisonWarningProperty.STATIC_AND_PARAMETER_IN_PUBLIC_METHOD" value="true"/>
+  </BugInstance>
+  <BugInstance type="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" priority="2" rank="13" abbrev="NP" category="STYLE" instanceHash="791432c14341241979a90bb457c4a230" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="476">
+    <ShortMessage>Possible null pointer dereference due to return value of called method</ShortMessage>
+    <LongMessage>Possible null pointer dereference in vn.hust.datn.casestudy.vulnshop.storage.FileStorageService.store(String, byte[]) due to return value of called method</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" start="25" end="85" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java">
+        <Message>At FileStorageService.java:[lines 25-85]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.storage.FileStorageService</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" name="store" signature="(Ljava/lang/String;[B)V" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" start="79" end="85" startBytecode="0" endBytecode="173" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.storage.FileStorageService.store(String, byte[])</Message>
+    </Method>
+    <LocalVariable name="?" register="-1" pc="53" role="LOCAL_VARIABLE_UNKNOWN">
+      <Message>Local variable stored in JVM register ?</Message>
+    </LocalVariable>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" primary="true" start="83" end="83" startBytecode="53" endBytecode="53" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java" role="SOURCE_LINE_INVOKED">
+      <Message>Method invoked at FileStorageService.java:[line 83]</Message>
+    </SourceLine>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" start="83" end="83" startBytecode="44" endBytecode="44" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java" role="SOURCE_LINE_KNOWN_NULL">
+      <Message>Known null at FileStorageService.java:[line 83]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="OBL_UNSATISFIED_OBLIGATION" priority="2" rank="20" abbrev="OBL" category="EXPERIMENTAL" instanceHash="21c3ffab7f61ff4f50f2afacdaedf72a" instanceOccurrenceNum="0" instanceOccurrenceMax="0">
+    <ShortMessage>Method may fail to clean up stream or resource</ShortMessage>
+    <LongMessage>vn.hust.datn.casestudy.vulnshop.storage.FileStorageService.readFirstByte(String) may fail to clean up java.io.InputStream</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" start="25" end="85" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java">
+        <Message>At FileStorageService.java:[lines 25-85]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.storage.FileStorageService</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" name="readFirstByte" signature="(Ljava/lang/String;)I" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" start="72" end="74" startBytecode="0" endBytecode="109" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.storage.FileStorageService.readFirstByte(String)</Message>
+    </Method>
+    <Class classname="java.io.InputStream" role="CLASS_REFTYPE">
+      <SourceLine classname="java.io.InputStream" start="61" end="806" sourcefile="InputStream.java" sourcepath="java/io/InputStream.java">
+        <Message>At InputStream.java:[lines 61-806]</Message>
+      </SourceLine>
+      <Message>Reference type java.io.InputStream</Message>
+    </Class>
+    <Int value="1" role="INT_OBLIGATIONS_REMAINING">
+      <Message>1 instances of obligation remaining</Message>
+    </Int>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" primary="true" start="72" end="72" startBytecode="19" endBytecode="19" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java" role="SOURCE_LINE_OBLIGATION_CREATED">
+      <Message>Obligation to clean up resource created at FileStorageService.java:[line 72] is not discharged</Message>
+    </SourceLine>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" start="73" end="73" startBytecode="23" endBytecode="23" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java" role="SOURCE_LINE_PATH_CONTINUES">
+      <Message>Path continues at FileStorageService.java:[line 73]</Message>
+    </SourceLine>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" start="74" end="74" startBytecode="28" endBytecode="28" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java" role="SOURCE_LINE_PATH_CONTINUES">
+      <Message>Path continues at FileStorageService.java:[line 74]</Message>
+    </SourceLine>
+    <String value="{InputStream x 1}" role="STRING_REMAINING_OBLIGATIONS">
+      <Message>Remaining obligations: {InputStream x 1}</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="OS_OPEN_STREAM" priority="2" rank="16" abbrev="OS" category="BAD_PRACTICE" instanceHash="b73a15c8a33d85d743656f4819b46c1c" instanceOccurrenceNum="0" instanceOccurrenceMax="0">
+    <ShortMessage>Method may fail to close stream</ShortMessage>
+    <LongMessage>vn.hust.datn.casestudy.vulnshop.storage.FileStorageService.readFirstByte(String) may fail to close stream</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" start="25" end="85" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java">
+        <Message>At FileStorageService.java:[lines 25-85]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.storage.FileStorageService</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" name="readFirstByte" signature="(Ljava/lang/String;)I" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" start="72" end="74" startBytecode="0" endBytecode="13" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.storage.FileStorageService.readFirstByte(String)</Message>
+    </Method>
+    <Type descriptor="Ljava/io/InputStream;" role="TYPE_CLOSEIT">
+      <SourceLine classname="java.io.InputStream" start="61" end="806" sourcefile="InputStream.java" sourcepath="java/io/InputStream.java">
+        <Message>At InputStream.java:[lines 61-806]</Message>
+      </SourceLine>
+      <Message>Need to close java.io.InputStream </Message>
+    </Type>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" primary="true" start="72" end="72" startBytecode="0" endBytecode="0" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java">
+      <Message>At FileStorageService.java:[line 72]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="PATH_TRAVERSAL_IN" priority="2" rank="12" abbrev="SECPTI" category="SECURITY" instanceHash="3e6b21f2415863894ebac61040343adb" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="22">
+    <ShortMessage>Potential Path Traversal (file read)</ShortMessage>
+    <LongMessage>This API (java/io/File.&lt;init&gt;(Ljava/lang/String;)V) reads a file whose location might be specified by user input</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" start="25" end="85" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java">
+        <Message>At FileStorageService.java:[lines 25-85]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.storage.FileStorageService</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" name="readUserFile" signature="(Ljava/lang/String;)Ljava/lang/String;" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" start="41" end="42" startBytecode="0" endBytecode="102" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.storage.FileStorageService.readUserFile(String)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" primary="true" start="41" end="41" startBytecode="22" endBytecode="22" sourcefile="FileStorageService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java">
+      <Message>At FileStorageService.java:[line 41]</Message>
+    </SourceLine>
+    <String value="java/io/File.&lt;init&gt;(Ljava/lang/String;)V" role="Sink method">
+      <Message>Sink method java/io/File.&lt;init&gt;(Ljava/lang/String;)V</Message>
+    </String>
+    <String value="0" role="Sink parameter">
+      <Message>Sink parameter 0</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP2" priority="2" rank="18" abbrev="EI2" category="MALICIOUS_CODE" instanceHash="f8b29ee769c4c042e52b62af326a77b9" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="374">
+    <ShortMessage>May expose internal representation by incorporating reference to mutable object</ShortMessage>
+    <LongMessage>new vn.hust.datn.casestudy.vulnshop.user.UserRepository(JdbcTemplate) may expose internal representation by storing an externally mutable object into UserRepository.jdbcTemplate</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" primary="true" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" start="13" end="51" sourcefile="UserRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserRepository.java">
+        <Message>At UserRepository.java:[lines 13-51]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.user.UserRepository</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" name="&lt;init&gt;" signature="(Lorg/springframework/jdbc/core/JdbcTemplate;)V" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" start="22" end="24" startBytecode="0" endBytecode="69" sourcefile="UserRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserRepository.java"/>
+      <Message>In method new vn.hust.datn.casestudy.vulnshop.user.UserRepository(JdbcTemplate)</Message>
+    </Method>
+    <Field classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" name="jdbcTemplate" signature="Lorg/springframework/jdbc/core/JdbcTemplate;" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" sourcefile="UserRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserRepository.java">
+        <Message>In UserRepository.java</Message>
+      </SourceLine>
+      <Message>Field vn.hust.datn.casestudy.vulnshop.user.UserRepository.jdbcTemplate</Message>
+    </Field>
+    <LocalVariable name="jdbcTemplate" register="1" pc="6" role="LOCAL_VARIABLE_NAMED">
+      <Message>Local variable named jdbcTemplate</Message>
+    </LocalVariable>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" primary="true" start="23" end="23" startBytecode="6" endBytecode="6" sourcefile="UserRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserRepository.java">
+      <Message>At UserRepository.java:[line 23]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="SQL_INJECTION_SPRING_JDBC" priority="2" rank="12" abbrev="SECSQLISPRJDBC" category="SECURITY" instanceHash="762123048fa7423063674b0e4daf789a" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="89">
+    <ShortMessage>Potential JDBC Injection (Spring JDBC)</ShortMessage>
+    <LongMessage>This use of org/springframework/jdbc/core/JdbcTemplate.query(Ljava/lang/String;Lorg/springframework/jdbc/core/RowMapper;)Ljava/util/List; can be vulnerable to SQL injection (with Spring JDBC)</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" primary="true" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" start="13" end="51" sourcefile="UserRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserRepository.java">
+        <Message>At UserRepository.java:[lines 13-51]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.user.UserRepository</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" name="findByUsername" signature="(Ljava/lang/String;)Ljava/util/List;" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" start="34" end="35" startBytecode="0" endBytecode="84" sourcefile="UserRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserRepository.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.user.UserRepository.findByUsername(String)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" primary="true" start="35" end="35" startBytecode="15" endBytecode="15" sourcefile="UserRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserRepository.java">
+      <Message>At UserRepository.java:[line 35]</Message>
+    </SourceLine>
+    <String value="org/springframework/jdbc/core/JdbcTemplate.query(Ljava/lang/String;Lorg/springframework/jdbc/core/RowMapper;)Ljava/util/List;" role="Sink method">
+      <Message>Sink method org/springframework/jdbc/core/JdbcTemplate.query(Ljava/lang/String;Lorg/springframework/jdbc/core/RowMapper;)Ljava/util/List;</Message>
+    </String>
+    <String value="1" role="Sink parameter">
+      <Message>Sink parameter 1</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP2" priority="2" rank="18" abbrev="EI2" category="MALICIOUS_CODE" instanceHash="3ceaf9ec402c01ec27a515df1ab0f03c" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="374">
+    <ShortMessage>May expose internal representation by incorporating reference to mutable object</ShortMessage>
+    <LongMessage>new vn.hust.datn.casestudy.vulnshop.user.UserService(UserRepository) may expose internal representation by storing an externally mutable object into UserService.userRepository</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.user.UserService" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" start="13" end="50" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java">
+        <Message>At UserService.java:[lines 13-50]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.user.UserService</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.user.UserService" name="&lt;init&gt;" signature="(Lvn/hust/datn/casestudy/vulnshop/user/UserRepository;)V" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" start="13" end="15" startBytecode="0" endBytecode="69" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java"/>
+      <Message>In method new vn.hust.datn.casestudy.vulnshop.user.UserService(UserRepository)</Message>
+    </Method>
+    <Field classname="vn.hust.datn.casestudy.vulnshop.user.UserService" name="userRepository" signature="Lvn/hust/datn/casestudy/vulnshop/user/UserRepository;" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java">
+        <Message>In UserService.java</Message>
+      </SourceLine>
+      <Message>Field vn.hust.datn.casestudy.vulnshop.user.UserService.userRepository</Message>
+    </Field>
+    <LocalVariable name="userRepository" register="1" pc="6" role="LOCAL_VARIABLE_NAMED">
+      <Message>Local variable named userRepository</Message>
+    </LocalVariable>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" primary="true" start="14" end="14" startBytecode="6" endBytecode="6" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java">
+      <Message>At UserService.java:[line 14]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" priority="2" rank="18" abbrev="RCN" category="STYLE" instanceHash="b75bda2e2d9175b15d7734338b0baee1" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="476">
+    <ShortMessage>Redundant nullcheck of value known to be non-null</ShortMessage>
+    <LongMessage>Redundant nullcheck of users, which is known to be non-null in vn.hust.datn.casestudy.vulnshop.user.UserService.countByRole(String)</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.user.UserService" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" start="13" end="50" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java">
+        <Message>At UserService.java:[lines 13-50]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.user.UserService</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.user.UserService" name="countByRole" signature="(Ljava/lang/String;)I" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" start="41" end="45" startBytecode="0" endBytecode="127" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.user.UserService.countByRole(String)</Message>
+    </Method>
+    <LocalVariable name="users" register="2" pc="9" role="LOCAL_VARIABLE_VALUE_OF">
+      <Message>Value loaded from users</Message>
+    </LocalVariable>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" name="findByRole" signature="(Ljava/lang/String;)Ljava/util/List;" isStatic="false" role="METHOD_RETURN_VALUE_OF" classAnnotationNames="org.springframework.stereotype.Repository">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserRepository" start="40" end="40" startBytecode="0" endBytecode="72" sourcefile="UserRepository.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserRepository.java"/>
+      <Message>Return value of vn.hust.datn.casestudy.vulnshop.user.UserRepository.findByRole(String) of type java.util.List</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" primary="true" start="42" end="42" startBytecode="10" endBytecode="10" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java" role="SOURCE_REDUNDANT_NULL_CHECK">
+      <Message>Redundant null check at UserService.java:[line 42]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="CRLF_INJECTION_LOGS" priority="3" rank="15" abbrev="SECCRLFLOG" category="SECURITY" instanceHash="4cc4ef8e38f6c966bcec52eb0280c568" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="117">
+    <ShortMessage>Potential CRLF Injection for logs</ShortMessage>
+    <LongMessage>This use of org/slf4j/Logger.info(Ljava/lang/String;)V might be used to include CRLF characters into log messages</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.util.AuditLogger" primary="true" classAnnotationNames="org.springframework.stereotype.Component">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.AuditLogger" start="13" end="30" sourcefile="AuditLogger.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/AuditLogger.java">
+        <Message>At AuditLogger.java:[lines 13-30]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.util.AuditLogger</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.util.AuditLogger" name="logLogin" signature="(Ljava/lang/String;Ljava/lang/String;)V" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Component">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.AuditLogger" start="24" end="25" startBytecode="0" endBytecode="81" sourcefile="AuditLogger.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/AuditLogger.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.util.AuditLogger.logLogin(String, String)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.AuditLogger" primary="true" start="24" end="24" startBytecode="10" endBytecode="10" sourcefile="AuditLogger.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/AuditLogger.java">
+      <Message>At AuditLogger.java:[line 24]</Message>
+    </SourceLine>
+    <String value="org/slf4j/Logger.info(Ljava/lang/String;)V" role="Sink method">
+      <Message>Sink method org/slf4j/Logger.info(Ljava/lang/String;)V</Message>
+    </String>
+    <String value="0" role="Sink parameter">
+      <Message>Sink parameter 0</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="CRLF_INJECTION_LOGS" priority="3" rank="15" abbrev="SECCRLFLOG" category="SECURITY" instanceHash="ab54f5fe48524393497e087e7db33fa4" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="117">
+    <ShortMessage>Potential CRLF Injection for logs</ShortMessage>
+    <LongMessage>This use of org/slf4j/Logger.info(Ljava/lang/String;Ljava/lang/Object;)V might be used to include CRLF characters into log messages</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.util.AuditLogger" primary="true" classAnnotationNames="org.springframework.stereotype.Component">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.AuditLogger" start="13" end="30" sourcefile="AuditLogger.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/AuditLogger.java">
+        <Message>At AuditLogger.java:[lines 13-30]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.util.AuditLogger</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.util.AuditLogger" name="logLogout" signature="(Ljava/lang/String;)V" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Component">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.AuditLogger" start="29" end="30" startBytecode="0" endBytecode="67" sourcefile="AuditLogger.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/AuditLogger.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.util.AuditLogger.logLogout(String)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.AuditLogger" primary="true" start="29" end="29" startBytecode="6" endBytecode="6" sourcefile="AuditLogger.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/AuditLogger.java">
+      <Message>At AuditLogger.java:[line 29]</Message>
+    </SourceLine>
+    <String value="org/slf4j/Logger.info(Ljava/lang/String;Ljava/lang/Object;)V" role="Sink method">
+      <Message>Sink method org/slf4j/Logger.info(Ljava/lang/String;Ljava/lang/Object;)V</Message>
+    </String>
+    <String value="0" role="Sink parameter">
+      <Message>Sink parameter 0</Message>
+    </String>
+    <String value="vn/hust/datn/casestudy/vulnshop/util/AuditLogger.logLogout(Ljava/lang/String;)V parameter 0" role="Unknown source">
+      <Message>Unknown source vn/hust/datn/casestudy/vulnshop/util/AuditLogger.logLogout(Ljava/lang/String;)V parameter 0</Message>
+    </String>
+    <String value="not detected" role="Method usage">
+      <Message>Method usage not detected</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="PREDICTABLE_RANDOM" priority="2" rank="12" abbrev="SECPR" category="SECURITY" instanceHash="c0890a36aa8bd8dd085d08f23ead6f15" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="330">
+    <ShortMessage>Predictable pseudorandom number generator</ShortMessage>
+    <LongMessage>This random generator (java.util.Random) is predictable</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.util.ColorPicker" primary="true">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.ColorPicker" start="21" end="35" sourcefile="ColorPicker.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/ColorPicker.java">
+        <Message>At ColorPicker.java:[lines 21-35]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.util.ColorPicker</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.util.ColorPicker" name="&lt;clinit&gt;" signature="()V" isStatic="true" primary="true">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.ColorPicker" start="21" end="23" startBytecode="0" endBytecode="70" sourcefile="ColorPicker.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/ColorPicker.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.util.ColorPicker.&lt;static initializer for ColorPicker&gt;()</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.ColorPicker" primary="true" start="21" end="21" startBytecode="4" endBytecode="4" sourcefile="ColorPicker.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/ColorPicker.java">
+      <Message>At ColorPicker.java:[line 21]</Message>
+    </SourceLine>
+    <String value="java.util.Random">
+      <Message>Value java.util.Random</Message>
+    </String>
+  </BugInstance>
+  <BugInstance type="RV_ABSOLUTE_VALUE_OF_HASHCODE" priority="1" rank="7" abbrev="RV" category="CORRECTNESS" instanceHash="64b004c741ecc78d28bd2199fcd2c184" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="440">
+    <ShortMessage>Bad attempt to compute absolute value of signed 32-bit hashcode</ShortMessage>
+    <LongMessage>Bad attempt to compute absolute value of signed 32-bit hashcode in vn.hust.datn.casestudy.vulnshop.util.ColorPicker.colorFor(String)</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.util.ColorPicker" primary="true">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.ColorPicker" start="21" end="35" sourcefile="ColorPicker.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/ColorPicker.java">
+        <Message>At ColorPicker.java:[lines 21-35]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.util.ColorPicker</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.util.ColorPicker" name="colorFor" signature="(Ljava/lang/String;)Ljava/lang/String;" isStatic="true" primary="true">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.ColorPicker" start="34" end="35" startBytecode="0" endBytecode="74" sourcefile="ColorPicker.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/ColorPicker.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.util.ColorPicker.colorFor(String)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.ColorPicker" primary="true" start="34" end="34" startBytecode="4" endBytecode="4" sourcefile="ColorPicker.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/ColorPicker.java">
+      <Message>At ColorPicker.java:[line 34]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugInstance type="DM_CONVERT_CASE" priority="3" rank="20" abbrev="Dm" category="I18N" instanceHash="51b83eb386f60b4f38fd0611c16355a9" instanceOccurrenceNum="0" instanceOccurrenceMax="0">
+    <ShortMessage>Consider using Locale parameterized version of invoked method</ShortMessage>
+    <LongMessage>Use of non-localized String.toUpperCase() or String.toLowerCase() in vn.hust.datn.casestudy.vulnshop.util.TextNormalizer.normalizeStatusCode(String)</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.util.TextNormalizer" primary="true">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.TextNormalizer" start="8" end="29" sourcefile="TextNormalizer.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/TextNormalizer.java">
+        <Message>At TextNormalizer.java:[lines 8-29]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.util.TextNormalizer</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.util.TextNormalizer" name="normalizeStatusCode" signature="(Ljava/lang/String;)Ljava/lang/String;" isStatic="true" primary="true">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.TextNormalizer" start="24" end="24" startBytecode="0" endBytecode="46" sourcefile="TextNormalizer.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/TextNormalizer.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.util.TextNormalizer.normalizeStatusCode(String)</Message>
+    </Method>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.util.TextNormalizer" primary="true" start="24" end="24" startBytecode="1" endBytecode="1" sourcefile="TextNormalizer.java" sourcepath="vn/hust/datn/casestudy/vulnshop/util/TextNormalizer.java">
+      <Message>At TextNormalizer.java:[line 24]</Message>
+    </SourceLine>
+  </BugInstance>
+  <BugCategory category="BAD_PRACTICE">
+    <Description>Bad practice</Description>
+  </BugCategory>
+  <BugCategory category="MALICIOUS_CODE">
+    <Description>Malicious code vulnerability</Description>
+  </BugCategory>
+  <BugCategory category="CORRECTNESS">
+    <Description>Correctness</Description>
+  </BugCategory>
+  <BugCategory category="SECURITY">
+    <Description>Security</Description>
+  </BugCategory>
+  <BugCategory category="STYLE">
+    <Description>Dodgy code</Description>
+  </BugCategory>
+  <BugCategory category="EXPERIMENTAL">
+    <Description>Experimental</Description>
+  </BugCategory>
+  <BugCategory category="I18N">
+    <Description>Internationalization</Description>
+  </BugCategory>
+  <BugPattern type="SQL_INJECTION_JDBC" abbrev="SECSQLIJDBC" category="SECURITY" cweid="89">
+    <ShortDescription>Potential JDBC Injection</ShortDescription>
+    <Details><![CDATA[
+            
+<p>
+The input values included in SQL queries need to be passed in safely.
+Bind variables in prepared statements can be used to easily mitigate the risk of SQL injection.
+</p>
+
+<p>
+    <b>Vulnerable Code:</b><br/>
+    <pre>Connection conn = [...];
+Statement stmt = con.createStatement();
+ResultSet rs = stmt.executeQuery("update COFFEES set SALES = "+nbSales+" where COF_NAME = '"+coffeeName+"'");</pre>
+</p>
+<p>
+    <b>Solution:</b><br/>
+    <pre>Connection conn = [...];
+conn.prepareStatement("update COFFEES set SALES = ? where COF_NAME = ?");
+updateSales.setInt(1, nbSales);
+updateSales.setString(2, coffeeName);</pre>
+</p>
+<br/>
+
+<b>References (JDBC)</b><br/>
+<a href="https://docs.oracle.com/javase/tutorial/jdbc/basics/prepared.html">Oracle Documentation: The Java Tutorials &gt; Prepared Statements</a><br/>
+<b>References (SQL injection)</b><br/>
+<a href="http://projects.webappsec.org/w/page/13246963/SQL%20Injection">WASC-19: SQL Injection</a><br/>
+<a href="https://capec.mitre.org/data/definitions/66.html">CAPEC-66: SQL Injection</a><br/>
+<a href="https://cwe.mitre.org/data/definitions/89.html">CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')</a><br/>
+<a href="https://www.owasp.org/index.php/Top_10_2013-A1-Injection">OWASP: Top 10 2013-A1-Injection</a><br/>
+<a href="https://www.owasp.org/index.php/SQL_Injection_Prevention_Cheat_Sheet">OWASP: SQL Injection Prevention Cheat Sheet</a><br/>
+<a href="https://www.owasp.org/index.php/Query_Parameterization_Cheat_Sheet">OWASP: Query Parameterization Cheat Sheet</a><br/>
+</p>
+
+        ]]></Details>
+  </BugPattern>
+  <BugPattern type="EI_EXPOSE_REP2" abbrev="EI2" category="MALICIOUS_CODE" cweid="374">
+    <ShortDescription>May expose internal representation by incorporating reference to mutable object</ShortDescription>
+    <Details><![CDATA[
+
+  <p> This code stores a reference to an externally mutable object into the
+  internal representation of the object.&nbsp;
+   If instances
+   are accessed by untrusted code, and unchecked changes to
+   the mutable object would compromise security or other
+   important properties, you will need to do something different.
+  Storing a copy of the object is better approach in many situations.</p>
+
+    ]]></Details>
+  </BugPattern>
+  <BugPattern type="RV_ABSOLUTE_VALUE_OF_HASHCODE" abbrev="RV" category="CORRECTNESS">
+    <ShortDescription>Bad attempt to compute absolute value of signed 32-bit hashcode</ShortDescription>
+    <Details><![CDATA[
+
+<p> This code generates a hashcode and then computes
+the absolute value of that hashcode.  If the hashcode
+is <code>Integer.MIN_VALUE</code>, then the result will be negative as well (since
+<code>Math.abs(Integer.MIN_VALUE) == Integer.MIN_VALUE</code>).
+</p>
+<p>One out of 2^32 strings have a hashCode of Integer.MIN_VALUE,
+including "polygenelubricants" "GydZG_" and ""DESIGNING WORKHOUSES".
+</p>
+
+    ]]></Details>
+  </BugPattern>
+  <BugPattern type="SQL_INJECTION_SPRING_JDBC" abbrev="SECSQLISPRJDBC" category="SECURITY" cweid="89">
+    <ShortDescription>Potential JDBC Injection (Spring JDBC)</ShortDescription>
+    <Details><![CDATA[
+            
+<p>
+The input values included in SQL queries need to be passed in safely.
+Bind variables in prepared statements can be used to easily mitigate the risk of SQL injection.
+</p>
+
+<p>
+    <b>Vulnerable Code:</b><br/>
+    <pre>JdbcTemplate jdbc = new JdbcTemplate();
+int count = jdbc.queryForObject("select count(*) from Users where name = '"+paramName+"'", Integer.class);
+</pre>
+    <pre>@Value("properties")
+private String sql;
+
+public function count() {
+    JdcbOperation jdbc = new JdcbOperation();
+    int count = jdbc.query(sql);
+}</pre>
+</p>
+<p>
+    <b>Solution:</b><br/>
+    <pre>JdbcTemplate jdbc = new JdbcTemplate();
+int count = jdbc.queryForObject("select count(*) from Users where name = ?", Integer.class, paramName);</pre>
+    <pre>private final static String sql = "select count(*) from Users";
+
+public function count() {
+    JdcbOperation jdbc = new JdcbOperation();
+    int count = jdbc.query(sql);
+}</pre>
+</p>
+<br/>
+
+<b>References (Spring JDBC)</b><br/>
+<a href="https://spring.io/guides/gs/relational-data-access/">Spring Official Documentation: Data access with JDBC</a><br/>
+<b>References (SQL injection)</b><br/>
+<a href="http://projects.webappsec.org/w/page/13246963/SQL%20Injection">WASC-19: SQL Injection</a><br/>
+<a href="https://capec.mitre.org/data/definitions/66.html">CAPEC-66: SQL Injection</a><br/>
+<a href="https://cwe.mitre.org/data/definitions/89.html">CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')</a><br/>
+<a href="https://www.owasp.org/index.php/Top_10_2013-A1-Injection">OWASP: Top 10 2013-A1-Injection</a><br/>
+<a href="https://www.owasp.org/index.php/SQL_Injection_Prevention_Cheat_Sheet">OWASP: SQL Injection Prevention Cheat Sheet</a><br/>
+<a href="https://www.owasp.org/index.php/Query_Parameterization_Cheat_Sheet">OWASP: Query Parameterization Cheat Sheet</a><br/>
+</p>
+
+        ]]></Details>
+  </BugPattern>
+  <BugPattern type="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" abbrev="NP" category="STYLE">
+    <ShortDescription>Possible null pointer dereference due to return value of called method</ShortDescription>
+    <Details><![CDATA[
+      
+<p> The return value from a method is dereferenced without a null check,
+and the return value of that method is one that should generally be checked
+for null.  This may lead to a <code>NullPointerException</code> when the code is executed.
+</p>
+      
+   ]]></Details>
+  </BugPattern>
+  <BugPattern type="UNSAFE_HASH_EQUALS" abbrev="SECUHE" category="SECURITY" cweid="203">
+    <ShortDescription>Unsafe hash equals</ShortDescription>
+    <Details><![CDATA[
+            
+<p>
+An attacker might be able to detect the value of the secret hash due to the exposure of comparison timing. When the
+functions <code>Arrays.equals()</code> or <code>String.equals()</code> are called, they will exit earlier if fewer
+bytes are matched.
+</p>
+<p>
+<p><b>Vulnerable Code:</b><br/>
+
+<pre>
+String actualHash = ...
+
+if(userInput.equals(actualHash)) {
+    ...
+}</pre>
+</p>
+<p><b>Solution:</b><br/>
+
+<pre>
+String actualHash = ...
+
+if(MessageDigest.isEqual(userInput.getBytes(),actualHash.getBytes())) {
+    ...
+}</pre>
+</p>
+<br/>
+<p>
+<b>References</b><br/>
+<a href="https://cwe.mitre.org/data/definitions/203.html">CWE-203: Information Exposure Through DiscrepancyKey</a><br/>
+</p>
+
+        ]]></Details>
+  </BugPattern>
+  <BugPattern type="PREDICTABLE_RANDOM" abbrev="SECPR" category="SECURITY" cweid="330">
+    <ShortDescription>Predictable pseudorandom number generator</ShortDescription>
+    <Details><![CDATA[
+            
+<p>The use of a predictable random value can lead to vulnerabilities when used in certain security critical contexts. For example, when the value is used as:</p>
+<ul>
+<li>a CSRF token: a predictable token can lead to a CSRF attack as an attacker will know the value of the token</li>
+<li>a password reset token (sent by email): a predictable password token can lead to an account takeover, since an attacker will guess the URL of the "change password" form</li>
+<li>any other secret value</li>
+</ul>
+<p>
+A quick fix could be to replace the use of <code>java.util.Random</code> with something stronger, such as <code>java.security.SecureRandom</code>.
+</p>
+<p>
+<b>Vulnerable Code:</b><br/>
+<pre>String generateSecretToken() {
+    Random r = new Random();
+    return Long.toHexString(r.nextLong());
+}</pre>
+</p>
+<p>
+<b>Solution:</b>
+<pre>import org.apache.commons.codec.binary.Hex;
+
+String generateSecretToken() {
+    SecureRandom secRandom = new SecureRandom();
+
+    byte[] result = new byte[32];
+    secRandom.nextBytes(result);
+    return Hex.encodeHexString(result);
+}</pre>
+</p>
+<br/>
+<p>
+<b>References</b><br/>
+<a href="https://jazzy.id.au/2010/09/20/cracking_random_number_generators_part_1.html">Cracking Random Number Generators - Part 1 (https://jazzy.id.au)</a><br/>
+<a href="https://www.securecoding.cert.org/confluence/display/java/MSC02-J.+Generate+strong+random+numbers">CERT: MSC02-J. Generate strong random numbers</a><br/>
+<a href="https://cwe.mitre.org/data/definitions/330.html">CWE-330: Use of Insufficiently Random Values</a><br/>
+<a href="https://blog.h3xstream.com/2014/12/predicting-struts-csrf-token-cve-2014.html">Predicting Struts CSRF Token (Example of real-life vulnerability and exploitation)</a>
+</p>
+
+        ]]></Details>
+  </BugPattern>
+  <BugPattern type="OBL_UNSATISFIED_OBLIGATION" abbrev="OBL" category="EXPERIMENTAL">
+    <ShortDescription>Method may fail to clean up stream or resource</ShortDescription>
+    <Details><![CDATA[
+          
+          <p>
+          This method may fail to clean up (close, dispose of) a stream,
+          database object, or other
+          resource requiring an explicit cleanup operation.
+          </p>
+
+          <p>
+          In general, if a method opens a stream or other resource,
+          the method should use a try/finally block to ensure that
+          the stream or resource is cleaned up before the method
+          returns.
+          </p>
+
+          <p>
+          This bug pattern is essentially the same as the
+          OS_OPEN_STREAM and ODR_OPEN_DATABASE_RESOURCE
+          bug patterns, but is based on a different
+          (and hopefully better) static analysis technique.
+          We are interested is getting feedback about the
+          usefulness of this bug pattern.
+          For sending feedback, check:
+          </p>
+          <ul>
+            <li><a href="https://github.com/spotbugs/spotbugs/blob/master/.github/CONTRIBUTING.md">contributing guideline</a></li>
+            <li><a href="https://github.com/spotbugs/discuss/issues?q=">mailinglist</a></li>
+          </ul>
+
+          <p>
+          In particular,
+          the false-positive suppression heuristics for this
+          bug pattern have not been extensively tuned, so
+          reports about false positives are helpful to us.
+          </p>
+
+          <p>
+          See Weimer and Necula, <i>Finding and Preventing Run-Time Error Handling Mistakes</i>
+          (<a href="https://people.eecs.berkeley.edu/~necula/Papers/rte_oopsla04.pdf">PDF</a>),
+          for a description of the analysis technique.
+          </p>
+          
+      ]]></Details>
+  </BugPattern>
+  <BugPattern type="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" abbrev="RCN" category="STYLE">
+    <ShortDescription>Redundant nullcheck of value known to be non-null</ShortDescription>
+    <Details><![CDATA[
+
+<p> This method contains a redundant check of a known non-null value against
+the constant null.</p>
+
+    ]]></Details>
+  </BugPattern>
+  <BugPattern type="CRLF_INJECTION_LOGS" abbrev="SECCRLFLOG" category="SECURITY" cweid="117">
+    <ShortDescription>Potential CRLF Injection for logs</ShortDescription>
+    <Details><![CDATA[
+            
+<p>
+    When data from an untrusted source is put into a logger and not neutralized correctly,
+    an attacker could forge log entries or include malicious content.
+    Inserted false entries could be used to skew statistics, distract the administrator
+    or even to implicate another party in the commission of a malicious act.
+    If the log file is processed automatically, the attacker can render the file unusable
+    by corrupting the format of the file or injecting unexpected characters.
+    An attacker may also inject code or other commands into the log file and take advantage
+    of a vulnerability in the log processing utility (e.g. command injection or XSS).
+</p>
+<br/>
+<p>
+<b>Code at risk:</b><br/>
+<pre>String val = request.getParameter("user");
+String metadata = request.getParameter("metadata");
+[...]
+if(authenticated) {
+    log.info("User " + val + " (" + metadata + ") was authenticated successfully");
+}
+else {
+    log.info("User " + val + " (" + metadata + ") was not authenticated");
+}
+</pre>
+
+A malicious user could send the metadata parameter with the value: <code>"Firefox) was authenticated successfully\r\n[INFO] User bbb (Internet Explorer"</code>.
+</p>
+
+<b>Solution:</b><br/>
+<p>
+You can manually sanitize each parameter.
+<pre>
+log.info("User " + val.replaceAll("[\r\n]","") + " (" + userAgent.replaceAll("[\r\n]","") + ") was not authenticated");
+</pre>
+</p>
+
+<p>
+You can also configure your logger service to replace new line for all message events. Here is sample configuration for LogBack <a href="https://logback.qos.ch/manual/layouts.html#replace">using the <code>replace</code> function</a>.
+<pre>
+&lt;pattern&gt;%-5level - %replace(%msg){'[\r\n]', ''}%n&lt;/pattern&gt;
+</pre>
+</p>
+
+<p>
+Finally, you can use a logger implementation that replace new line by spaces.
+The project <a href="https://github.com/javabeanz/owasp-security-logging">OWASP Security Logging</a> has an implementation for Logback and Log4j.
+</p>
+
+<br/>
+<p>
+    <b>References</b><br/>
+    <a href="https://cwe.mitre.org/data/definitions/117.html">CWE-117: Improper Output Neutralization for Logs</a><br/>
+    <a href="https://cwe.mitre.org/data/definitions/93.html">CWE-93: Improper Neutralization of CRLF Sequences ('CRLF Injection')</a><br/>
+    <a href="https://logback.qos.ch/manual/layouts.html#replace">CWE-93: Improper Neutralization of CRLF Sequences ('CRLF Injection')</a><br/>
+    <a href="https://github.com/javabeanz/owasp-security-logging">OWASP Security Logging</a><br/>
+</p>
+
+
+        ]]></Details>
+  </BugPattern>
+  <BugPattern type="MS_MUTABLE_COLLECTION_PKGPROTECT" abbrev="MS" category="MALICIOUS_CODE">
+    <ShortDescription>Field is a mutable collection which should be package protected</ShortDescription>
+    <Details><![CDATA[
+
+ <p>A mutable collection instance is assigned to a final static field,
+   thus can be changed by malicious code or by accident from another package.
+   The field could be made package protected to avoid this vulnerability.
+   Alternatively you may wrap this field into Collections.unmodifiableSet/List/Map/etc.
+   to avoid this vulnerability.</p>
+
+    ]]></Details>
+  </BugPattern>
+  <BugPattern type="SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE" abbrev="SQL" category="SECURITY" cweid="89">
+    <ShortDescription>Nonconstant string passed to execute or addBatch method on an SQL statement</ShortDescription>
+    <Details><![CDATA[
+
+  <p>The method invokes the execute or addBatch method on an SQL statement with a String that seems
+to be dynamically generated. Consider using
+a prepared statement instead. It is more efficient and less vulnerable to
+SQL injection attacks.
+</p>
+
+    ]]></Details>
+  </BugPattern>
+  <BugPattern type="SPRING_ENDPOINT" abbrev="SECSC" category="SECURITY">
+    <ShortDescription>Found Spring endpoint</ShortDescription>
+    <Details><![CDATA[
+            
+<p>This class is a Spring Controller. All methods annotated with <code>RequestMapping</code> (as well as its shortcut annotations <code>GetMapping</code>, <code>PostMapping</code>, <code>PutMapping</code>, <code>DeleteMapping</code>, and <code>PatchMapping</code>) are reachable remotely.
+This class should be analyzed to make sure that remotely exposed methods are safe to expose to potential attackers.</p>
+
+        ]]></Details>
+  </BugPattern>
+  <BugPattern type="PATH_TRAVERSAL_IN" abbrev="SECPTI" category="SECURITY" cweid="22">
+    <ShortDescription>Potential Path Traversal (file read)</ShortDescription>
+    <Details><![CDATA[
+            
+<p>A file is opened to read its content. The filename comes from an <b>input</b> parameter.
+If an unfiltered parameter is passed to this file API, files from an arbitrary filesystem location could be read.</p>
+<p>This rule identifies <b>potential</b> path traversal vulnerabilities. In many cases, the constructed file path cannot be controlled
+by the user. If that is the case, the reported instance is a false positive.</p>
+<br/>
+
+<p>
+    <b>Vulnerable Code:</b><br/>
+<pre>@GET
+@Path("/images/{image}")
+@Produces("images/*")
+public Response getImage(@javax.ws.rs.PathParam("image") String image) {
+    File file = new File("resources/images/", image); //Weak point
+
+    if (!file.exists()) {
+        return Response.status(Status.NOT_FOUND).build();
+    }
+
+    return Response.ok().entity(new FileInputStream(file)).build();
+}</pre>
+</p>
+<br/>
+
+<p>
+    <b>Solution:</b><br/>
+<pre>import org.apache.commons.io.FilenameUtils;
+
+@GET
+@Path("/images/{image}")
+@Produces("images/*")
+public Response getImage(@javax.ws.rs.PathParam("image") String image) {
+    File file = new File("resources/images/", FilenameUtils.getName(image)); //Fix
+
+    if (!file.exists()) {
+        return Response.status(Status.NOT_FOUND).build();
+    }
+
+    return Response.ok().entity(new FileInputStream(file)).build();
+}</pre>
+</p>
+<br/>
+<p>
+<b>References</b><br/>
+<a href="http://projects.webappsec.org/w/page/13246952/Path%20Traversal">WASC: Path Traversal</a><br/>
+<a href="https://www.owasp.org/index.php/Path_Traversal">OWASP: Path Traversal</a><br/>
+<a href="https://capec.mitre.org/data/definitions/126.html">CAPEC-126: Path Traversal</a><br/>
+<a href="https://cwe.mitre.org/data/definitions/22.html">CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')</a>
+</p>
+
+        ]]></Details>
+  </BugPattern>
+  <BugPattern type="WEAK_MESSAGE_DIGEST_MD5" abbrev="SECMD5" category="SECURITY" cweid="328">
+    <ShortDescription>MD2, MD4 and MD5 are weak hash functions</ShortDescription>
+    <Details><![CDATA[
+            
+<p>The algorithms MD2, MD4 and MD5 are not a recommended MessageDigest. <b>PBKDF2</b> should be used to hash password for example.</p>
+
+<blockquote>
+    "The security of the MD5 hash function is severely compromised. A collision attack exists that can find collisions
+    within seconds on a computer with a 2.6 GHz Pentium 4 processor (complexity of 2<sup>24.1</sup>).[1] Further, there is also a
+    chosen-prefix collision attack that can produce a collision for two inputs with specified prefixes within hours, using
+    off-the-shelf computing hardware (complexity 2<sup>39</sup>).[2]"<br/>
+    - <a href="https://en.wikipedia.org/wiki/MD5#Security">Wikipedia: MD5 - Security</a>
+</blockquote>
+
+<blockquote>
+    "<b>SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, and SHA-512/256</b>:<br/>
+    The use of these hash functions is acceptable for all hash function applications."<br/>
+    - <a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-131Ar2.pdf">NIST: Transitioning the Use of Cryptographic Algorithms and Key Lengths p.15</a>
+</blockquote>
+<blockquote>
+    "The main idea of a PBKDF is to slow dictionary or brute force attacks on the passwords by increasing the time
+    needed to test each password. An attacker with a list of likely passwords can evaluate the PBKDF using the known
+    iteration counter and the salt. Since an attacker has to spend a significant amount of computing time for each try,
+    it becomes harder to apply the dictionary or brute force attacks."<br/>
+- <a href="https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf">NIST: Recommendation for Password-Based Key Derivation  p.12</a>
+</blockquote>
+<br/>
+<p>
+    <b>Vulnerable Code:</b><br/>
+    <pre>MessageDigest md5Digest = MessageDigest.getInstance("MD5");
+    md5Digest.update(password.getBytes());
+    byte[] hashValue = md5Digest.digest();</pre>
+    <br/>
+    <pre>byte[] hashValue = DigestUtils.getMd5Digest().digest(password.getBytes());</pre>
+</p>
+<br/>
+<p>
+    <b>Solution (Using bouncy castle):</b><br/>
+    <pre>public static byte[] getEncryptedPassword(String password, byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator(new SHA256Digest());
+    gen.init(password.getBytes("UTF-8"), salt.getBytes(), 4096);
+    return ((KeyParameter) gen.generateDerivedParameters(256)).getKey();
+}</pre>
+    <br/>
+    <b>Solution (Java 8 and later):</b><br/>
+    <pre>public static byte[] getEncryptedPassword(String password, byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 4096, 256 * 8);
+    SecretKeyFactory f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+    return f.generateSecret(spec).getEncoded();
+}</pre>
+</p>
+<br/>
+<p>
+<b>References</b><br/>
+[1] <a href="https://www.win.tue.nl/hashclash/On%20Collisions%20for%20MD5%20-%20M.M.J.%20Stevens.pdf">On Collisions for MD5</a>: Master Thesis by M.M.J. Stevens<br/>
+[2] <a href="https://homepages.cwi.nl/~stevens/papers/stJOC%20-%20Chosen-Prefix%20Collisions%20for%20MD5%20and%20Applications.pdf">Chosen-prefix collisions for MD5 and applications</a>: Paper written by Marc Stevens<br/>
+<a href="https://en.wikipedia.org/wiki/MD5">Wikipedia: MD5</a><br/>
+<a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-131Ar2.pdf">NIST: Transitioning the Use of Cryptographic Algorithms and Key Lengths</a><br/>
+<a href="https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf">NIST: Recommendation for Password-Based Key Derivation</a><br/>
+<a href="https://stackoverflow.com/q/22580853/89769">Stackoverflow: Reliable implementation of PBKDF2-HMAC-SHA256 for Java</a><br/>
+<a href="https://cwe.mitre.org/data/definitions/327.html">CWE-327: Use of a Broken or Risky Cryptographic Algorithm</a>
+</p>
+
+        ]]></Details>
+  </BugPattern>
+  <BugPattern type="DM_DEFAULT_ENCODING" abbrev="Dm" category="I18N">
+    <ShortDescription>Reliance on default encoding</ShortDescription>
+    <Details><![CDATA[
+
+<p> Found a call to a method which will perform a byte to String (or String to byte) conversion,
+and will assume that the default platform encoding is suitable. This will cause the application
+behavior to vary between platforms. Use an alternative API and specify a charset name or Charset
+object explicitly.</p>
+
+      ]]></Details>
+  </BugPattern>
+  <BugPattern type="HE_EQUALS_USE_HASHCODE" abbrev="HE" category="BAD_PRACTICE">
+    <ShortDescription>Class defines equals() and uses Object.hashCode()</ShortDescription>
+    <Details><![CDATA[
+
+  <p> This class overrides <code>equals(Object)</code>, but does not
+  override <code>hashCode()</code>, and inherits the implementation of
+  <code>hashCode()</code> from <code>java.lang.Object</code> (which returns
+  the identity hash code, an arbitrary value assigned to the object
+  by the VM).&nbsp; Therefore, the class is very likely to violate the
+  invariant that equal objects must have equal hashcodes.</p>
+
+<p>If you don't think instances of this class will ever be inserted into a HashMap/HashTable,
+the recommended <code>hashCode</code> implementation to use is:</p>
+<pre><code>public int hashCode() {
+    assert false : "hashCode not designed";
+    return 42; // any arbitrary constant will do
+}
+</code></pre>
+
+    ]]></Details>
+  </BugPattern>
+  <BugPattern type="ES_COMPARING_PARAMETER_STRING_WITH_EQ" abbrev="ES" category="BAD_PRACTICE">
+    <ShortDescription>Comparison of String parameter using == or !=</ShortDescription>
+    <Details><![CDATA[
+
+  <p>This code compares a <code>java.lang.String</code> parameter for reference
+equality using the == or != operators. Requiring callers to
+pass only String constants or interned strings to a method is unnecessarily
+fragile, and rarely leads to measurable performance gains. Consider
+using the <code>equals(Object)</code> method instead.</p>
+
+    ]]></Details>
+  </BugPattern>
+  <BugPattern type="OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE" abbrev="OBL" category="EXPERIMENTAL">
+    <ShortDescription>Method may fail to clean up stream or resource on checked exception</ShortDescription>
+    <Details><![CDATA[
+          
+          <p>
+          This method may fail to clean up (close, dispose of) a stream,
+          database object, or other
+          resource requiring an explicit cleanup operation.
+          </p>
+
+          <p>
+          In general, if a method opens a stream or other resource,
+          the method should use a try/finally block to ensure that
+          the stream or resource is cleaned up before the method
+          returns.
+          </p>
+
+          <p>
+          This bug pattern is essentially the same as the
+          OS_OPEN_STREAM and ODR_OPEN_DATABASE_RESOURCE
+          bug patterns, but is based on a different
+          (and hopefully better) static analysis technique.
+          We are interested is getting feedback about the
+          usefulness of this bug pattern.
+          For sending feedback, check:
+          </p>
+          <ul>
+            <li><a href="https://github.com/spotbugs/spotbugs/blob/master/.github/CONTRIBUTING.md">contributing guideline</a></li>
+            <li><a href="https://github.com/spotbugs/discuss/issues?q=">mailinglist</a></li>
+          </ul>
+
+          <p>
+          In particular,
+          the false-positive suppression heuristics for this
+          bug pattern have not been extensively tuned, so
+          reports about false positives are helpful to us.
+          </p>
+
+          <p>
+          See Weimer and Necula, <i>Finding and Preventing Run-Time Error Handling Mistakes</i>
+          (<a href="https://people.eecs.berkeley.edu/~necula/Papers/rte_oopsla04.pdf">PDF</a>),
+          for a description of the analysis technique.
+          </p>
+          
+      ]]></Details>
+  </BugPattern>
+  <BugPattern type="OS_OPEN_STREAM" abbrev="OS" category="BAD_PRACTICE">
+    <ShortDescription>Method may fail to close stream</ShortDescription>
+    <Details><![CDATA[
+
+<p> The method creates an IO stream object, does not assign it to any
+fields, pass it to other methods that might close it,
+or return it, and does not appear to close
+the stream on all paths out of the method.&nbsp; This may result in
+a file descriptor leak.&nbsp; It is generally a good
+idea to use a <code>finally</code> block to ensure that streams are
+closed.</p>
+
+    ]]></Details>
+  </BugPattern>
+  <BugPattern type="DM_CONVERT_CASE" abbrev="Dm" category="I18N">
+    <ShortDescription>Consider using Locale parameterized version of invoked method</ShortDescription>
+    <Details><![CDATA[
+
+  <p> A String is being converted to upper or lowercase, using the platform's default encoding. This may
+      result in improper conversions when used with international characters. Use the </p>
+      <ul>
+    <li>String.toUpperCase( Locale l )</li>
+    <li>String.toLowerCase( Locale l )</li>
+    </ul>
+      <p>versions instead.</p>
+
+    ]]></Details>
+  </BugPattern>
+  <BugCode abbrev="SECPR">
+    <Description>Predictable Pseudo Random Generator</Description>
+  </BugCode>
+  <BugCode abbrev="NP" cweid="476">
+    <Description>Null pointer dereference</Description>
+  </BugCode>
+  <BugCode abbrev="SECMD5">
+    <Description>MD2, MD4 and MD5 are weak hash functions</Description>
+  </BugCode>
+  <BugCode abbrev="OS">
+    <Description>Stream not closed on all paths</Description>
+  </BugCode>
+  <BugCode abbrev="RV" cweid="440">
+    <Description>Bad use of return value from method</Description>
+  </BugCode>
+  <BugCode abbrev="SECCRLFLOG">
+    <Description>CRLF Injection for logs</Description>
+  </BugCode>
+  <BugCode abbrev="MS" cweid="493">
+    <Description>Mutable static field</Description>
+  </BugCode>
+  <BugCode abbrev="Dm">
+    <Description>Dubious method used</Description>
+  </BugCode>
+  <BugCode abbrev="SECSQLIJDBC">
+    <Description>SQL Injection (JDBC)</Description>
+  </BugCode>
+  <BugCode abbrev="ES" cweid="597">
+    <Description>Checking String equality using == or !=</Description>
+  </BugCode>
+  <BugCode abbrev="SQL">
+    <Description>Potential SQL Problem</Description>
+  </BugCode>
+  <BugCode abbrev="EI2">
+    <Description>Storing reference to mutable object</Description>
+  </BugCode>
+  <BugCode abbrev="SECUHE">
+    <Description>Hard Coded Key</Description>
+  </BugCode>
+  <BugCode abbrev="SECSC">
+    <Description>Spring Endpoint</Description>
+  </BugCode>
+  <BugCode abbrev="SECSQLISPRJDBC">
+    <Description>SQL Injection (Spring JDBC)</Description>
+  </BugCode>
+  <BugCode abbrev="OBL">
+    <Description>Unsatisfied obligation to clean up stream or resource</Description>
+  </BugCode>
+  <BugCode abbrev="SECPTI">
+    <Description>Potential Path Traversal (file read)</Description>
+  </BugCode>
+  <BugCode abbrev="RCN" cweid="476">
+    <Description>Redundant comparison to null</Description>
+  </BugCode>
+  <BugCode abbrev="HE">
+    <Description>Equal objects must have equal hashcodes</Description>
+  </BugCode>
+  <Errors errors="0" missingClasses="6">
+    <MissingClass>apply</MissingClass>
+    <MissingClass>equals</MissingClass>
+    <MissingClass>hashCode</MissingClass>
+    <MissingClass>makeConcatWithConstants</MissingClass>
+    <MissingClass>mapRow</MissingClass>
+    <MissingClass>toString</MissingClass>
+  </Errors>
+  <FindBugsSummary timestamp="Wed, 5 Aug 2026 04:59:21 +0000" total_classes="21" referenced_classes="107" total_bugs="34" total_size="328" num_packages="10" java_version="21.0.11" vm_version="21.0.11+10-LTS" cpu_seconds="24.53" clock_seconds="3.53" peak_mbytes="203.63" alloc_mbytes="1950.00" gc_seconds="0.07" priority_3="7" priority_2="18" priority_1="9">
+    <FileStats path="evidence/canary/Canary.java" bugCount="6" size="11" bugHash="21db11fcec2daaf685d0e0a3d50bc3b9"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/VulnshopApplication.java" bugCount="0" size="6"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/auth/AuthController.java" bugCount="2" size="16" bugHash="56830fbebe31fbc76185c1e1a7e36f06"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/auth/AuthService.java" bugCount="1" size="18" bugHash="f49127c5b66b3657c071f916dfc311fe"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java" bugCount="3" size="18" bugHash="d80728cc921ebc11eb3f3206d5328e3d"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/auth/SecurityConstants.java" bugCount="0" size="6"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/auth/SessionRegistry.java" bugCount="1" size="14" bugHash="a963c45fad7f6c928762ec652d3dfc2f"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/cart/CartService.java" bugCount="0" size="15"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/cart/PaginationHelper.java" bugCount="0" size="9"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/catalog/ProductController.java" bugCount="3" size="10" bugHash="cbe7910a6f4ddaf88515a46d4ac4f6ab"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java" bugCount="3" size="29" bugHash="fba5ade964580686a534d9b7f8395463"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/domain/Product.java" bugCount="1" size="26" bugHash="c18f790e8f387a3cb608efcc840307df"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/domain/SortField.java" bugCount="0" size="20"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/domain/User.java" bugCount="0" size="16"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker.java" bugCount="1" size="9" bugHash="0a28284622f5d48fc07d50c0b9b2dbf3"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java" bugCount="4" size="28" bugHash="dc7bbe517e8b86ba09b9054cb79208a1"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/user/UserRepository.java" bugCount="2" size="28" bugHash="85f658edc819d0cd987581352c009c39"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/user/UserService.java" bugCount="2" size="17" bugHash="ffbf774fcf848728ea85f3fcce8fe095"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/util/AuditLogger.java" bugCount="2" size="12" bugHash="b3d6c7a586b6a7095c2335bb878427de"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/util/ColorPicker.java" bugCount="2" size="13" bugHash="e1d75fa49aa49671ba5744c7d66ce710"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/util/TextNormalizer.java" bugCount="1" size="7" bugHash="e2dc6cd7caefd3a004a0b9859a360d7b"/>
+    <PackageStats package="evidence.canary" total_bugs="6" total_types="1" total_size="11" priority_2="2" priority_1="4">
+      <ClassStats class="evidence.canary.Canary" sourceFile="Canary.java" interface="false" size="11" bugs="6" priority_2="2" priority_1="4"/>
+    </PackageStats>
+    <PackageStats package="vn.hust.datn.casestudy.vulnshop" total_bugs="0" total_types="1" total_size="6">
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.VulnshopApplication" sourceFile="VulnshopApplication.java" interface="false" size="6" bugs="0"/>
+    </PackageStats>
+    <PackageStats package="vn.hust.datn.casestudy.vulnshop.auth" total_bugs="7" total_types="5" total_size="72" priority_3="2" priority_2="3" priority_1="2">
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.auth.AuthController" sourceFile="AuthController.java" interface="false" size="16" bugs="2" priority_3="2"/>
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.auth.AuthService" sourceFile="AuthService.java" interface="false" size="18" bugs="1" priority_2="1"/>
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.auth.PasswordHasher" sourceFile="PasswordHasher.java" interface="false" size="18" bugs="3" priority_2="1" priority_1="2"/>
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.auth.SecurityConstants" sourceFile="SecurityConstants.java" interface="false" size="6" bugs="0"/>
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.auth.SessionRegistry" sourceFile="SessionRegistry.java" interface="false" size="14" bugs="1" priority_2="1"/>
+    </PackageStats>
+    <PackageStats package="vn.hust.datn.casestudy.vulnshop.cart" total_bugs="0" total_types="2" total_size="24">
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.cart.CartService" sourceFile="CartService.java" interface="false" size="15" bugs="0"/>
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.cart.PaginationHelper" sourceFile="PaginationHelper.java" interface="false" size="9" bugs="0"/>
+    </PackageStats>
+    <PackageStats package="vn.hust.datn.casestudy.vulnshop.catalog" total_bugs="6" total_types="2" total_size="39" priority_3="2" priority_2="4">
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.catalog.ProductController" sourceFile="ProductController.java" interface="false" size="10" bugs="3" priority_3="2" priority_2="1"/>
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.catalog.ProductRepository" sourceFile="ProductRepository.java" interface="false" size="29" bugs="3" priority_2="3"/>
+    </PackageStats>
+    <PackageStats package="vn.hust.datn.casestudy.vulnshop.domain" total_bugs="1" total_types="3" total_size="62" priority_1="1">
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.domain.Product" sourceFile="Product.java" interface="false" size="26" bugs="1" priority_1="1"/>
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.domain.SortField" sourceFile="SortField.java" interface="false" size="20" bugs="0"/>
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.domain.User" sourceFile="User.java" interface="false" size="16" bugs="0"/>
+    </PackageStats>
+    <PackageStats package="vn.hust.datn.casestudy.vulnshop.order" total_bugs="1" total_types="1" total_size="9" priority_1="1">
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.order.OrderStatusChecker" sourceFile="OrderStatusChecker.java" interface="false" size="9" bugs="1" priority_1="1"/>
+    </PackageStats>
+    <PackageStats package="vn.hust.datn.casestudy.vulnshop.storage" total_bugs="4" total_types="1" total_size="28" priority_2="4">
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" sourceFile="FileStorageService.java" interface="false" size="28" bugs="4" priority_2="4"/>
+    </PackageStats>
+    <PackageStats package="vn.hust.datn.casestudy.vulnshop.user" total_bugs="4" total_types="2" total_size="45" priority_2="4">
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.user.UserRepository" sourceFile="UserRepository.java" interface="false" size="28" bugs="2" priority_2="2"/>
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.user.UserService" sourceFile="UserService.java" interface="false" size="17" bugs="2" priority_2="2"/>
+    </PackageStats>
+    <PackageStats package="vn.hust.datn.casestudy.vulnshop.util" total_bugs="5" total_types="3" total_size="32" priority_3="3" priority_2="1" priority_1="1">
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.util.AuditLogger" sourceFile="AuditLogger.java" interface="false" size="12" bugs="2" priority_3="2"/>
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.util.ColorPicker" sourceFile="ColorPicker.java" interface="false" size="13" bugs="2" priority_2="1" priority_1="1"/>
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.util.TextNormalizer" sourceFile="TextNormalizer.java" interface="false" size="7" bugs="1" priority_3="1"/>
+    </PackageStats>
+    <FindBugsProfile>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.ClassInfoAnalysisEngine" totalMilliseconds="469" invocations="1045" avgMicrosecondsPerInvocation="449" maxMicrosecondsPerInvocation="20900" standardDeviationMicrosecondsPerInvocation="1162"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.ClassDataAnalysisEngine" totalMilliseconds="203" invocations="1053" avgMicrosecondsPerInvocation="193" maxMicrosecondsPerInvocation="6268" standardDeviationMicrosecondsPerInvocation="479"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.FieldItemSummary" totalMilliseconds="195" invocations="107" avgMicrosecondsPerInvocation="1830" maxMicrosecondsPerInvocation="22855" standardDeviationMicrosecondsPerInvocation="3724"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.FindNoSideEffectMethods" totalMilliseconds="137" invocations="107" avgMicrosecondsPerInvocation="1286" maxMicrosecondsPerInvocation="15794" standardDeviationMicrosecondsPerInvocation="2435"/>
+      <ClassProfile name="edu.umd.cs.findbugs.OpcodeStack$JumpInfoFactory" totalMilliseconds="111" invocations="314" avgMicrosecondsPerInvocation="355" maxMicrosecondsPerInvocation="4519" standardDeviationMicrosecondsPerInvocation="597"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.JavaClassAnalysisEngine" totalMilliseconds="76" invocations="202" avgMicrosecondsPerInvocation="380" maxMicrosecondsPerInvocation="19454" standardDeviationMicrosecondsPerInvocation="1464"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.NoteDirectlyRelevantTypeQualifiers" totalMilliseconds="60" invocations="107" avgMicrosecondsPerInvocation="565" maxMicrosecondsPerInvocation="8097" standardDeviationMicrosecondsPerInvocation="1178"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.TypeDataflowFactory" totalMilliseconds="58" invocations="95" avgMicrosecondsPerInvocation="614" maxMicrosecondsPerInvocation="16244" standardDeviationMicrosecondsPerInvocation="1717"/>
+      <ClassProfile name="edu.umd.cs.findbugs.ba.npe.NullDerefAndRedundantComparisonFinder" totalMilliseconds="55" invocations="93" avgMicrosecondsPerInvocation="599" maxMicrosecondsPerInvocation="18292" standardDeviationMicrosecondsPerInvocation="1950"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.FunctionsThatMightBeMistakenForProcedures" totalMilliseconds="52" invocations="107" avgMicrosecondsPerInvocation="488" maxMicrosecondsPerInvocation="6400" standardDeviationMicrosecondsPerInvocation="1034"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.ValueNumberDataflowFactory" totalMilliseconds="51" invocations="95" avgMicrosecondsPerInvocation="541" maxMicrosecondsPerInvocation="20617" standardDeviationMicrosecondsPerInvocation="2114"/>
+      <ClassProfile name="edu.umd.cs.findbugs.util.TopologicalSort" totalMilliseconds="51" invocations="995" avgMicrosecondsPerInvocation="51" maxMicrosecondsPerInvocation="2204" standardDeviationMicrosecondsPerInvocation="131"/>
+      <ClassProfile name="com.h3xstream.findsecbugs.taintanalysis.TaintDataflowEngine" totalMilliseconds="45" invocations="93" avgMicrosecondsPerInvocation="490" maxMicrosecondsPerInvocation="7064" standardDeviationMicrosecondsPerInvocation="869"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.ExplicitSerialization" totalMilliseconds="43" invocations="107" avgMicrosecondsPerInvocation="409" maxMicrosecondsPerInvocation="24684" standardDeviationMicrosecondsPerInvocation="2484"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.CFGFactory" totalMilliseconds="42" invocations="93" avgMicrosecondsPerInvocation="461" maxMicrosecondsPerInvocation="7429" standardDeviationMicrosecondsPerInvocation="826"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.OverridingEqualsNotSymmetrical" totalMilliseconds="40" invocations="107" avgMicrosecondsPerInvocation="383" maxMicrosecondsPerInvocation="13663" standardDeviationMicrosecondsPerInvocation="1373"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.IsNullValueDataflowFactory" totalMilliseconds="40" invocations="93" avgMicrosecondsPerInvocation="440" maxMicrosecondsPerInvocation="5006" standardDeviationMicrosecondsPerInvocation="679"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.CalledMethods" totalMilliseconds="39" invocations="107" avgMicrosecondsPerInvocation="366" maxMicrosecondsPerInvocation="4562" standardDeviationMicrosecondsPerInvocation="715"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.BuildObligationPolicyDatabase" totalMilliseconds="38" invocations="107" avgMicrosecondsPerInvocation="359" maxMicrosecondsPerInvocation="5440" standardDeviationMicrosecondsPerInvocation="712"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.MethodGenFactory" totalMilliseconds="37" invocations="93" avgMicrosecondsPerInvocation="403" maxMicrosecondsPerInvocation="20393" standardDeviationMicrosecondsPerInvocation="2092"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.UnconditionalValueDerefDataflowFactory" totalMilliseconds="33" invocations="93" avgMicrosecondsPerInvocation="355" maxMicrosecondsPerInvocation="5218" standardDeviationMicrosecondsPerInvocation="698"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.ValueRangeAnalysisFactory" totalMilliseconds="29" invocations="93" avgMicrosecondsPerInvocation="312" maxMicrosecondsPerInvocation="21070" standardDeviationMicrosecondsPerInvocation="2181"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.FindOpenStream" totalMilliseconds="26" invocations="21" avgMicrosecondsPerInvocation="1264" maxMicrosecondsPerInvocation="25452" standardDeviationMicrosecondsPerInvocation="5410"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.BuildStringPassthruGraph" totalMilliseconds="25" invocations="107" avgMicrosecondsPerInvocation="234" maxMicrosecondsPerInvocation="3323" standardDeviationMicrosecondsPerInvocation="449"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.ReflectiveClasses" totalMilliseconds="23" invocations="107" avgMicrosecondsPerInvocation="222" maxMicrosecondsPerInvocation="3048" standardDeviationMicrosecondsPerInvocation="425"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.FindRefComparison$SpecialTypeAnalysis" totalMilliseconds="22" invocations="76" avgMicrosecondsPerInvocation="297" maxMicrosecondsPerInvocation="1660" standardDeviationMicrosecondsPerInvocation="378"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.EqualsOperandShouldHaveClassCompatibleWithThis" totalMilliseconds="18" invocations="107" avgMicrosecondsPerInvocation="169" maxMicrosecondsPerInvocation="3366" standardDeviationMicrosecondsPerInvocation="393"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.impl.ZipCodeBaseFactory" totalMilliseconds="17" invocations="68" avgMicrosecondsPerInvocation="251" maxMicrosecondsPerInvocation="2381" standardDeviationMicrosecondsPerInvocation="322"/>
+    </FindBugsProfile>
+  </FindBugsSummary>
+  <ClassFeatures></ClassFeatures>
+  <History></History>
+</BugCollection>
