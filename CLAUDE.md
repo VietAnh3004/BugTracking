@@ -208,6 +208,18 @@ Nguyên nhân giống hai dạng kia (IDE background compiler ghi đè file tron
 đang đọc), cách xử lý cũng giống: chạy lại y nguyên lệnh đó. Mẹo khoanh vùng: `grep -n "Caused by"`
 trên log và đọc cái CUỐI CÙNG, đừng dừng ở cái đầu tiên.
 
+**Một lỗi biên dịch bất kỳ làm Lombok DỪNG sinh code, và javac báo tiếp một loạt
+`cannot find symbol: method getId()` trên các entity — trông y hệt entity hỏng.** Gặp thật ở tuần
+8-9: lỗi thật chỉ là `@Scheduled(fixedDelay = INTERVAL_MS)` với `INTERVAL_MS` tính bằng
+`Duration.ofMinutes(30).toMillis()` (annotation đòi **constant expression**, biểu thức gọi method
+không phải), nhưng log đầy `cannot find symbol` ở `AnalysisRun.getId()` — rất dễ đi sửa nhầm entity
+hoặc tưởng Lombok hỏng. **Luôn sửa lỗi ĐẦU TIÊN trong danh sách rồi biên dịch lại trước khi tin
+những lỗi phía sau.** Cùng họ với bẫy "đọc `Caused by` cuối cùng" ở dưới.
+
+**`InspectVolumeResponse` của docker-java nằm ở `com.github.dockerjava.api.command`, KHÔNG phải
+`api.model`** — khác với `Container`, `HostConfig`, `Frame`, `Volume` vốn đều ở `api.model`, nên
+IDE tự import rất dễ chọn nhầm chỗ rồi báo "cannot find symbol" một cách khó hiểu.
+
 **Lỗi khoá file trên Windows khi `mvn clean` tái diễn thường xuyên, và có HAI dạng khác nhau:**
 `Failed to delete ...\target\test-classes` (hỏng ở goal `clean`) và
 `error while writing ...: ...\target\classes\...\X.class` (hỏng ở goal `compile`). Cả hai đều do
