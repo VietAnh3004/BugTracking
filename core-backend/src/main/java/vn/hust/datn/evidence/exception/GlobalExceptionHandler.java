@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
+import vn.hust.datn.evidence.service.analysis.InvalidArtifactException;
+
 /**
  * Điểm xử lý lỗi duy nhất của toàn bộ API.
  *
@@ -161,6 +163,18 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleArchiveLimitExceeded(ArchiveLimitExceededException ex, HttpServletRequest request) {
         return problem(
                 HttpStatus.PAYLOAD_TOO_LARGE, "archive-limit-exceeded", "Archive vượt giới hạn cho phép", ex.getMessage(), request);
+    }
+
+    /**
+     * Artifact analyzer không nhận dạng được, hoặc zip báo cáo không chứa báo cáo nào.
+     *
+     * <p>400 chứ không phải 500: đây là dữ liệu người gọi gửi lên. Lưu ý phạm vi — ngoại lệ này
+     * chỉ ra tới đây khi bị từ chối TRƯỚC lúc tạo hàng {@code analysis_run}; artifact hỏng phát
+     * hiện trong lúc parse đi đường khác, thành một run {@code FAILED} kèm lý do đọc được.
+     */
+    @ExceptionHandler(InvalidArtifactException.class)
+    public ProblemDetail handleInvalidArtifact(InvalidArtifactException ex, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "invalid-artifact", "Artifact analyzer không hợp lệ", ex.getMessage(), request);
     }
 
     /** Snapshot đang giải nén hoặc đã FAILED — cây file rỗng lúc này vô nghĩa. */

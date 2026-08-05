@@ -84,6 +84,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/snapshots/{snapshotId}/analysis-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Nạp artifact analyzer và tạo một lần phân tích */
+        post: operations["ingest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -353,6 +370,37 @@ export interface components {
             /** Format: int32 */
             context_lines?: number;
         };
+        AnalysisRunResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            snapshotId: string;
+            /** @enum {string} */
+            status: "RUNNING" | "SUCCEEDED" | "SUCCEEDED_CLEAN" | "FAILED";
+            /**
+             * Format: int32
+             * @description Chỉ đếm STATIC_WARNING, không phải tổng số evidence
+             */
+            findingCount: number;
+            /** Format: int32 */
+            locationCount: number;
+            /**
+             * Format: int32
+             * @description Số vị trí không đối chiếu được với snapshot_file.path; mẫu số là locationCount
+             */
+            unresolvedLocationCount: number;
+            /** @description Bắt buộc khi status=SUCCEEDED_CLEAN */
+            cleanAckNote?: string;
+            errorMessage?: string;
+            /** @description Phiên bản đọc từ chính artifact; khoá 'jacoco' vắng mặt là bình thường */
+            toolVersions?: {
+                [key: string]: Record<string, never>;
+            };
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            finishedAt?: string;
+        };
         CreateProjectRequest: {
             name: string;
             description?: string;
@@ -604,6 +652,34 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ItemsResult"];
+                };
+            };
+        };
+    };
+    ingest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                snapshotId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    artifacts: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnalysisRunResponse"];
                 };
             };
         };

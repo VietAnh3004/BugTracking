@@ -177,6 +177,53 @@
         } ]
       }
     },
+    "/api/v1/snapshots/{snapshotId}/analysis-runs" : {
+      "post" : {
+        "tags" : [ "analysis-runs" ],
+        "summary" : "Nạp artifact analyzer và tạo một lần phân tích",
+        "operationId" : "ingest",
+        "parameters" : [ {
+          "name" : "snapshotId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "artifacts" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "string",
+                      "format" : "binary"
+                    }
+                  }
+                },
+                "required" : [ "artifacts" ]
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnalysisRunResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects" : {
       "get" : {
         "tags" : [ "projects" ],
@@ -833,6 +880,60 @@
           }
         },
         "required" : [ "analysis_run_id" ]
+      },
+      "AnalysisRunResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "snapshotId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "RUNNING", "SUCCEEDED", "SUCCEEDED_CLEAN", "FAILED" ]
+          },
+          "findingCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Chỉ đếm STATIC_WARNING, không phải tổng số evidence"
+          },
+          "locationCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "unresolvedLocationCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số vị trí không đối chiếu được với snapshot_file.path; mẫu số là locationCount"
+          },
+          "cleanAckNote" : {
+            "type" : "string",
+            "description" : "Bắt buộc khi status=SUCCEEDED_CLEAN"
+          },
+          "errorMessage" : {
+            "type" : "string"
+          },
+          "toolVersions" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "description" : "Phiên bản đọc từ chính artifact; khoá 'jacoco' vắng mặt là bình thường"
+          },
+          "startedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "finishedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "findingCount", "id", "locationCount", "snapshotId", "startedAt", "status", "unresolvedLocationCount" ]
       },
       "CreateProjectRequest" : {
         "type" : "object",
