@@ -4,6 +4,10 @@
  * Là layout route (không phải component thường) nên nó KHÔNG bị unmount khi chuyển giữa các route
  * con — trạng thái trong khung giữ nguyên khi đổi trang, và `BackendStatus` không phải gọi lại API
  * mỗi lần điều hướng.
+ *
+ * Bề ngang ở đây chỉ là TRẦN chung (1400px). Ràng buộc thật của từng nhóm route nằm ở
+ * `NarrowContent` / `WideContent` — tách ra vì Evidence Explorer và bảng cảnh báo cần rộng hơn
+ * 880px, còn trang đăng nhập thì không nên giãn ra cả màn hình.
  */
 
 import { Link, Outlet } from 'react-router-dom';
@@ -15,7 +19,7 @@ export function RootLayout() {
   const { status, user, signOut } = useAuth();
 
   return (
-    <div className="mx-auto max-w-[880px] px-6 py-8 font-sans">
+    <div className="mx-auto w-full max-w-[1400px] px-6 py-8 font-sans">
       <header className="border-border flex items-start justify-between border-b pb-4">
         <div>
           <Link to="/projects" className="text-ink no-underline">
