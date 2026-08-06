@@ -25,6 +25,8 @@ import vn.hust.datn.evidence.domain.EvidenceLinkRelation;
 import vn.hust.datn.evidence.domain.EvidenceRecord;
 import vn.hust.datn.evidence.domain.EvidenceType;
 import vn.hust.datn.evidence.repository.EvidenceRecordRepository;
+import vn.hust.datn.evidence.repository.StackFrameRepository;
+import vn.hust.datn.evidence.repository.TestCaseRepository;
 import vn.hust.datn.evidence.repository.WarningLocationRepository;
 
 /**
@@ -74,14 +76,20 @@ public class EvidenceLinker {
     private final JdbcTemplate jdbcTemplate;
     private final EvidenceRecordRepository evidenceRecordRepository;
     private final WarningLocationRepository warningLocationRepository;
+    private final StackFrameRepository stackFrameRepository;
+    private final TestCaseRepository testCaseRepository;
 
     public EvidenceLinker(
             JdbcTemplate jdbcTemplate,
             EvidenceRecordRepository evidenceRecordRepository,
-            WarningLocationRepository warningLocationRepository) {
+            WarningLocationRepository warningLocationRepository,
+            StackFrameRepository stackFrameRepository,
+            TestCaseRepository testCaseRepository) {
         this.jdbcTemplate = jdbcTemplate;
         this.evidenceRecordRepository = evidenceRecordRepository;
         this.warningLocationRepository = warningLocationRepository;
+        this.stackFrameRepository = stackFrameRepository;
+        this.testCaseRepository = testCaseRepository;
     }
 
     @Transactional
@@ -93,14 +101,22 @@ public class EvidenceLinker {
                 .findByAnalysisRunIdAndType(runId, EvidenceType.CODE_CONTEXT, Pageable.unpaged())
                 .getContent();
 
+        List<StackFrameRow> frames = stackFrameRepository.findProductionFramesByRun(runId);
+        List<TestCaseRow> testCases = testCaseRepository.findRowsByRun(runId);
+
         LinkAccumulator accumulator = new LinkAccumulator();
         accumulator.addAll(locatedIn(locations, contexts));
+        accumulator.addAll(supportsByStackFrame(locations, frames, testCases));
 
         List<LinkCandidate> candidates = accumulator.candidates();
         write(runId, candidates);
 
-        Set<UUID> linkedWarnings =
-                candidates.stream().map(LinkCandidate::fromEvidenceId).collect(Collectors.toSet());
+        // Gom CẢ HAI đầu: tầng 1 sinh warning → context (cảnh báo ở đầu `from`), tầng 3 sinh
+        // test → warning (cảnh báo ở đầu `to`). Chỉ đếm một đầu thì mọi cảnh báo chỉ có bằng
+        // chứng từ test sẽ bị tính nhầm là "trơ trọi".
+        Set<UUID> linkedWarnings = candidates.stream()
+                .flatMap(candidate -> java.util.stream.Stream.of(candidate.fromEvidenceId(), candidate.toEvidenceId()))
+                .collect(Collectors.toSet());
         int unlinked = (int) locations.stream()
                 .map(WarningLocationRow::evidenceRecordId)
                 .distinct()
@@ -175,6 +191,68 @@ public class EvidenceLinker {
                                     context.getEndLine()));
             if (seen.add(candidate.dedupeKey())) {
                 candidates.add(candidate);
+            }
+        }
+        return candidates;
+    }
+
+    /**
+     * Tầng 3 — {@code SUPPORTS} theo stack frame: test hỏng NÀO đi qua đúng dòng bị cảnh báo.
+     *
+     * <p>Đây là loại bằng chứng thuyết phục nhất cho verdict "Likely True Positive": không phải
+     * suy diễn theo tên hay theo độ phủ tổng hợp, mà là một lần chạy thật đã đi qua đúng dòng đó
+     * rồi ném lỗi.
+     *
+     * <p><b>Hướng: {@code failed_test → warning}</b>, không phải {@code stack_trace → warning}.
+     * Liên kết phải trỏ về evidence mà người dùng gọi là "test liên quan"; nếu trỏ vào evidence
+     * {@code STACK_TRACE} thì giao diện hiện ra một stack trace thay vì một cái tên test. Quy đổi
+     * bằng {@code test_case.stack_trace_evidence_id} — provenance cấu trúc đã có sẵn từ tuần 8-9,
+     * không cần thêm liên kết ngữ nghĩa nào.
+     *
+     * <p><b>Tầng này KHÔNG đủ một mình.</b> Trên vulnshop chỉ 7/44 frame trỏ về production, và
+     * 3/5 test hỏng không có frame production nào — toàn bộ test hỏng kiểu {@code AssertionFailedError}
+     * có trace chỉ chứa {@code org.junit.jupiter.api.*} rồi tới lớp test, không hề đi qua mã đang
+     * kiểm thử. Đó chính là lý do tầng 2 (độ phủ + quy ước tên) tồn tại.
+     */
+    private List<LinkCandidate> supportsByStackFrame(
+            List<WarningLocationRow> locations, List<StackFrameRow> frames, List<TestCaseRow> testCases) {
+        if (frames.isEmpty() || locations.isEmpty()) {
+            return List.of();
+        }
+        Map<UUID, UUID> testByStackTrace = testCases.stream()
+                .filter(testCase -> testCase.stackTraceEvidenceId() != null)
+                .collect(Collectors.toMap(
+                        TestCaseRow::stackTraceEvidenceId, TestCaseRow::evidenceRecordId, (first, second) -> first));
+
+        Map<String, List<WarningLocationRow>> locationsByFile =
+                locations.stream().collect(Collectors.groupingBy(WarningLocationRow::filePath));
+
+        List<LinkCandidate> candidates = new ArrayList<>();
+        for (StackFrameRow frame : frames) {
+            UUID testEvidenceId = testByStackTrace.get(frame.stackTraceEvidenceId());
+            if (testEvidenceId == null) {
+                // Stack trace không quy được về test nào. Không im lặng bỏ qua — nhưng cũng không
+                // dựng liên kết trỏ vào một evidence mà UI không biết trình bày.
+                log.debug("Stack trace {} khong co test_case nao tro toi", frame.stackTraceEvidenceId());
+                continue;
+            }
+            for (WarningLocationRow location : locationsByFile.getOrDefault(frame.filePath(), List.of())) {
+                int warningStart = location.startLine();
+                int warningEnd = location.endLine() != null ? location.endLine() : warningStart;
+                int frameLine = frame.lineNumber();
+
+                boolean exact = frameLine == warningStart;
+                boolean withinRange = warningStart <= frameLine && frameLine <= warningEnd;
+                if (!exact && !withinRange) {
+                    continue;
+                }
+                candidates.add(new LinkCandidate(
+                        testEvidenceId,
+                        location.evidenceRecordId(),
+                        EvidenceLinkRelation.SUPPORTS,
+                        exact ? EvidenceLinkMethod.STACK_FRAME : EvidenceLinkMethod.RANGE_OVERLAP,
+                        exact ? 1.0 : 0.7,
+                        "Stack trace cua test hong di qua dong %d: %s".formatted(frameLine, frame.rawLine())));
             }
         }
         return candidates;
