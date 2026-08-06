@@ -88,6 +88,20 @@ export const routes: RouteObject[] = [
                 errorElement: <RouteErrorBoundary />,
               },
               {
+                // Khoá là `shortId` (EV-001A) chứ không phải UUID: đó là thứ LLM viết ra trong
+                // citation, nên tuần 12-13 trỏ thẳng vào URL này được mà không phải tra đổi khoá.
+                //
+                // Đặt tên đoạn là `evidence` chứ không `warnings` vì citation trỏ tới evidence
+                // BẤT KỲ LOẠI NÀO — một COVERAGE_INFORMATION cũng phải mở được bằng chính URL này.
+                path: 'snapshots/:snapshotId/runs/:runId/evidence/:shortId',
+                lazy: async () => {
+                  const { EvidenceExplorerPage } =
+                    await import('@/features/evidence/pages/EvidenceExplorerPage');
+                  return { Component: EvidenceExplorerPage };
+                },
+                errorElement: <RouteErrorBoundary />,
+              },
+              {
                 // `lazy` theo route: phần duyệt mã nguồn là mảng nặng nhất của ứng dụng (cây file +
                 // source viewer) nhưng người dùng chỉ mở nó sau khi đã đăng nhập và chọn snapshot —
                 // không nên nằm trong bundle đầu tiên của màn hình đăng nhập.

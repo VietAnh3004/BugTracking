@@ -73,7 +73,7 @@ export function WarningsPage() {
       ) : null}
       {warnings.isSuccess && warnings.data.items.length > 0 ? (
         <>
-          <WarningTable warnings={warnings.data.items} snapshotId={snapshotId} />
+          <WarningTable warnings={warnings.data.items} snapshotId={snapshotId} runId={runId} />
           <p className="text-ink-muted m-0 text-sm">
             Hiển thị {warnings.data.items.length}/{warnings.data.total} cảnh báo.
           </p>

@@ -35,12 +35,31 @@ function warning(overrides: Partial<Warning> = {}): Warning {
 function renderTable(warnings: Warning[]) {
   return render(
     <MemoryRouter>
-      <WarningTable warnings={warnings} snapshotId="snap-1" />
+      <WarningTable warnings={warnings} snapshotId="snap-1" runId="run-1" />
     </MemoryRouter>,
   );
 }
 
 describe('WarningTable', () => {
+  /**
+   * `shortId` là lối vào Evidence Explorer, và nó vá một lỗ hổng sẵn có: cảnh báo không đối chiếu
+   * được đường dẫn thì cột Vị trí không render link, nên trước đây nó HOÀN TOÀN không bấm được.
+   */
+  it('shortId là link mở Evidence Explorer', () => {
+    renderTable([warning()]);
+
+    expect(screen.getByRole('link', { name: 'EV-001A' })).toHaveAttribute(
+      'href',
+      '/snapshots/snap-1/runs/run-1/evidence/EV-001A',
+    );
+  });
+
+  it('cảnh báo không đối chiếu được đường dẫn vẫn bấm được qua shortId', () => {
+    renderTable([warning({ filePath: undefined, startLine: undefined })]);
+
+    expect(screen.getByRole('link', { name: 'EV-001A' })).toBeInTheDocument();
+  });
+
   it('bấm vào vị trí thì nhảy tới đúng file và đúng dòng của source viewer', () => {
     renderTable([warning()]);
 
@@ -72,24 +91,27 @@ describe('WarningTable', () => {
   it('hiện đủ đường dẫn dù chia thành hai đoạn để xuống dòng', () => {
     renderTable([warning()]);
 
-    expect(screen.getByRole('link').textContent).toBe('src/main/java/vn/hust/App.java:42');
+    expect(screen.getByRole('link', { name: /App\.java:42/ }).textContent).toBe(
+      'src/main/java/vn/hust/App.java:42',
+    );
   });
 
-  it('hàng không đối chiếu được đường dẫn vẫn hiện ra nhưng KHÔNG bấm được', () => {
+  it('hàng không đối chiếu được đường dẫn vẫn hiện ra nhưng VỊ TRÍ không bấm được', () => {
     renderTable([warning({ filePath: undefined, startLine: undefined, shortId: 'EV-002B' })]);
 
     // Bằng chứng không bao giờ bị giấu đi.
-    expect(screen.getByText('EV-002B')).toBeInTheDocument();
     expect(screen.getByText('Mat khau bam bang MD5')).toBeInTheDocument();
-    // Nhưng lý do không bấm được phải hiện thành chữ, không phải một link chết.
+    // Lý do không bấm được phải hiện thành chữ, không phải một link chết.
     expect(screen.getByText(/chưa đối chiếu được với snapshot/)).toBeInTheDocument();
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /App\.java/ })).not.toBeInTheDocument();
+    // Nhưng bằng chứng vẫn mở được qua shortId — xem ca đầu tiên của bộ test này.
+    expect(screen.getByRole('link', { name: 'EV-002B' })).toBeInTheDocument();
   });
 
   it('cảnh báo không có số dòng vẫn bấm được, chỉ là không có hash', () => {
     renderTable([warning({ startLine: undefined })]);
 
-    expect(screen.getByRole('link')).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /App\.java/ })).toHaveAttribute(
       'href',
       '/snapshots/snap-1/files/src/main/java/vn/hust/App.java',
     );

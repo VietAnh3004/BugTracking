@@ -19,9 +19,11 @@ import type { Warning } from '@/features/warnings/api/warningApi';
 interface WarningTableProps {
   warnings: Warning[];
   snapshotId: string;
+  /** Cần để dựng link sang Evidence Explorer; `WarningsPage` đã có sẵn từ tham số route. */
+  runId: string;
 }
 
-export function WarningTable({ warnings, snapshotId }: WarningTableProps) {
+export function WarningTable({ warnings, snapshotId, runId }: WarningTableProps) {
   return (
     // `overflow-x-auto` + `min-w`: dưới ngưỡng đó thì bảng tự cuộn ngang, KHÔNG bóp cột cho vừa.
     <div className="overflow-x-auto">
@@ -58,7 +60,22 @@ export function WarningTable({ warnings, snapshotId }: WarningTableProps) {
               <td className="text-ink-muted py-2 pr-3">{warning.tool}</td>
               <td className="py-2 pr-3">
                 <span className="font-mono text-xs break-all">{warning.ruleIdNormalized}</span>
-                <span className="text-ink-muted ml-2 text-xs">{warning.shortId}</span>
+                {/*
+                 * `shortId` là lối vào Evidence Explorer, và nó vá luôn một lỗ hổng sẵn có: khi
+                 * `filePath` NULL (không đối chiếu được với snapshot) thì cột Vị trí không render
+                 * link, nên trước đây cảnh báo đó HOÀN TOÀN không bấm được. `shortId` thì luôn tồn
+                 * tại.
+                 *
+                 * Cũng là chỗ dạy người dùng rằng Evidence ID bấm được — đúng affordance mà
+                 * citation của chatbot sẽ dùng lại ở tuần 12-13.
+                 */}
+                <Link
+                  to={`/snapshots/${snapshotId}/runs/${runId}/evidence/${warning.shortId}`}
+                  className="text-brand ml-2 font-mono text-xs"
+                  title="Mở Evidence Explorer: ngữ cảnh mã, test liên quan và độ phủ"
+                >
+                  {warning.shortId}
+                </Link>
               </td>
               <td className="py-2 pr-3">
                 <WarningLocation warning={warning} snapshotId={snapshotId} />
