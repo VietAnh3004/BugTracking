@@ -1,5 +1,6 @@
 package vn.hust.datn.evidence.service.linker;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,11 +33,53 @@ public final class TestClassNameConvention {
 
     private static final String PREFIX = "Test";
 
+    /**
+     * Từ mô tả phạm vi test, đứng giữa tên lớp production và hậu tố: {@code UserRepositoryIntegrationTest}.
+     *
+     * <p>Bỏ hậu tố thôi thì ra {@code UserRepositoryIntegration} — một lớp KHÔNG TỒN TẠI, và liên
+     * kết biến mất trong im lặng. Gặp thật trên vulnshop: {@code UserRepositoryIntegrationTest} là
+     * lớp test phủ đúng dòng SQL injection của {@code findByUsername} — cạm bẫy trung tâm của cả
+     * case study — mà không sinh được liên kết nào.
+     */
+    private static final List<String> SCOPE_QUALIFIERS = List.of("Integration", "Unit", "E2E", "Slice");
+
     private TestClassNameConvention() {}
 
     /**
+     * Ứng viên lớp production, xếp CỤ THỂ TRƯỚC.
+     *
+     * <p>Trả danh sách chứ không phải một giá trị, vì tên lớp test không đủ để biết đâu là ranh
+     * giới giữa tên lớp production và mô tả phạm vi: {@code UserRepositoryIntegrationTest} có thể
+     * là test của {@code UserRepositoryIntegration} hoặc test tích hợp của {@code UserRepository},
+     * và chỉ DỮ LIỆU mới trả lời được — lớp nào thật sự tồn tại và có cảnh báo.
+     *
+     * <p>Người gọi thử lần lượt và dừng ở ứng viên đầu tiên khớp. Đoán một giá trị rồi đoán sai là
+     * mất bằng chứng mà không có gì báo.
+     */
+    public static List<String> productionClassCandidates(String testClassName) {
+        Optional<String> direct = productionClassOf(testClassName);
+        if (direct.isEmpty()) {
+            return List.of();
+        }
+        String base = direct.get();
+        List<String> candidates = new ArrayList<>();
+        candidates.add(base);
+
+        int lastDot = base.lastIndexOf('.');
+        String packageName = lastDot < 0 ? "" : base.substring(0, lastDot + 1);
+        String simpleName = base.substring(lastDot + 1);
+        for (String qualifier : SCOPE_QUALIFIERS) {
+            if (simpleName.length() > qualifier.length() && simpleName.endsWith(qualifier)) {
+                candidates.add(packageName + simpleName.substring(0, simpleName.length() - qualifier.length()));
+            }
+        }
+        return List.copyOf(candidates);
+    }
+
+    /**
      * @param testClassName FQN của lớp test, vd {@code vn.hust.app.FooTest}
-     * @return FQN lớp production tương ứng, hoặc rỗng khi không suy được
+     * @return FQN lớp production tương ứng sau khi bỏ hậu tố/tiền tố test, hoặc rỗng khi không suy
+     *     được. Người gọi thường muốn {@link #productionClassCandidates(String)} thay vì hàm này
      */
     public static Optional<String> productionClassOf(String testClassName) {
         if (testClassName == null || testClassName.isBlank()) {

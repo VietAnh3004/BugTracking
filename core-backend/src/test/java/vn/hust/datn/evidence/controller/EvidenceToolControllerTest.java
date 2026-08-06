@@ -4,6 +4,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -171,12 +173,23 @@ class EvidenceToolControllerTest extends AbstractWebIntegrationTest {
                 .andExpect(jsonPath("$.total").value(0));
     }
 
+    /**
+     * Không có liên kết ⇒ rỗng, và đó là một KẾT QUẢ hợp lệ (cơ sở của
+     * {@code INSUFFICIENT_EVIDENCE}), không phải lỗi.
+     *
+     * <p>Từ tuần 10-11, rỗng ở đây còn có một nghĩa mạnh hơn: nhánh fallback theo vị trí đã bị bỏ,
+     * nên tool KHÔNG còn cách nào trả về item mà thiếu {@code relation}/{@code method}/{@code weight}.
+     * Rỗng là rỗng thật, chứ không phải "che một linker hỏng bằng dữ liệu trông hợp lý".
+     */
     @Test
-    void getCodeContext_traVeRongVaKhongLoi() throws Exception {
+    void getCodeContext_khongCoLienKet_traVeRongVaKhongLoi() throws Exception {
         Project project = fixtures.project("p-" + System.nanoTime());
         RepositorySnapshot snapshot = fixtures.snapshot(project);
         AnalysisRun run = fixtures.succeededRun(snapshot, 1);
         Warning warning = fixtures.warning(run, "DM_CONVERT_CASE", WarningTool.spotbugs, "TextNormalizer.java", 10);
+        // Có evidence CODE_CONTEXT ngay cạnh vị trí cảnh báo NHƯNG không có liên kết: trước tuần
+        // 10-11 nhánh fallback sẽ vớt nó lên và trả về một item không có method/weight.
+        fixtures.evidenceRecord(run, EvidenceType.CODE_CONTEXT, EvidenceSource.parser, "TextNormalizer.java", 8);
 
         String body =
                 """
@@ -188,5 +201,54 @@ class EvidenceToolControllerTest extends AbstractWebIntegrationTest {
                 .perform(post("/api/v1/tools/get_code_context").contentType(MediaType.APPLICATION_JSON).content(body).with(serviceToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(0));
+    }
+
+    /**
+     * Ba tool này rỗng suốt từ tuần 4 tới hết tuần 8-9 vì {@code evidence_link} chưa có writer nào.
+     * Từ tuần 10-11 chúng phải trả DỮ LIỆU THẬT — đó là tiền đề của agent loop ở tuần 12-13.
+     *
+     * <p>Assert cả {@code method} và {@code weight}: thiếu hai trường đó, LLM không phân biệt được
+     * bằng chứng mạnh với bằng chứng suy ra, và tuần 15 không đo được tỉ lệ liên kết yếu.
+     */
+    @Test
+    void baToolTraVeKhacRongKhiDaCoLienKet() throws Exception {
+        Project project = fixtures.project("p-" + System.nanoTime());
+        RepositorySnapshot snapshot = fixtures.snapshot(project);
+        AnalysisRun run = fixtures.succeededRun(snapshot, 1);
+        Warning warning = fixtures.warning(run, "WEAK_MESSAGE_DIGEST_MD5", WarningTool.spotbugs, "PasswordHasher.java", 40);
+
+        EvidenceRecord context =
+                fixtures.evidenceRecord(run, EvidenceType.CODE_CONTEXT, EvidenceSource.parser, "PasswordHasher.java", 37);
+        EvidenceRecord failedTest = fixtures.evidenceRecord(
+                run, EvidenceType.FAILED_TEST, EvidenceSource.surefire, "PasswordHasherTest.java", 20);
+        EvidenceRecord coverage = fixtures.evidenceRecord(
+                run, EvidenceType.COVERAGE_INFORMATION, EvidenceSource.jacoco, "PasswordHasher.java", 1);
+
+        fixtures.link(
+                warning.getEvidenceRecord(), context, EvidenceLinkRelation.LOCATED_IN, EvidenceLinkMethod.LINE_EXACT, 1.0);
+        fixtures.link(
+                failedTest, warning.getEvidenceRecord(), EvidenceLinkRelation.SUPPORTS, EvidenceLinkMethod.STACK_FRAME, 1.0);
+        fixtures.link(
+                coverage, warning.getEvidenceRecord(), EvidenceLinkRelation.COVERS, EvidenceLinkMethod.LINE_EXACT, 1.0);
+
+        String body =
+                """
+                {"analysis_run_id": "%s", "evidence_id": "%s"}
+                """
+                        .formatted(run.getId(), warning.getEvidenceRecord().getShortId());
+
+        for (String tool : List.of("get_code_context", "get_related_tests", "get_coverage")) {
+            getMockMvc()
+                    .perform(post("/api/v1/tools/" + tool)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body)
+                            .with(serviceToken()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.total").value(1))
+                    .andExpect(jsonPath("$.items[0].short_id").exists())
+                    .andExpect(jsonPath("$.items[0].relation").exists())
+                    .andExpect(jsonPath("$.items[0].method").exists())
+                    .andExpect(jsonPath("$.items[0].weight").value(1.0));
+        }
     }
 }

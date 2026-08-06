@@ -465,17 +465,23 @@ public class EvidenceLinker {
             List<CoverageLineRow> coverageLines,
             List<LinkCandidate> soFar) {
 
+        // Một lớp test cho NHIỀU ứng viên lớp production (xem TestClassNameConvention): đăng ký
+        // dưới mọi ứng viên rồi để việc tra cứu quyết định cái nào thật sự tồn tại. Đoán một giá
+        // trị rồi đoán sai là mất bằng chứng mà không có gì báo — đã gặp thật với
+        // UserRepositoryIntegrationTest, lớp phủ đúng dòng SQL injection của vulnshop.
         Map<String, List<TestCaseRow>> testsByProductionClass = new LinkedHashMap<>();
         int unmatched = 0;
         for (TestCaseRow testCase : testCases) {
-            Optional<String> production = TestClassNameConvention.productionClassOf(testCase.className());
-            if (production.isEmpty()) {
+            List<String> candidates = TestClassNameConvention.productionClassCandidates(testCase.className());
+            if (candidates.isEmpty()) {
                 unmatched++;
                 continue;
             }
-            testsByProductionClass
-                    .computeIfAbsent(TestClassNameConvention.canonical(production.get()), key -> new ArrayList<>())
-                    .add(testCase);
+            for (String candidate : candidates) {
+                testsByProductionClass
+                        .computeIfAbsent(TestClassNameConvention.canonical(candidate), key -> new ArrayList<>())
+                        .add(testCase);
+            }
         }
         if (unmatched > 0) {
             // Không nuốt: quy ước đặt tên của repo khác giả định ở đây thì bằng chứng mất trong
