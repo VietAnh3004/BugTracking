@@ -35,6 +35,18 @@ public record AnalysisRunResponse(
                         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
                         description = "Phiên bản đọc từ chính artifact; khoá 'jacoco' vắng mặt là bình thường")
                 Map<String, Object> toolVersions,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "Số evidence_link EvidenceLinker sinh ra")
+                int linkCount,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "Số evidence CODE_CONTEXT do JavaParser dựng")
+                int codeContextCount,
+        @Schema(
+                        requiredMode = Schema.RequiredMode.REQUIRED,
+                        description = "Số cảnh báo không nhận được liên kết nào; mẫu số là findingCount")
+                int unlinkedWarningCount,
+        @Schema(
+                        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+                        description = "Phân bố liên kết theo EvidenceLinkMethod — NAMING_CONVENTION là mức yếu nhất")
+                Map<String, Object> linkCountsByMethod,
         @Schema(
                         requiredMode = Schema.RequiredMode.REQUIRED,
                         description = "Artifact do người dùng nạp tay hay do sandbox tự chạy — hai mức đáng tin khác nhau")

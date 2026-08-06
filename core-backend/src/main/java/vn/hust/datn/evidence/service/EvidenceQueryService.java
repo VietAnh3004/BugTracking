@@ -84,28 +84,30 @@ public class EvidenceQueryService {
     }
 
     /**
-     * Tuần 4: query evidence_link LOCATED_IN trước, fallback theo (run, file, khoảng dòng) nếu
-     * chưa có link. Cả hai nguồn đều rỗng cho tới khi EvidenceLinker + JavaParser ra đời (tuần
-     * 10-11) — đúng như thiết kế, không phải lỗi.
+     * Ngữ cảnh mã nguồn bao quanh một bằng chứng — CHỈ qua {@code evidence_link} LOCATED_IN.
+     *
+     * <h2>Đã BỎ nhánh fallback theo (run, file, khoảng dòng)</h2>
+     *
+     * Tuần 4 có một nhánh dự phòng: không tìm thấy liên kết thì quét evidence CODE_CONTEXT nằm gần
+     * vị trí của neo. Nhánh đó phải bỏ khi EvidenceLinker ra đời (tuần 10-11), vì hai lý do:
+     *
+     * <ul>
+     *   <li>Nó trả item với {@code relation}, {@code method} NULL và {@code weight} 0.0 — vi phạm
+     *       chính hợp đồng mà {@link ToolEvidenceItem} tuyên bố, và LLM mất căn cứ phân biệt bằng
+     *       chứng mạnh với yếu.
+     *   <li>Tệ hơn: nó CHE một linker hỏng bằng dữ liệu trông hợp lý. Sau khi bỏ, không có liên
+     *       kết nghĩa là trả {@code []}, và các bộ đếm trên {@code analysis_run}
+     *       ({@code link_count}, {@code code_context_count}, {@code unlinked_warning_count}) nói ra
+     *       vì sao.
+     * </ul>
+     *
+     * <p>{@code contextLines} giữ lại trong chữ ký tool: nó thuộc hợp đồng JSON Schema mà
+     * agent-service đã sinh ra, và đổi chữ ký tool là một breaking change theo ADR 0005.
      */
     public List<ToolEvidenceItem> getCodeContext(UUID runId, String shortId, int contextLines) {
         ensureRunQueryable(runId);
         EvidenceRecord anchor = requireEvidenceInRun(runId, shortId);
-
-        List<ToolEvidenceItem> viaLink = relatedEvidence(anchor, Set.of(EvidenceLinkRelation.LOCATED_IN), null);
-        if (!viaLink.isEmpty()) {
-            return viaLink;
-        }
-
-        if (anchor.getFilePath() == null || anchor.getStartLine() == null) {
-            return List.of();
-        }
-        int from = Math.max(1, anchor.getStartLine() - contextLines);
-        int to = (anchor.getEndLine() != null ? anchor.getEndLine() : anchor.getStartLine()) + contextLines;
-        return evidenceRecordRepository.findNearLocation(runId, anchor.getFilePath(), from, to).stream()
-                .filter(e -> e.getType() == EvidenceType.CODE_CONTEXT && !e.getId().equals(anchor.getId()))
-                .map(e -> toItem(e, null, null))
-                .toList();
+        return relatedEvidence(anchor, Set.of(EvidenceLinkRelation.LOCATED_IN), null);
     }
 
     /**
@@ -234,8 +236,9 @@ public class EvidenceQueryService {
     }
 
     /**
-     * Điểm cắm authorization mà ADR 0005 nói tới — CHƯA CÓ caller nào ở tuần 5-7 (REST resource UI
-     * cho evidence hoãn tới tuần 10-11), viết sẵn để khoá tên chỗ cắm trước khi có nhu cầu thật.
+     * Điểm cắm authorization mà ADR 0005 nói tới. Viết sẵn ở tuần 5-7 để khoá tên chỗ cắm trước
+     * khi có nhu cầu thật; caller đầu tiên là {@code EvidenceDetailService} (tuần 10-11), đúng như
+     * Javadoc này dự liệu.
      *
      * <p>KHÔNG đụng vào {@link #ensureRunQueryable(UUID)}: đường tool ({@code /api/v1/tools/**})
      * dùng service token, phân quyền đã xảy ra ở entry point theo ADR 0005, và

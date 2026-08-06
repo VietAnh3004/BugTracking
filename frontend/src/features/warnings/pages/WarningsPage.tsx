@@ -51,6 +51,8 @@ export function WarningsPage() {
           findingCount={run.data.findingCount}
           locationCount={run.data.locationCount}
           unresolvedLocationCount={run.data.unresolvedLocationCount}
+          linkCount={run.data.linkCount}
+          unlinkedWarningCount={run.data.unlinkedWarningCount}
         />
       </header>
 
@@ -92,17 +94,30 @@ function RunSummary({
   findingCount,
   locationCount,
   unresolvedLocationCount,
+  linkCount,
+  unlinkedWarningCount,
 }: {
   findingCount: number;
   locationCount: number;
   unresolvedLocationCount: number;
+  linkCount: number;
+  unlinkedWarningCount: number;
 }) {
   const resolved = locationCount - unresolvedLocationCount;
+  const linked = findingCount - unlinkedWarningCount;
   return (
     <div className="text-ink-muted text-right text-sm">
       <p className="m-0">{findingCount} cảnh báo tĩnh</p>
       <p className={`m-0 ${unresolvedLocationCount > 0 ? 'text-sev-medium font-medium' : ''}`}>
         {resolved}/{locationCount} vị trí đối chiếu được với mã nguồn
+      </p>
+      {/*
+       * Bộ đếm liên kết cùng một lý do tồn tại với hai dòng trên: một liên kết KHÔNG sinh ra được
+       * trông y hệt "dự án này không có bằng chứng liên quan". Không hiện ra thì muốn biết
+       * 30/34 cảnh báo trơ trọi phải mở DB.
+       */}
+      <p className={`m-0 ${unlinkedWarningCount > 0 ? 'text-sev-medium font-medium' : ''}`}>
+        {linked}/{findingCount} cảnh báo có bằng chứng liên quan ({linkCount} liên kết)
       </p>
     </div>
   );

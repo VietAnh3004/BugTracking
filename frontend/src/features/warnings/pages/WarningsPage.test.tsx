@@ -30,6 +30,9 @@ function run(overrides: Record<string, unknown> = {}) {
     findingCount: 33,
     locationCount: 90,
     unresolvedLocationCount: 0,
+    linkCount: 120,
+    codeContextCount: 30,
+    unlinkedWarningCount: 0,
     startedAt: '2026-08-01T00:00:00Z',
     ...overrides,
   };
@@ -92,6 +95,27 @@ describe('WarningsPage', () => {
     renderPage();
 
     expect(await screen.findByText('78/90 vị trí đối chiếu được với mã nguồn')).toBeInTheDocument();
+  });
+
+  /**
+   * Bộ đếm liên kết cùng lý do tồn tại: một liên kết KHÔNG sinh ra được trông y hệt "dự án này
+   * không có bằng chứng liên quan".
+   *
+   * Test này cũng canh một cách hỏng cụ thể đã gặp: nếu mock (hoặc API) thiếu hai trường thì phép
+   * trừ ra `NaN` và màn hình hiện "NaN/33" — mà không assertion nào bắt được nếu chỉ kiểm số cảnh
+   * báo.
+   */
+  it('hiện tỉ lệ cảnh báo có bằng chứng liên quan, không để lọt NaN', async () => {
+    getAnalysisRunMock.mockResolvedValue(
+      run({ findingCount: 34, linkCount: 123, unlinkedWarningCount: 4 }),
+    );
+    listWarningsMock.mockResolvedValue({ items: [], page: 0, size: 50, total: 0 });
+
+    renderPage();
+
+    expect(
+      await screen.findByText('30/34 cảnh báo có bằng chứng liên quan (123 liên kết)'),
+    ).toBeInTheDocument();
   });
 
   it('danh sách rỗng nói rõ là rỗng, không để màn hình trắng', async () => {

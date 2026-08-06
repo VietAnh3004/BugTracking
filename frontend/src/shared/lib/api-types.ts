@@ -483,6 +483,25 @@ export interface components {
                 [key: string]: Record<string, never>;
             };
             /**
+             * Format: int32
+             * @description Số evidence_link EvidenceLinker sinh ra
+             */
+            linkCount: number;
+            /**
+             * Format: int32
+             * @description Số evidence CODE_CONTEXT do JavaParser dựng
+             */
+            codeContextCount: number;
+            /**
+             * Format: int32
+             * @description Số cảnh báo không nhận được liên kết nào; mẫu số là findingCount
+             */
+            unlinkedWarningCount: number;
+            /** @description Phân bố liên kết theo EvidenceLinkMethod — NAMING_CONVENTION là mức yếu nhất */
+            linkCountsByMethod?: {
+                [key: string]: Record<string, never>;
+            };
+            /**
              * @description Artifact do người dùng nạp tay hay do sandbox tự chạy — hai mức đáng tin khác nhau
              * @enum {string}
              */

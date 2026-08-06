@@ -1134,6 +1134,28 @@
             },
             "description" : "Phiên bản đọc từ chính artifact; khoá 'jacoco' vắng mặt là bình thường"
           },
+          "linkCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số evidence_link EvidenceLinker sinh ra"
+          },
+          "codeContextCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số evidence CODE_CONTEXT do JavaParser dựng"
+          },
+          "unlinkedWarningCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số cảnh báo không nhận được liên kết nào; mẫu số là findingCount"
+          },
+          "linkCountsByMethod" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "description" : "Phân bố liên kết theo EvidenceLinkMethod — NAMING_CONVENTION là mức yếu nhất"
+          },
           "artifactSource" : {
             "type" : "string",
             "description" : "Artifact do người dùng nạp tay hay do sandbox tự chạy — hai mức đáng tin khác nhau",
@@ -1155,7 +1177,7 @@
             "format" : "date-time"
           }
         },
-        "required" : [ "artifactSource", "findingCount", "id", "locationCount", "snapshotId", "startedAt", "status", "unresolvedLocationCount" ]
+        "required" : [ "artifactSource", "codeContextCount", "findingCount", "id", "linkCount", "locationCount", "snapshotId", "startedAt", "status", "unlinkedWarningCount", "unresolvedLocationCount" ]
       },
       "CreateProjectRequest" : {
         "type" : "object",
