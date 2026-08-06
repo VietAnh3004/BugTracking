@@ -157,6 +157,19 @@ public class EvidenceQueryService {
      */
     private List<ToolEvidenceItem> relatedEvidence(
             EvidenceRecord anchor, Set<EvidenceLinkRelation> relations, Set<EvidenceType> typeFilter) {
+        return relatedPairs(anchor, relations, typeFilter).stream()
+                .map(pair -> toItem(pair.record(), pair.link().getRelation(), pair.link()))
+                .toList();
+    }
+
+    /**
+     * Truy vấn dùng chung cho cả đường tool lẫn đường UI — xem {@link LinkedEvidence}.
+     *
+     * <p>Public để {@code EvidenceDetailService} gọi được mà không phải viết lại truy vấn thứ hai
+     * (ADR 0005 quyết định 3). Người gọi tự lo phần map sang DTO của mình.
+     */
+    public List<LinkedEvidence> relatedPairs(
+            EvidenceRecord anchor, Set<EvidenceLinkRelation> relations, Set<EvidenceType> typeFilter) {
         List<EvidenceLink> links = evidenceLinkRepository
                 .findByFromEvidenceIdOrToEvidenceId(anchor.getId(), anchor.getId())
                 .stream()
@@ -177,8 +190,17 @@ public class EvidenceQueryService {
                 .filter(entry -> entry.getValue() != null)
                 .filter(entry -> typeFilter == null || typeFilter.contains(entry.getValue().getType()))
                 .sorted(ITEM_ORDER)
-                .map(entry -> toItem(entry.getValue(), entry.getKey().getRelation(), entry.getKey()))
+                .map(entry -> new LinkedEvidence(
+                        entry.getKey(),
+                        entry.getValue(),
+                        entry.getKey().getFromEvidenceId().equals(anchor.getId())))
                 .toList();
+    }
+
+    /** Neo của một màn hình chi tiết. Public vì đường UI cần chính phép phân loại lỗi này. */
+    public EvidenceRecord getEvidence(UUID runId, String shortId) {
+        ensureRunQueryable(runId);
+        return requireEvidenceInRun(runId, shortId);
     }
 
     private static UUID oppositeIdOf(EvidenceLink link, UUID anchorId) {

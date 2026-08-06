@@ -329,6 +329,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis-runs/{runId}/evidence/{shortId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chi tiết một bằng chứng kèm mọi liên kết, cho Evidence Explorer */
+        get: operations["detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -628,6 +645,121 @@ export interface components {
             severityNormalized: "HIGH" | "MEDIUM" | "LOW" | "INFO";
             /** @description false khi tool không tự đánh dấu vị trí chính và parser phải tự chọn */
             hasPrimaryLocation: boolean;
+        };
+        EvidenceDetailResponse: {
+            /** Format: uuid */
+            evidenceId: string;
+            shortId: string;
+            /** Format: uuid */
+            analysisRunId: string;
+            /**
+             * Format: uuid
+             * @description Để FE dựng link tới mã nguồn mà không phải hỏi thêm
+             */
+            snapshotId: string;
+            /** @enum {string} */
+            type: "STATIC_WARNING" | "CODE_CONTEXT" | "TEST_RESULT" | "FAILED_TEST" | "STACK_TRACE" | "COVERAGE_INFORMATION";
+            /** @enum {string} */
+            source: "spotbugs" | "semgrep" | "surefire" | "jacoco" | "parser";
+            summary: string;
+            filePath?: string;
+            /** Format: int32 */
+            startLine?: number;
+            /** Format: int32 */
+            endLine?: number;
+            symbol?: string;
+            /** @description Chỉ có khi type là STATIC_WARNING */
+            warning?: components["schemas"]["WarningDetailView"];
+            /** @description Quan hệ LOCATED_IN — đoạn mã bao quanh */
+            codeContext: components["schemas"]["RelatedEvidenceView"][];
+            /** @description SUPPORTS/CONTRADICTS từ test */
+            tests: components["schemas"]["RelatedEvidenceView"][];
+            /** @description Quan hệ COVERS */
+            coverage: components["schemas"]["RelatedEvidenceView"][];
+            /** @description Liên kết không thuộc ba nhóm trên, vd CROSS_TOOL_AGREEMENT giữa hai cảnh báo */
+            other: components["schemas"]["RelatedEvidenceView"][];
+            /**
+             * Format: int32
+             * @description Tổng số liên kết. 0 là một KẾT QUẢ hợp lệ, không phải lỗi
+             */
+            relatedTotal: number;
+        };
+        RelatedEvidenceView: {
+            /** Format: uuid */
+            evidenceId: string;
+            shortId: string;
+            /** @enum {string} */
+            type: "STATIC_WARNING" | "CODE_CONTEXT" | "TEST_RESULT" | "FAILED_TEST" | "STACK_TRACE" | "COVERAGE_INFORMATION";
+            /** @enum {string} */
+            source: "spotbugs" | "semgrep" | "surefire" | "jacoco" | "parser";
+            summary: string;
+            filePath?: string;
+            /** Format: int32 */
+            startLine?: number;
+            /** Format: int32 */
+            endLine?: number;
+            symbol?: string;
+            /** @enum {string} */
+            relation: "SUPPORTS" | "CONTRADICTS" | "COVERS" | "LOCATED_IN";
+            /**
+             * @description Cách suy ra liên kết. NAMING_CONVENTION là yếu nhất — giao diện PHẢI hiển thị
+             * @enum {string}
+             */
+            method: "LINE_EXACT" | "LINE_NEAREST_EXECUTABLE" | "RANGE_OVERLAP" | "METHOD_AGGREGATE" | "STACK_FRAME" | "NAMING_CONVENTION" | "SYMBOL_MATCH" | "CROSS_TOOL_AGREEMENT";
+            /**
+             * Format: double
+             * @description Độ tin cậy của LIÊN KẾT, không phải mức độ phủ
+             */
+            weight: number;
+            /** @description Câu giải thích duy nhất người dùng đọc được cho một liên kết */
+            rationale?: string;
+            /** @description true khi neo nằm ở đầu 'from' của liên kết */
+            outgoing: boolean;
+            /** @description Chỉ có khi type là TEST_RESULT/FAILED_TEST */
+            testCase?: components["schemas"]["TestCaseSummaryView"];
+        };
+        TestCaseSummaryView: {
+            className: string;
+            methodName: string;
+            /** @enum {string} */
+            status: "PASSED" | "FAILED" | "SKIPPED";
+            /** @enum {string} */
+            failureKind?: "FAILURE" | "ERROR";
+            failureType?: string;
+            failureMessage?: string;
+            /** Format: int32 */
+            durationMs?: number;
+            /** @description Evidence STACK_TRACE của chính test này; NULL khi test không hỏng */
+            stackTraceShortId?: string;
+        };
+        WarningDetailView: {
+            /** @enum {string} */
+            tool: "spotbugs" | "semgrep";
+            ruleId: string;
+            ruleIdNormalized: string;
+            severityRaw?: string;
+            /** @enum {string} */
+            severityNormalized: "HIGH" | "MEDIUM" | "LOW" | "INFO";
+            /** @description false khi tool không tự đánh dấu vị trí chính và parser phải tự chọn */
+            hasPrimaryLocation: boolean;
+            cweIds?: number[];
+            locations: components["schemas"]["WarningLocationView"][];
+        };
+        WarningLocationView: {
+            /** Format: int32 */
+            ordinal: number;
+            primary: boolean;
+            roleRaw?: string;
+            /** @description Nguyên văn analyzer khai */
+            pathRaw: string;
+            /** @description Đã đối chiếu với snapshot; NULL nghĩa là không tìm thấy trong mã nguồn đã tải lên */
+            filePath?: string;
+            /** Format: int32 */
+            startLine?: number;
+            /** Format: int32 */
+            endLine?: number;
+            className?: string;
+            methodName?: string;
         };
     };
     responses: never;
@@ -1188,6 +1320,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseWarningView"];
+                };
+            };
+        };
+    };
+    detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+                shortId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EvidenceDetailResponse"];
                 };
             };
         };

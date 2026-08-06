@@ -38,4 +38,13 @@ public interface WarningLocationRepository extends JpaRepository<WarningLocation
             order by e.seqInRun, wl.ordinal
             """)
     List<WarningLocationRow> findResolvedRowsByRun(@Param("runId") UUID runId);
+
+    /**
+     * Mọi vị trí của MỘT cảnh báo, kể cả những vị trí KHÔNG đối chiếu được với snapshot.
+     *
+     * <p>Khác {@link #findResolvedRowsByRun}: ở đây giữ cả hàng có {@code file_path} NULL, vì màn
+     * hình chi tiết phải nói được "analyzer khai đường dẫn này nhưng không tìm thấy trong mã nguồn
+     * đã tải lên" — im lặng bỏ vị trí đi là giấu đúng thứ người dùng cần biết để chẩn đoán.
+     */
+    List<WarningLocation> findByEvidenceRecordIdOrderByOrdinalAsc(UUID evidenceRecordId);
 }

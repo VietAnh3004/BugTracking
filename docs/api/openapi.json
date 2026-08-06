@@ -781,6 +781,41 @@
           }
         }
       }
+    },
+    "/api/v1/analysis-runs/{runId}/evidence/{shortId}" : {
+      "get" : {
+        "tags" : [ "evidence" ],
+        "summary" : "Chi tiết một bằng chứng kèm mọi liên kết, cho Evidence Explorer",
+        "operationId" : "detail",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "shortId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EvidenceDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components" : {
@@ -1504,6 +1539,266 @@
           }
         },
         "required" : [ "analysisRunId", "evidenceId", "hasPrimaryLocation", "ruleId", "ruleIdNormalized", "severityNormalized", "shortId", "summary", "tool" ]
+      },
+      "EvidenceDetailResponse" : {
+        "type" : "object",
+        "properties" : {
+          "evidenceId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "shortId" : {
+            "type" : "string"
+          },
+          "analysisRunId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "snapshotId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Để FE dựng link tới mã nguồn mà không phải hỏi thêm"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "STATIC_WARNING", "CODE_CONTEXT", "TEST_RESULT", "FAILED_TEST", "STACK_TRACE", "COVERAGE_INFORMATION" ]
+          },
+          "source" : {
+            "type" : "string",
+            "enum" : [ "spotbugs", "semgrep", "surefire", "jacoco", "parser" ]
+          },
+          "summary" : {
+            "type" : "string"
+          },
+          "filePath" : {
+            "type" : "string"
+          },
+          "startLine" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "endLine" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "symbol" : {
+            "type" : "string"
+          },
+          "warning" : {
+            "$ref" : "#/components/schemas/WarningDetailView",
+            "description" : "Chỉ có khi type là STATIC_WARNING"
+          },
+          "codeContext" : {
+            "type" : "array",
+            "description" : "Quan hệ LOCATED_IN — đoạn mã bao quanh",
+            "items" : {
+              "$ref" : "#/components/schemas/RelatedEvidenceView"
+            }
+          },
+          "tests" : {
+            "type" : "array",
+            "description" : "SUPPORTS/CONTRADICTS từ test",
+            "items" : {
+              "$ref" : "#/components/schemas/RelatedEvidenceView"
+            }
+          },
+          "coverage" : {
+            "type" : "array",
+            "description" : "Quan hệ COVERS",
+            "items" : {
+              "$ref" : "#/components/schemas/RelatedEvidenceView"
+            }
+          },
+          "other" : {
+            "type" : "array",
+            "description" : "Liên kết không thuộc ba nhóm trên, vd CROSS_TOOL_AGREEMENT giữa hai cảnh báo",
+            "items" : {
+              "$ref" : "#/components/schemas/RelatedEvidenceView"
+            }
+          },
+          "relatedTotal" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Tổng số liên kết. 0 là một KẾT QUẢ hợp lệ, không phải lỗi"
+          }
+        },
+        "required" : [ "analysisRunId", "codeContext", "coverage", "evidenceId", "other", "relatedTotal", "shortId", "snapshotId", "source", "summary", "tests", "type" ]
+      },
+      "RelatedEvidenceView" : {
+        "type" : "object",
+        "properties" : {
+          "evidenceId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "shortId" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "STATIC_WARNING", "CODE_CONTEXT", "TEST_RESULT", "FAILED_TEST", "STACK_TRACE", "COVERAGE_INFORMATION" ]
+          },
+          "source" : {
+            "type" : "string",
+            "enum" : [ "spotbugs", "semgrep", "surefire", "jacoco", "parser" ]
+          },
+          "summary" : {
+            "type" : "string"
+          },
+          "filePath" : {
+            "type" : "string"
+          },
+          "startLine" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "endLine" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "symbol" : {
+            "type" : "string"
+          },
+          "relation" : {
+            "type" : "string",
+            "enum" : [ "SUPPORTS", "CONTRADICTS", "COVERS", "LOCATED_IN" ]
+          },
+          "method" : {
+            "type" : "string",
+            "description" : "Cách suy ra liên kết. NAMING_CONVENTION là yếu nhất — giao diện PHẢI hiển thị",
+            "enum" : [ "LINE_EXACT", "LINE_NEAREST_EXECUTABLE", "RANGE_OVERLAP", "METHOD_AGGREGATE", "STACK_FRAME", "NAMING_CONVENTION", "SYMBOL_MATCH", "CROSS_TOOL_AGREEMENT" ]
+          },
+          "weight" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Độ tin cậy của LIÊN KẾT, không phải mức độ phủ"
+          },
+          "rationale" : {
+            "type" : "string",
+            "description" : "Câu giải thích duy nhất người dùng đọc được cho một liên kết"
+          },
+          "outgoing" : {
+            "type" : "boolean",
+            "description" : "true khi neo nằm ở đầu 'from' của liên kết"
+          },
+          "testCase" : {
+            "$ref" : "#/components/schemas/TestCaseSummaryView",
+            "description" : "Chỉ có khi type là TEST_RESULT/FAILED_TEST"
+          }
+        },
+        "required" : [ "evidenceId", "method", "outgoing", "relation", "shortId", "source", "summary", "type", "weight" ]
+      },
+      "TestCaseSummaryView" : {
+        "type" : "object",
+        "properties" : {
+          "className" : {
+            "type" : "string"
+          },
+          "methodName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "PASSED", "FAILED", "SKIPPED" ]
+          },
+          "failureKind" : {
+            "type" : "string",
+            "enum" : [ "FAILURE", "ERROR" ]
+          },
+          "failureType" : {
+            "type" : "string"
+          },
+          "failureMessage" : {
+            "type" : "string"
+          },
+          "durationMs" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "stackTraceShortId" : {
+            "type" : "string",
+            "description" : "Evidence STACK_TRACE của chính test này; NULL khi test không hỏng"
+          }
+        },
+        "required" : [ "className", "methodName", "status" ]
+      },
+      "WarningDetailView" : {
+        "type" : "object",
+        "properties" : {
+          "tool" : {
+            "type" : "string",
+            "enum" : [ "spotbugs", "semgrep" ]
+          },
+          "ruleId" : {
+            "type" : "string"
+          },
+          "ruleIdNormalized" : {
+            "type" : "string"
+          },
+          "severityRaw" : {
+            "type" : "string"
+          },
+          "severityNormalized" : {
+            "type" : "string",
+            "enum" : [ "HIGH", "MEDIUM", "LOW", "INFO" ]
+          },
+          "hasPrimaryLocation" : {
+            "type" : "boolean",
+            "description" : "false khi tool không tự đánh dấu vị trí chính và parser phải tự chọn"
+          },
+          "cweIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
+          },
+          "locations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/WarningLocationView"
+            }
+          }
+        },
+        "required" : [ "hasPrimaryLocation", "locations", "ruleId", "ruleIdNormalized", "severityNormalized", "tool" ]
+      },
+      "WarningLocationView" : {
+        "type" : "object",
+        "properties" : {
+          "ordinal" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "primary" : {
+            "type" : "boolean"
+          },
+          "roleRaw" : {
+            "type" : "string"
+          },
+          "pathRaw" : {
+            "type" : "string",
+            "description" : "Nguyên văn analyzer khai"
+          },
+          "filePath" : {
+            "type" : "string",
+            "description" : "Đã đối chiếu với snapshot; NULL nghĩa là không tìm thấy trong mã nguồn đã tải lên"
+          },
+          "startLine" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "endLine" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "className" : {
+            "type" : "string"
+          },
+          "methodName" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "ordinal", "pathRaw", "primary" ]
       }
     },
     "securitySchemes" : {
