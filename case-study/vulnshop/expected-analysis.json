@@ -11,16 +11,29 @@
     "la du lieu dau vao cua do an, khong phai loi), nen vulnshop hong the nao build cung xanh.",
     "Chi co so sanh so lieu moi phat hien duoc hong hoc.",
     "",
-    "Sua file nay chi khi da hieu VI SAO so lieu doi, va ghi ly do vao commit message."
+    "Sua file nay chi khi da hieu VI SAO so lieu doi, va ghi ly do vao commit message.",
+    "",
+    "LICH SU THAY DOI SO LIEU",
+    "",
+    "Tuan 10-11: gieo them TP-14 (UserService.displayNameOf) + 2 test, mot trong hai co tinh",
+    "hong. Truoc do vulnshop KHONG CO truong hop nao ma mot canh bao tinh va mot stack frame",
+    "cua test hong cung tro ve DUNG MOT DONG, nen quan he SUPPORTS suy tu stack frame - loai",
+    "bang chung thuyet phuc nhat cho verdict LIKELY_TRUE_POSITIVE - khong co mau nao de demo",
+    "hay de do. EvidenceLinker tang 3 chay dung nhung sinh 0 lien ket.",
+    "",
+    "  33 -> 35 test, 5 -> 6 hong   (them displayNameOf happy path + ban co tinh hong)",
+    "  28 -> 29 canh bao SpotBugs   (them NP_NULL_ON_SOME_PATH tai UserService.java:66)",
+    "  82/171 -> 85/174 dong phu    (them 3 dong thuc thi duoc, ca ba deu duoc test chay qua)",
+    "  Semgrep khong doi (5)        (Semgrep khong co rule cho dang NPE nay)"
   ],
 
   "tests": {
-    "total": 33,
-    "failed": 5
+    "total": 35,
+    "failed": 6
   },
 
   "spotbugs": {
-    "findings": 28,
+    "findings": 29,
     "plugins": 1
   },
 
@@ -29,7 +42,7 @@
   },
 
   "coverage": {
-    "covered_lines": 82,
-    "total_lines": 171
+    "covered_lines": 85,
+    "total_lines": 174
   }
 }

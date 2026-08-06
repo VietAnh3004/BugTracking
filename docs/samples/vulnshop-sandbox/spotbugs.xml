@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<BugCollection version="4.9.3" sequence="0" timestamp="1785905961834" analysisTimestamp="1785905970150" release="">
+<BugCollection version="4.9.3" sequence="0" timestamp="1785987699310" analysisTimestamp="1785987705923" release="">
   <Project projectName="">
     <Jar>target/classes</Jar>
     <Jar>/opt/canary/classes</Jar>
@@ -695,8 +695,8 @@
     <ShortMessage>May expose internal representation by incorporating reference to mutable object</ShortMessage>
     <LongMessage>new vn.hust.datn.casestudy.vulnshop.user.UserService(UserRepository) may expose internal representation by storing an externally mutable object into UserService.userRepository</LongMessage>
     <Class classname="vn.hust.datn.casestudy.vulnshop.user.UserService" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
-      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" start="13" end="50" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java">
-        <Message>At UserService.java:[lines 13-50]</Message>
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" start="13" end="71" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java">
+        <Message>At UserService.java:[lines 13-71]</Message>
       </SourceLine>
       <Message>In class vn.hust.datn.casestudy.vulnshop.user.UserService</Message>
     </Class>
@@ -717,12 +717,35 @@
       <Message>At UserService.java:[line 14]</Message>
     </SourceLine>
   </BugInstance>
+  <BugInstance type="NP_NULL_ON_SOME_PATH" priority="1" rank="6" abbrev="NP" category="CORRECTNESS" instanceHash="78aaaa4592f1ab046266fb2abb06c366" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="476">
+    <ShortMessage>Possible null pointer dereference</ShortMessage>
+    <LongMessage>Possible null pointer dereference of user in vn.hust.datn.casestudy.vulnshop.user.UserService.displayNameOf(String)</LongMessage>
+    <Class classname="vn.hust.datn.casestudy.vulnshop.user.UserService" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" start="13" end="71" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java">
+        <Message>At UserService.java:[lines 13-71]</Message>
+      </SourceLine>
+      <Message>In class vn.hust.datn.casestudy.vulnshop.user.UserService</Message>
+    </Class>
+    <Method classname="vn.hust.datn.casestudy.vulnshop.user.UserService" name="displayNameOf" signature="(Ljava/lang/String;)Ljava/lang/String;" isStatic="false" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" start="64" end="66" startBytecode="0" endBytecode="128" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java"/>
+      <Message>In method vn.hust.datn.casestudy.vulnshop.user.UserService.displayNameOf(String)</Message>
+    </Method>
+    <LocalVariable name="user" register="2" pc="21" role="LOCAL_VARIABLE_VALUE_OF">
+      <Message>Value loaded from user</Message>
+    </LocalVariable>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" primary="true" start="66" end="66" startBytecode="22" endBytecode="22" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java" role="SOURCE_LINE_DEREF">
+      <Message>Dereferenced at UserService.java:[line 66]</Message>
+    </SourceLine>
+    <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" start="65" end="65" startBytecode="10" endBytecode="10" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java" role="SOURCE_LINE_KNOWN_NULL">
+      <Message>Known null at UserService.java:[line 65]</Message>
+    </SourceLine>
+  </BugInstance>
   <BugInstance type="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" priority="2" rank="18" abbrev="RCN" category="STYLE" instanceHash="b75bda2e2d9175b15d7734338b0baee1" instanceOccurrenceNum="0" instanceOccurrenceMax="0" cweid="476">
     <ShortMessage>Redundant nullcheck of value known to be non-null</ShortMessage>
     <LongMessage>Redundant nullcheck of users, which is known to be non-null in vn.hust.datn.casestudy.vulnshop.user.UserService.countByRole(String)</LongMessage>
     <Class classname="vn.hust.datn.casestudy.vulnshop.user.UserService" primary="true" classAnnotationNames="org.springframework.stereotype.Service">
-      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" start="13" end="50" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java">
-        <Message>At UserService.java:[lines 13-50]</Message>
+      <SourceLine classname="vn.hust.datn.casestudy.vulnshop.user.UserService" start="13" end="71" sourcefile="UserService.java" sourcepath="vn/hust/datn/casestudy/vulnshop/user/UserService.java">
+        <Message>At UserService.java:[lines 13-71]</Message>
       </SourceLine>
       <Message>In class vn.hust.datn.casestudy.vulnshop.user.UserService</Message>
     </Class>
@@ -930,6 +953,19 @@ is <code>Integer.MIN_VALUE</code>, then the result will be negative as well (sin
 </p>
 <p>One out of 2^32 strings have a hashCode of Integer.MIN_VALUE,
 including "polygenelubricants" "GydZG_" and ""DESIGNING WORKHOUSES".
+</p>
+
+    ]]></Details>
+  </BugPattern>
+  <BugPattern type="NP_NULL_ON_SOME_PATH" abbrev="NP" category="CORRECTNESS">
+    <ShortDescription>Possible null pointer dereference</ShortDescription>
+    <Details><![CDATA[
+
+<p> There is a branch of statement that, <em>if executed,</em>  guarantees that
+a null value will be dereferenced, which
+would generate a <code>NullPointerException</code> when the code is executed.
+Of course, the problem might be that the branch or statement is infeasible and that
+the null pointer exception cannot ever be executed; deciding that is beyond the ability of SpotBugs.
 </p>
 
     ]]></Details>
@@ -1526,7 +1562,7 @@ closed.</p>
     <MissingClass>mapRow</MissingClass>
     <MissingClass>toString</MissingClass>
   </Errors>
-  <FindBugsSummary timestamp="Wed, 5 Aug 2026 04:59:21 +0000" total_classes="21" referenced_classes="107" total_bugs="34" total_size="328" num_packages="10" java_version="21.0.11" vm_version="21.0.11+10-LTS" cpu_seconds="24.53" clock_seconds="3.53" peak_mbytes="203.63" alloc_mbytes="1950.00" gc_seconds="0.07" priority_3="7" priority_2="18" priority_1="9">
+  <FindBugsSummary timestamp="Thu, 6 Aug 2026 03:41:39 +0000" total_classes="21" referenced_classes="107" total_bugs="35" total_size="332" num_packages="10" java_version="21.0.11" vm_version="21.0.11+10-LTS" cpu_seconds="5.01" clock_seconds="2.50" peak_mbytes="140.04" alloc_mbytes="512.00" gc_seconds="0.06" priority_3="7" priority_2="18" priority_1="10">
     <FileStats path="evidence/canary/Canary.java" bugCount="6" size="11" bugHash="21db11fcec2daaf685d0e0a3d50bc3b9"/>
     <FileStats path="vn/hust/datn/casestudy/vulnshop/VulnshopApplication.java" bugCount="0" size="6"/>
     <FileStats path="vn/hust/datn/casestudy/vulnshop/auth/AuthController.java" bugCount="2" size="16" bugHash="56830fbebe31fbc76185c1e1a7e36f06"/>
@@ -1544,7 +1580,7 @@ closed.</p>
     <FileStats path="vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker.java" bugCount="1" size="9" bugHash="0a28284622f5d48fc07d50c0b9b2dbf3"/>
     <FileStats path="vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java" bugCount="4" size="28" bugHash="dc7bbe517e8b86ba09b9054cb79208a1"/>
     <FileStats path="vn/hust/datn/casestudy/vulnshop/user/UserRepository.java" bugCount="2" size="28" bugHash="85f658edc819d0cd987581352c009c39"/>
-    <FileStats path="vn/hust/datn/casestudy/vulnshop/user/UserService.java" bugCount="2" size="17" bugHash="ffbf774fcf848728ea85f3fcce8fe095"/>
+    <FileStats path="vn/hust/datn/casestudy/vulnshop/user/UserService.java" bugCount="3" size="21" bugHash="3c0e1b5f236e04794b315c89b1ff3cdd"/>
     <FileStats path="vn/hust/datn/casestudy/vulnshop/util/AuditLogger.java" bugCount="2" size="12" bugHash="b3d6c7a586b6a7095c2335bb878427de"/>
     <FileStats path="vn/hust/datn/casestudy/vulnshop/util/ColorPicker.java" bugCount="2" size="13" bugHash="e1d75fa49aa49671ba5744c7d66ce710"/>
     <FileStats path="vn/hust/datn/casestudy/vulnshop/util/TextNormalizer.java" bugCount="1" size="7" bugHash="e2dc6cd7caefd3a004a0b9859a360d7b"/>
@@ -1580,9 +1616,9 @@ closed.</p>
     <PackageStats package="vn.hust.datn.casestudy.vulnshop.storage" total_bugs="4" total_types="1" total_size="28" priority_2="4">
       <ClassStats class="vn.hust.datn.casestudy.vulnshop.storage.FileStorageService" sourceFile="FileStorageService.java" interface="false" size="28" bugs="4" priority_2="4"/>
     </PackageStats>
-    <PackageStats package="vn.hust.datn.casestudy.vulnshop.user" total_bugs="4" total_types="2" total_size="45" priority_2="4">
+    <PackageStats package="vn.hust.datn.casestudy.vulnshop.user" total_bugs="5" total_types="2" total_size="49" priority_2="4" priority_1="1">
       <ClassStats class="vn.hust.datn.casestudy.vulnshop.user.UserRepository" sourceFile="UserRepository.java" interface="false" size="28" bugs="2" priority_2="2"/>
-      <ClassStats class="vn.hust.datn.casestudy.vulnshop.user.UserService" sourceFile="UserService.java" interface="false" size="17" bugs="2" priority_2="2"/>
+      <ClassStats class="vn.hust.datn.casestudy.vulnshop.user.UserService" sourceFile="UserService.java" interface="false" size="21" bugs="3" priority_2="2" priority_1="1"/>
     </PackageStats>
     <PackageStats package="vn.hust.datn.casestudy.vulnshop.util" total_bugs="5" total_types="3" total_size="32" priority_3="3" priority_2="1" priority_1="1">
       <ClassStats class="vn.hust.datn.casestudy.vulnshop.util.AuditLogger" sourceFile="AuditLogger.java" interface="false" size="12" bugs="2" priority_3="2"/>
@@ -1590,34 +1626,28 @@ closed.</p>
       <ClassStats class="vn.hust.datn.casestudy.vulnshop.util.TextNormalizer" sourceFile="TextNormalizer.java" interface="false" size="7" bugs="1" priority_3="1"/>
     </PackageStats>
     <FindBugsProfile>
-      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.ClassInfoAnalysisEngine" totalMilliseconds="469" invocations="1045" avgMicrosecondsPerInvocation="449" maxMicrosecondsPerInvocation="20900" standardDeviationMicrosecondsPerInvocation="1162"/>
-      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.ClassDataAnalysisEngine" totalMilliseconds="203" invocations="1053" avgMicrosecondsPerInvocation="193" maxMicrosecondsPerInvocation="6268" standardDeviationMicrosecondsPerInvocation="479"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.FieldItemSummary" totalMilliseconds="195" invocations="107" avgMicrosecondsPerInvocation="1830" maxMicrosecondsPerInvocation="22855" standardDeviationMicrosecondsPerInvocation="3724"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.FindNoSideEffectMethods" totalMilliseconds="137" invocations="107" avgMicrosecondsPerInvocation="1286" maxMicrosecondsPerInvocation="15794" standardDeviationMicrosecondsPerInvocation="2435"/>
-      <ClassProfile name="edu.umd.cs.findbugs.OpcodeStack$JumpInfoFactory" totalMilliseconds="111" invocations="314" avgMicrosecondsPerInvocation="355" maxMicrosecondsPerInvocation="4519" standardDeviationMicrosecondsPerInvocation="597"/>
-      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.JavaClassAnalysisEngine" totalMilliseconds="76" invocations="202" avgMicrosecondsPerInvocation="380" maxMicrosecondsPerInvocation="19454" standardDeviationMicrosecondsPerInvocation="1464"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.NoteDirectlyRelevantTypeQualifiers" totalMilliseconds="60" invocations="107" avgMicrosecondsPerInvocation="565" maxMicrosecondsPerInvocation="8097" standardDeviationMicrosecondsPerInvocation="1178"/>
-      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.TypeDataflowFactory" totalMilliseconds="58" invocations="95" avgMicrosecondsPerInvocation="614" maxMicrosecondsPerInvocation="16244" standardDeviationMicrosecondsPerInvocation="1717"/>
-      <ClassProfile name="edu.umd.cs.findbugs.ba.npe.NullDerefAndRedundantComparisonFinder" totalMilliseconds="55" invocations="93" avgMicrosecondsPerInvocation="599" maxMicrosecondsPerInvocation="18292" standardDeviationMicrosecondsPerInvocation="1950"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.FunctionsThatMightBeMistakenForProcedures" totalMilliseconds="52" invocations="107" avgMicrosecondsPerInvocation="488" maxMicrosecondsPerInvocation="6400" standardDeviationMicrosecondsPerInvocation="1034"/>
-      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.ValueNumberDataflowFactory" totalMilliseconds="51" invocations="95" avgMicrosecondsPerInvocation="541" maxMicrosecondsPerInvocation="20617" standardDeviationMicrosecondsPerInvocation="2114"/>
-      <ClassProfile name="edu.umd.cs.findbugs.util.TopologicalSort" totalMilliseconds="51" invocations="995" avgMicrosecondsPerInvocation="51" maxMicrosecondsPerInvocation="2204" standardDeviationMicrosecondsPerInvocation="131"/>
-      <ClassProfile name="com.h3xstream.findsecbugs.taintanalysis.TaintDataflowEngine" totalMilliseconds="45" invocations="93" avgMicrosecondsPerInvocation="490" maxMicrosecondsPerInvocation="7064" standardDeviationMicrosecondsPerInvocation="869"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.ExplicitSerialization" totalMilliseconds="43" invocations="107" avgMicrosecondsPerInvocation="409" maxMicrosecondsPerInvocation="24684" standardDeviationMicrosecondsPerInvocation="2484"/>
-      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.CFGFactory" totalMilliseconds="42" invocations="93" avgMicrosecondsPerInvocation="461" maxMicrosecondsPerInvocation="7429" standardDeviationMicrosecondsPerInvocation="826"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.OverridingEqualsNotSymmetrical" totalMilliseconds="40" invocations="107" avgMicrosecondsPerInvocation="383" maxMicrosecondsPerInvocation="13663" standardDeviationMicrosecondsPerInvocation="1373"/>
-      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.IsNullValueDataflowFactory" totalMilliseconds="40" invocations="93" avgMicrosecondsPerInvocation="440" maxMicrosecondsPerInvocation="5006" standardDeviationMicrosecondsPerInvocation="679"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.CalledMethods" totalMilliseconds="39" invocations="107" avgMicrosecondsPerInvocation="366" maxMicrosecondsPerInvocation="4562" standardDeviationMicrosecondsPerInvocation="715"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.BuildObligationPolicyDatabase" totalMilliseconds="38" invocations="107" avgMicrosecondsPerInvocation="359" maxMicrosecondsPerInvocation="5440" standardDeviationMicrosecondsPerInvocation="712"/>
-      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.MethodGenFactory" totalMilliseconds="37" invocations="93" avgMicrosecondsPerInvocation="403" maxMicrosecondsPerInvocation="20393" standardDeviationMicrosecondsPerInvocation="2092"/>
-      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.UnconditionalValueDerefDataflowFactory" totalMilliseconds="33" invocations="93" avgMicrosecondsPerInvocation="355" maxMicrosecondsPerInvocation="5218" standardDeviationMicrosecondsPerInvocation="698"/>
-      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.ValueRangeAnalysisFactory" totalMilliseconds="29" invocations="93" avgMicrosecondsPerInvocation="312" maxMicrosecondsPerInvocation="21070" standardDeviationMicrosecondsPerInvocation="2181"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.FindOpenStream" totalMilliseconds="26" invocations="21" avgMicrosecondsPerInvocation="1264" maxMicrosecondsPerInvocation="25452" standardDeviationMicrosecondsPerInvocation="5410"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.BuildStringPassthruGraph" totalMilliseconds="25" invocations="107" avgMicrosecondsPerInvocation="234" maxMicrosecondsPerInvocation="3323" standardDeviationMicrosecondsPerInvocation="449"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.ReflectiveClasses" totalMilliseconds="23" invocations="107" avgMicrosecondsPerInvocation="222" maxMicrosecondsPerInvocation="3048" standardDeviationMicrosecondsPerInvocation="425"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.FindRefComparison$SpecialTypeAnalysis" totalMilliseconds="22" invocations="76" avgMicrosecondsPerInvocation="297" maxMicrosecondsPerInvocation="1660" standardDeviationMicrosecondsPerInvocation="378"/>
-      <ClassProfile name="edu.umd.cs.findbugs.detect.EqualsOperandShouldHaveClassCompatibleWithThis" totalMilliseconds="18" invocations="107" avgMicrosecondsPerInvocation="169" maxMicrosecondsPerInvocation="3366" standardDeviationMicrosecondsPerInvocation="393"/>
-      <ClassProfile name="edu.umd.cs.findbugs.classfile.impl.ZipCodeBaseFactory" totalMilliseconds="17" invocations="68" avgMicrosecondsPerInvocation="251" maxMicrosecondsPerInvocation="2381" standardDeviationMicrosecondsPerInvocation="322"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.ClassInfoAnalysisEngine" totalMilliseconds="415" invocations="1045" avgMicrosecondsPerInvocation="397" maxMicrosecondsPerInvocation="29938" standardDeviationMicrosecondsPerInvocation="1646"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.FindNoSideEffectMethods" totalMilliseconds="127" invocations="107" avgMicrosecondsPerInvocation="1195" maxMicrosecondsPerInvocation="29767" standardDeviationMicrosecondsPerInvocation="3428"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.FieldItemSummary" totalMilliseconds="124" invocations="107" avgMicrosecondsPerInvocation="1167" maxMicrosecondsPerInvocation="10854" standardDeviationMicrosecondsPerInvocation="2284"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.JavaClassAnalysisEngine" totalMilliseconds="122" invocations="202" avgMicrosecondsPerInvocation="605" maxMicrosecondsPerInvocation="28777" standardDeviationMicrosecondsPerInvocation="3166"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.ClassDataAnalysisEngine" totalMilliseconds="110" invocations="1053" avgMicrosecondsPerInvocation="104" maxMicrosecondsPerInvocation="4515" standardDeviationMicrosecondsPerInvocation="228"/>
+      <ClassProfile name="edu.umd.cs.findbugs.OpcodeStack$JumpInfoFactory" totalMilliseconds="62" invocations="315" avgMicrosecondsPerInvocation="197" maxMicrosecondsPerInvocation="2096" standardDeviationMicrosecondsPerInvocation="263"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.BuildObligationPolicyDatabase" totalMilliseconds="56" invocations="107" avgMicrosecondsPerInvocation="524" maxMicrosecondsPerInvocation="31926" standardDeviationMicrosecondsPerInvocation="3064"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.FindOpenStream" totalMilliseconds="45" invocations="21" avgMicrosecondsPerInvocation="2167" maxMicrosecondsPerInvocation="44446" standardDeviationMicrosecondsPerInvocation="9454"/>
+      <ClassProfile name="edu.umd.cs.findbugs.util.TopologicalSort" totalMilliseconds="39" invocations="995" avgMicrosecondsPerInvocation="39" maxMicrosecondsPerInvocation="4986" standardDeviationMicrosecondsPerInvocation="170"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.NoteDirectlyRelevantTypeQualifiers" totalMilliseconds="39" invocations="107" avgMicrosecondsPerInvocation="368" maxMicrosecondsPerInvocation="3889" standardDeviationMicrosecondsPerInvocation="675"/>
+      <ClassProfile name="edu.umd.cs.findbugs.ba.npe.NullDerefAndRedundantComparisonFinder" totalMilliseconds="36" invocations="94" avgMicrosecondsPerInvocation="393" maxMicrosecondsPerInvocation="20881" standardDeviationMicrosecondsPerInvocation="2133"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.FunctionsThatMightBeMistakenForProcedures" totalMilliseconds="34" invocations="107" avgMicrosecondsPerInvocation="326" maxMicrosecondsPerInvocation="4107" standardDeviationMicrosecondsPerInvocation="696"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.SwitchFallthrough" totalMilliseconds="29" invocations="21" avgMicrosecondsPerInvocation="1413" maxMicrosecondsPerInvocation="27620" standardDeviationMicrosecondsPerInvocation="5862"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.ExplicitSerialization" totalMilliseconds="28" invocations="107" avgMicrosecondsPerInvocation="263" maxMicrosecondsPerInvocation="13462" standardDeviationMicrosecondsPerInvocation="1407"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.BadResultSetAccess" totalMilliseconds="27" invocations="21" avgMicrosecondsPerInvocation="1315" maxMicrosecondsPerInvocation="27405" standardDeviationMicrosecondsPerInvocation="5833"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.CalledMethods" totalMilliseconds="27" invocations="107" avgMicrosecondsPerInvocation="255" maxMicrosecondsPerInvocation="3238" standardDeviationMicrosecondsPerInvocation="487"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.MethodGenFactory" totalMilliseconds="25" invocations="94" avgMicrosecondsPerInvocation="273" maxMicrosecondsPerInvocation="18600" standardDeviationMicrosecondsPerInvocation="1902"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.FindBadForLoop" totalMilliseconds="24" invocations="21" avgMicrosecondsPerInvocation="1175" maxMicrosecondsPerInvocation="23548" standardDeviationMicrosecondsPerInvocation="5003"/>
+      <ClassProfile name="com.h3xstream.findsecbugs.taintanalysis.TaintDataflowEngine" totalMilliseconds="24" invocations="94" avgMicrosecondsPerInvocation="256" maxMicrosecondsPerInvocation="7549" standardDeviationMicrosecondsPerInvocation="795"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.OverridingEqualsNotSymmetrical" totalMilliseconds="23" invocations="107" avgMicrosecondsPerInvocation="221" maxMicrosecondsPerInvocation="6305" standardDeviationMicrosecondsPerInvocation="650"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.BuildStringPassthruGraph" totalMilliseconds="23" invocations="107" avgMicrosecondsPerInvocation="217" maxMicrosecondsPerInvocation="3092" standardDeviationMicrosecondsPerInvocation="450"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.TypeDataflowFactory" totalMilliseconds="21" invocations="96" avgMicrosecondsPerInvocation="224" maxMicrosecondsPerInvocation="7693" standardDeviationMicrosecondsPerInvocation="781"/>
     </FindBugsProfile>
   </FindBugsSummary>
   <ClassFeatures></ClassFeatures>

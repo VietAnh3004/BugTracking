@@ -190,7 +190,7 @@ class AnalyzerSanityCheckerTest {
                 .filter(draft -> !AnalyzerSanityChecker.isCanaryEvidence(draft))
                 .toList();
 
-        assertThat(tatCa).hasSize(34);
+        assertThat(tatCa).hasSize(SampleArtifacts.expectedInt("spotbugs", "findings") + 6);
         assertThat(canary).hasSize(6);
         assertThat(nguoiDung).hasSize(SampleArtifacts.expectedInt("spotbugs", "findings"));
         assertThat(nguoiDung)

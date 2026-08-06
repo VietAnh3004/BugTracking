@@ -64,41 +64,52 @@ class SurefireResultCollectorTest {
         assertThat(failed.stream()
                         .filter(draft -> draft.failureKind() == TestFailureKind.ERROR)
                         .count())
-                .isEqualTo(2);
+                .isEqualTo(3);
         assertThat(failed.stream()
                         .filter(draft -> draft.failureKind() == TestFailureKind.FAILURE)
                         .count())
                 .isEqualTo(3);
-        // Ngoai le den tu ma production, assertion den tu lop test.
+        // Ngoai le den tu ma production, assertion den tu lop test. Hai NPE: mot cua TP-11
+        // (emailDomainOf) va mot cua TP-16 (displayNameOf).
         assertThat(failed.stream()
                         .filter(draft -> draft.failureKind() == TestFailureKind.ERROR)
                         .map(TestCaseDraft::failureType))
-                .containsExactlyInAnyOrder("java.lang.ArithmeticException", "java.lang.NullPointerException");
+                .containsExactlyInAnyOrder(
+                        "java.lang.ArithmeticException",
+                        "java.lang.NullPointerException",
+                        "java.lang.NullPointerException");
     }
 
     /**
-     * Phát hiện 2 (SEEDED.md §5) mã hoá thành test: chỉ 2/5 test hỏng có frame trỏ về mã
-     * production. Ai "sửa" heuristic cho ra 5/5 thì test này đỏ.
+     * Phát hiện 2 (SEEDED.md §5) mã hoá thành test: chỉ 3/6 test hỏng có frame trỏ về mã
+     * production. Ai "sửa" heuristic cho ra 6/6 thì test này đỏ.
+     *
+     * <p>Con số đổi từ 2/5 lên 3/6 ở tuần 10-11 khi gieo TP-16 — xem SEEDED.md. Chú ý: có frame
+     * production là điều kiện CẦN chứ chưa đủ để EvidenceLinker tầng 3 sinh liên kết; frame còn
+     * phải rơi vào một dòng ĐÃ CÓ CẢNH BÁO. Trước TP-16 thì cả hai frame production của vulnshop
+     * đều thuộc nhóm "không công cụ nào bắt", nên tầng 3 chạy đúng mà sinh 0 liên kết.
      */
     @Test
-    void collect_chiHaiTrongNamTestHongCoFrameProduction() {
+    void collect_chiBaTrongSauTestHongCoFrameProduction() {
         List<StackTraceDraft> traces = collectAll().stream()
                 .filter(StackTraceDraft.class::isInstance)
                 .map(StackTraceDraft.class::cast)
                 .toList();
 
-        assertThat(traces).hasSize(5);
+        assertThat(traces).hasSize(6);
 
         List<StackTraceDraft> withProduction = traces.stream()
                 .filter(trace -> Boolean.TRUE.equals(trace.content().get("has_production_frame")))
                 .toList();
 
-        assertThat(withProduction).hasSize(2);
+        assertThat(withProduction).hasSize(3);
         assertThat(withProduction).extracting(StackTraceDraft::rawFilePath)
                 .containsExactlyInAnyOrder(
                         "vn/hust/datn/casestudy/vulnshop/cart/CartService.java",
+                        "vn/hust/datn/casestudy/vulnshop/user/UserService.java",
                         "vn/hust/datn/casestudy/vulnshop/user/UserService.java");
-        assertThat(withProduction).extracting(StackTraceDraft::startLine).containsExactlyInAnyOrder(25, 30);
+        // 66 la TP-16: dong DUY NHAT cua vulnshop vua co canh bao tinh vua co frame stack trace.
+        assertThat(withProduction).extracting(StackTraceDraft::startLine).containsExactlyInAnyOrder(25, 30, 66);
 
         // Ba trace con lai phai NOI THANG ra trong summary rang khong co frame production, thay vi
         // de LLM suy dien tu su vang mat cua du lieu.
@@ -106,6 +117,7 @@ class SurefireResultCollectorTest {
                         .filter(trace -> !Boolean.TRUE.equals(trace.content().get("has_production_frame")))
                         .map(StackTraceDraft::summary))
                 .hasSize(3)
+                // Ba trace kieu assertion: PaginationHelperTest, ProductTest, OrderStatusCheckerTest.
                 .allSatisfy(summary -> assertThat(summary).contains("KHONG co frame nao tro ve ma production"));
     }
 
@@ -159,13 +171,14 @@ class SurefireResultCollectorTest {
     void collect_evidenceTypePhanBietTestXanhVaTestHong() {
         List<EvidenceDraft> drafts = collectAll();
 
+        // 35 test = 29 xanh + 6 hong; moi test hong sinh THEM mot STACK_TRACE rieng.
         assertThat(drafts.stream().filter(d -> d.type() == EvidenceType.TEST_RESULT).count())
-                .isEqualTo(28);
+                .isEqualTo(29);
         assertThat(drafts.stream().filter(d -> d.type() == EvidenceType.FAILED_TEST).count())
-                .isEqualTo(5);
+                .isEqualTo(6);
         assertThat(drafts.stream().filter(d -> d.type() == EvidenceType.STACK_TRACE).count())
-                .isEqualTo(5);
-        assertThat(drafts).hasSize(38);
+                .isEqualTo(6);
+        assertThat(drafts).hasSize(41);
     }
 
     /** Test tích hợp có {@code <system-out>} rất dài mà vẫn PASSED — không được nhầm là hỏng. */

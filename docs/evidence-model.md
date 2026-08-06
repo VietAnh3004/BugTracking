@@ -202,12 +202,12 @@ erDiagram
 Đã tự parse toàn bộ `docs/samples/vulnshop/`, không suy đoán. Xem thêm
 [ADR 0004](adr/0004-unified-evidence-model-hai-tang.md).
 
-1. **Không phải warning nào cũng chỉ có 1 vị trí, nhưng đa số có** — 25/28 BugInstance chỉ có
-   đúng 1 `SourceLine` con trực tiếp; 3/28 có 2-3 vị trí (một BugInstance `UNSAFE_HASH_EQUALS`
+1. **Không phải warning nào cũng chỉ có 1 vị trí, nhưng đa số có** — 25/29 BugInstance chỉ có
+   đúng 1 `SourceLine` con trực tiếp; 4/29 có 2-3 vị trí (một BugInstance `UNSAFE_HASH_EQUALS`
    trỏ tới 3 file khác nhau: `PasswordHasher.java:48`, `AuthService.java:32`, `User.java:4`).
-   5/28 có đúng 1 vị trí nhưng **không** đánh dấu `primary='true'` (chỉ `synthetic='true'`) —
+   5/29 có đúng 1 vị trí nhưng **không** đánh dấu `primary='true'` (chỉ `synthetic='true'`) —
    parser phải fallback, không phải lỗi thiết kế cần bảng riêng.
-2. **3/5 test hỏng không có stack frame nào trỏ về mã production.** Toàn bộ test hỏng kiểu
+2. **3/6 test hỏng không có stack frame nào trỏ về mã production.** Toàn bộ test hỏng kiểu
    `AssertionFailedError` (khác `ArithmeticException`/`NullPointerException`) có stack trace chỉ
    chứa frame `org.junit.jupiter.api.*` rồi tới lớp test — không hề đi qua mã đang kiểm thử. Ca
    đau nhất: `OrderStatusCheckerTest` fail vì lỗi ở đúng dòng SpotBugs báo
@@ -236,7 +236,7 @@ artifact thật của vulnshop. Mục 8-12 dưới đây là bảng provenance c
 
 | Bảng | Vì sao cần | Khuôn quan hệ |
 |---|---|---|
-| `warning_location` | Phát hiện 1: 3/28 warning có nhiều vị trí | 1:N `(evidence_record_id, ordinal)`, FK trỏ `warning` |
+| `warning_location` | Phát hiện 1: 4/29 warning có nhiều vị trí | 1:N `(evidence_record_id, ordinal)`, FK trỏ `warning` |
 | `test_case` | Nguồn TEST_RESULT/FAILED_TEST | **1:1 PK=FK** như `warning` |
 | `stack_frame` | Phát hiện 2: parse riêng để reparse được nếu heuristic sai | 1:N `(evidence_record_id, ordinal)` |
 | `coverage_line` | Giữ `mi/ci/mb/cb` để phân biệt PARTIAL, không thu về boolean | 1:N `(evidence_record_id, line_number)` |
@@ -266,7 +266,7 @@ Ví dụ dùng chung: `WEAK_MESSAGE_DIGEST_MD5` tại `PasswordHasher.java:40` (
 | evidence_record_id | DERIVED | FK tới `warning.evidence_record_id` (= `evidence_record.id`) | — |
 | ordinal | DERIVED | thứ tự `SourceLine` con trực tiếp trong BugInstance | `0` |
 | role_raw | spotbugs | `spotbugs:BugInstance[@type='OBL_UNSATISFIED_OBLIGATION']/SourceLine[2]/@role` | `SOURCE_LINE_PATH_CONTINUES` |
-| is_primary | DERIVED | có `@primary='true'` hay không; false cho 5/28 bug chỉ có `synthetic='true'` | `true` |
+| is_primary | DERIVED | có `@primary='true'` hay không; false cho 5/29 bug chỉ có `synthetic='true'` | `true` |
 | path_raw | spotbugs | `spotbugs:BugInstance[@type='WEAK_MESSAGE_DIGEST_MD5']/SourceLine[@primary='true']/@sourcepath` | `vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java` |
 | file_path | DERIVED | chuẩn hoá `path_raw` về `snapshot_file.path`; NULL nếu không khớp | — |
 | start_line | spotbugs | `spotbugs:BugInstance[@type='WEAK_MESSAGE_DIGEST_MD5']/SourceLine[@primary='true']/@start` | `40` |
@@ -275,12 +275,12 @@ Ví dụ dùng chung: `WEAK_MESSAGE_DIGEST_MD5` tại `PasswordHasher.java:40` (
 | method_name | spotbugs | `spotbugs:BugInstance[@type='WEAK_MESSAGE_DIGEST_MD5']/Method[@primary='true']/@name` | `checksumForDeduplication` |
 
 Locator của `role_raw` cố tình lấy từ một BugInstance **khác** (`OBL_UNSATISFIED_OBLIGATION`,
-vị trí thứ 2): 27/33 vị trí thật không có `@role`, nên ví dụ MD5 sẽ không chứng minh được gì.
+vị trí thứ 2): 27/35 vị trí thật không có `@role`, nên ví dụ MD5 sẽ không chứng minh được gì.
 
 ## 9. Bảng provenance — `test_case`
 
 Ví dụ dùng chung: `OrderStatusCheckerTest.isShipped_chuoiTaoLucChay_vanPhaiTraVeDung` — test hỏng
-kiểu assertion, tức là ca **không có** frame nào trỏ về mã production (3/5 test hỏng thuộc loại
+kiểu assertion, tức là ca **không có** frame nào trỏ về mã production (3/6 test hỏng thuộc loại
 này, phát hiện 2).
 
 | Cột | Nguồn | Locator | Ví dụ |
@@ -294,13 +294,18 @@ này, phát hiện 2).
 | failure_type | surefire | `surefire:TEST-vn.hust.datn.casestudy.vulnshop.order.OrderStatusCheckerTest.xml#./testcase[@name='isShipped_chuoiTaoLucChay_vanPhaiTraVeDung']/failure/@type` | `org.opentest4j.AssertionFailedError` |
 | failure_message | surefire | `surefire:TEST-vn.hust.datn.casestudy.vulnshop.order.OrderStatusCheckerTest.xml#./testcase[@name='isShipped_chuoiTaoLucChay_vanPhaiTraVeDung']/failure/@message` | `expected: <true> but was: <false>` |
 | stack_trace_raw | surefire | `surefire:TEST-vn.hust.datn.casestudy.vulnshop.order.OrderStatusCheckerTest.xml#./testcase[@name='isShipped_chuoiTaoLucChay_vanPhaiTraVeDung']/failure` | |
-| duration_ms | surefire | `surefire:TEST-vn.hust.datn.casestudy.vulnshop.order.OrderStatusCheckerTest.xml#./testcase[@name='isShipped_chuoiTaoLucChay_vanPhaiTraVeDung']/@time` | `0.002` |
+| duration_ms | surefire | `surefire:TEST-vn.hust.datn.casestudy.vulnshop.order.OrderStatusCheckerTest.xml#./testcase[@name='isShipped_chuoiTaoLucChay_vanPhaiTraVeDung']/@time` | |
 | stack_trace_evidence_id | DERIVED | FK tới evidence_record loại STACK_TRACE của chính test này | — |
 | report_file | DERIVED | tên file `TEST-*.xml` đã sinh ra hàng này | — |
 
 `duration_ms` là chỗ duy nhất có **đổi đơn vị**: Surefire ghi `@time` bằng **giây** dạng thập phân,
-cột lưu **mili giây** dạng INT. Cột "Ví dụ" ở trên là giá trị nguyên văn trong artifact (`0.002`),
-giá trị lưu xuống là `2`.
+cột lưu **mili giây** dạng INT. Ví dụ: `0.002` giây trong artifact được lưu thành `2`.
+
+Ô "Ví dụ" của dòng này để **trống có chủ đích** — `@time` là thời gian chạy tường, nó đổi sau mỗi
+lần chạy analyzer (đã thấy `0.002` thành `0.0`). Ghim một giá trị ở đây biến `check-evidence-model.py`
+thành một phép kiểm đỏ ngẫu nhiên, và một phép kiểm hay đỏ vô cớ thì sớm muộn cũng bị tắt. Locator
+**vẫn được kiểm là resolve được**, nên gõ sai đường dẫn vẫn bị bắt; chỉ giá trị là không ghim. Cùng
+cách xử lý với `stack_trace_raw` (toàn văn vài KB).
 
 ## 10. Bảng provenance — `stack_frame`
 
@@ -340,8 +345,8 @@ Ví dụ dùng chung: `OrderStatusChecker.java` dòng 27 — một dòng `MISSED
 | status | DERIVED | generated column từ mi/ci/mb/cb | `MISSED` |
 
 **Đừng thu bốn bộ đếm về một boolean.** "Dòng được phủ" theo JaCoCo là `ci > 0`, tức COVERED
-**cộng** PARTIAL = 77 + 5 = **82** trên vulnshop — khớp counter `LINE covered='82'` của chính
-JaCoCo và `expected-analysis.json`. Đếm mỗi COVERED ra 77 là sai.
+**cộng** PARTIAL = 80 + 5 = **85** trên vulnshop — khớp counter `LINE covered='85'` của chính
+JaCoCo và `expected-analysis.json`. Đếm mỗi COVERED ra 80 là sai.
 
 ## 12. Bảng provenance — `coverage_method`
 
@@ -397,7 +402,7 @@ embedding sinh từ *một mô hình ngôn ngữ*.
 |---|---|---|
 | `link_count` | Số `evidence_link` sinh ra | Cùng lý do tồn tại với `unresolved_location_count`: một liên kết không sinh ra được trông **y hệt** "không có bằng chứng liên quan" |
 | `code_context_count` | Số evidence `CODE_CONTEXT` JavaParser sinh ra | Phân biệt "JavaParser không chạy" với "chạy rồi nhưng không nối được" |
-| `unlinked_warning_count` | Số cảnh báo không có liên kết nào | Thất bại **một phần** cũng phải thấy được: 30/33 cảnh báo trơ trọi khác hẳn 0/33, mà `link_count` một mình không phân biệt |
+| `unlinked_warning_count` | Số cảnh báo không có liên kết nào | Thất bại **một phần** cũng phải thấy được: 30/34 cảnh báo trơ trọi khác hẳn 0/34, mà `link_count` một mình không phân biệt |
 | `link_counts_by_method` | Phân bố theo `EvidenceLinkMethod` | Nguồn số liệu *"bao nhiêu % liên kết chỉ dựa vào quy ước đặt tên"* của tuần 15 |
 
 Ràng buộc `ck_run_links_not_silently_empty` (`status <> 'SUCCEEDED' OR code_context_count = 0 OR

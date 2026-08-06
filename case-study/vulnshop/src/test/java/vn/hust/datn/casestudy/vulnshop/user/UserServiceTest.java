@@ -47,6 +47,34 @@ class UserServiceTest {
     }
 
     @Test
+    void displayNameOf_nguoiDungTonTai_traVeTenVaEmail() {
+        when(userRepository.findByUsername("anh"))
+                .thenReturn(List.of(new User(1, "anh", "anh@hust.edu.vn", "hash", "USER")));
+
+        assertEquals("anh <anh@hust.edu.vn>", userService().displayNameOf("anh"));
+    }
+
+    /**
+     * TEST NAY CO TINH HONG, va no la test QUAN TRONG NHAT ve mat phuong phap.
+     *
+     * <p>Khac emailDomainOf_khongTonTai (loi ma KHONG cong cu nao bat duoc), day la ca DOI CHUNG:
+     * SpotBugs bao NP_NULL_ON_SOME_PATH tai UserService.displayNameOf, VA stack trace cua test nay
+     * co mot frame tro ve dung dong do.
+     *
+     * <p>Nho vay vulnshop moi co mot truong hop de sinh quan he SUPPORTS tu stack frame — loai
+     * bang chung thuyet phuc nhat cho verdict LIKELY_TRUE_POSITIVE. Truoc khi co test nay,
+     * EvidenceLinker tang 3 chay dung nhung sinh 0 lien ket, vi hai frame production duy nhat cua
+     * bo test deu tro vao file khong co canh bao nao.
+     */
+    @Test
+    @DisplayName("Khong tim thay nguoi dung: displayNameOf phai bao loi ro rang thay vi NPE")
+    void displayNameOf_khongTonTai_khongDuocNemNPE() {
+        when(userRepository.findByUsername("khong-ton-tai")).thenReturn(List.of());
+
+        assertEquals("? <>", userService().displayNameOf("khong-ton-tai"));
+    }
+
+    @Test
     void countByRole_demDungSoLuong() {
         when(userRepository.findByRole("ADMIN"))
                 .thenReturn(List.of(

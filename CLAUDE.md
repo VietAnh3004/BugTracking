@@ -429,6 +429,12 @@ Pipeline "chạy thành công" nhưng Evidence Store rỗng nguy hiểm hơn nhi
 hổng SQL injection nhưng test đường đi bình thường vẫn xanh, và có một test xanh khác *chứng minh*
 lỗ hổng có thật. Agent nào kết luận "có test phủ + test xanh ⇒ false positive" là sai.
 
-**Liên kết bằng chứng không thể chỉ dựa vào stack trace.** Thực tế chỉ 2/5 test hỏng cho frame
+**Liên kết bằng chứng không thể chỉ dựa vào stack trace.** Thực tế chỉ 3/6 test hỏng cho frame
 trỏ về mã production; test hỏng kiểu assertion ném lỗi từ chính lớp test. Cần kết hợp liên kết
-theo độ phủ hoặc theo quy ước tên, nếu không mất 60% bằng chứng test hỏng.
+theo độ phủ hoặc theo quy ước tên, nếu không mất một nửa bằng chứng test hỏng.
+
+Tệ hơn thế: có frame production mới là điều kiện **CẦN**, chưa đủ — frame còn phải rơi vào một
+dòng **đã có cảnh báo**. Tới hết tuần 8-9, cả hai frame production của vulnshop đều thuộc nhóm lỗi
+"không công cụ nào bắt", nên EvidenceLinker tầng 3 chạy đúng mà sinh **0 liên kết**. Phải gieo
+thêm TP-16 (`UserService.displayNameOf`) mới có một ca `SUPPORTS` thật. Xem
+`case-study/vulnshop/SEEDED.md`.

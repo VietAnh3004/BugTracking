@@ -93,11 +93,17 @@ class AnalysisRunServiceTest extends AbstractIntegrationTest {
         assertThat(run.getErrorMessage()).isNull();
         assertThat(run.getFinishedAt()).isNotNull();
 
-        // 90 evidence TỪ ARTIFACT (28 SpotBugs + 5 Semgrep + 33 test + 5 stack trace + 19 coverage).
+        // Evidence TỪ ARTIFACT = cảnh báo + test_case + stack trace + 19 sourcefile của JaCoCo.
+        // Bốn số đầu đọc từ expected-analysis.json nên tự theo khi case study đổi.
+        //
         // Đếm riêng CODE_CONTEXT vì nó không đến từ artifact mà từ JavaParser đọc mã nguồn — trộn
         // vào một con số thì mọi lần chỉnh heuristic của extractor lại làm đỏ một test vốn canh
         // parser artifact.
-        assertThat(countEvidence(run.getId()) - run.getCodeContextCount()).isEqualTo(90);
+        int tuArtifact = canhBaoTinh
+                + SampleArtifacts.expectedInt("tests", "total")
+                + SampleArtifacts.expectedInt("tests", "failed")
+                + 19;
+        assertThat(countEvidence(run.getId()) - run.getCodeContextCount()).isEqualTo(tuArtifact);
 
         // Tiêu chí nghiệm thu của kế hoạch: 0 vị trí hỏng trên cây nguồn thật.
         assertThat(run.getLocationCount()).isPositive();

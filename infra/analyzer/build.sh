@@ -2,12 +2,13 @@
 #
 # Dựng hai image analyzer VÀ đối chiếu chúng với `expected-analysis.json`.
 #
-#   ./infra/analyzer/build.sh            # dựng + đối chiếu (mặc định)
-#   ./infra/analyzer/build.sh --no-check # chỉ dựng
+#   ./infra/analyzer/build.sh                # dựng + đối chiếu (mặc định)
+#   ./infra/analyzer/build.sh --no-check     # chỉ dựng
+#   ./infra/analyzer/build.sh --emit-samples # dựng + đối chiếu + ghi lại docs/samples/vulnshop-sandbox/
 #
 # Vì sao bước đối chiếu nằm ngay trong script dựng, không phải một việc riêng ai đó nhớ thì chạy:
 # một image analyzer "dựng thành công" nhưng cho ra 0 cảnh báo là đúng thứ mà cả đồ án chống. Có
-# đủ ground truth (28 SpotBugs + 5 Semgrep trên vulnshop) mà không đối chiếu thì phí.
+# đủ ground truth (`expected-analysis.json`) mà không đối chiếu thì phí.
 #
 # Script này CỐ Ý dùng `docker create` + `docker cp` + `docker start`, KHÔNG dùng bind mount — y
 # hệt cách DockerSandboxRunner sẽ làm ở D6. Nhờ vậy nó vừa là bước dựng, vừa là bản kiểm chứng
@@ -17,7 +18,16 @@
 set -euo pipefail
 
 CHECK=1
-[ "${1:-}" = "--no-check" ] && CHECK=0
+EMIT_SAMPLES=0
+case "${1:-}" in
+    --no-check) CHECK=0 ;;
+    --emit-samples) EMIT_SAMPLES=1 ;;
+    "") ;;
+    *)
+        echo "Tham so khong biet: $1 (chi nhan --no-check hoac --emit-samples)" >&2
+        exit 2
+        ;;
+esac
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -140,3 +150,20 @@ docker_ cp "$SEMGREP_NAME:/work/.analysis/." "$(hostpath "$OUT")"
 python "$SCRIPT_DIR/check_sandbox_output.py" \
     "$(hostpath "$OUT")" \
     "$(hostpath "$REPO_ROOT/case-study/vulnshop/expected-analysis.json")"
+
+# Chép artifact vào docs/samples/vulnshop-sandbox/ — chỉ khi được yêu cầu tường minh.
+#
+# Trước đây README bảo "chạy build.sh rồi copy từ /work/.analysis", nhưng $WORK_TMP bị `trap
+# cleanup EXIT` xoá ngay khi script kết thúc, nên hướng dẫn đó KHÔNG làm theo được. Việc sinh lại
+# bộ mẫu phải tái lập bằng một lệnh chứ không bằng một đoạn văn.
+#
+# Hai file này là fixture của AnalyzerSanityCheckerTest, và chúng phải đồng bộ với
+# expected-analysis.json: bốn tầng chống "0 cảnh báo" chỉ kiểm được bằng artifact do CHÍNH sandbox
+# sinh ra (artifact chạy trên host không có mã canary).
+if [ "$EMIT_SAMPLES" = "1" ]; then
+    SAMPLES_DIR="$REPO_ROOT/docs/samples/vulnshop-sandbox"
+    mkdir -p "$SAMPLES_DIR"
+    cp "$OUT/spotbugs.xml" "$SAMPLES_DIR/spotbugs.xml"
+    cp "$OUT/semgrep.sarif" "$SAMPLES_DIR/semgrep.sarif"
+    echo "Da cap nhat docs/samples/vulnshop-sandbox/ (spotbugs.xml, semgrep.sarif)."
+fi

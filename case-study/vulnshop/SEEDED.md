@@ -43,10 +43,27 @@ liễu không" — và câu hỏi đó hoàn toàn chính đáng.
 | TP-13 | `CartService.averagePrice:25` | Chia cho 0 khi giỏ rỗng | **KHÔNG công cụ nào bắt** — chỉ test hỏng phát hiện |
 | TP-14 | `SecurityConstants.JWT_SIGNING_KEY:12` | Khoá bí mật nhúng trong mã | **KHÔNG công cụ nào bắt** (ngoài dự kiến) |
 | TP-15 | `SecurityConstants.DEFAULT_ADMIN_PASSWORD:19` | Mật khẩu mặc định trong mã | **KHÔNG công cụ nào bắt** (ngoài dự kiến) |
+| TP-16 | `UserService.displayNameOf:66` | NPE — cùng lỗi TP-11 nhưng kiểm null nằm trong cùng method | SpotBugs `NP_NULL_ON_SOME_PATH` **và** test hỏng trỏ đúng dòng |
 
 **Ba lỗi TP-11 → TP-13 là hạt nhân của đề tài.** Phân tích tĩnh im lặng hoàn toàn, chỉ có test
 hỏng kèm stack trace mới chứng minh được. Đây là bằng chứng thực nghiệm trực tiếp cho luận điểm
 "một nguồn bằng chứng là không đủ" — và nó tái hiện đúng phát hiện của spike tuần 1.
+
+**TP-16 gieo ở tuần 10-11, và nó là ca ĐỐI CHỨNG của TP-11.** Cùng một lỗi NullPointerException,
+khác đúng một điểm: phép kiểm null nằm **trong cùng method** với chỗ giải tham chiếu, nên SpotBugs
+nhìn thấy nhánh mà giá trị chắc chắn null vẫn đi tới lệnh gọi. Ở TP-11 việc trả về null nằm trong
+một method riêng (`findFirst`) và công cụ im lặng.
+
+Lý do gieo thêm nó là một **khiếm khuyết đo được của case study**, phát hiện khi hiện thực
+EvidenceLinker: trước TP-16, vulnshop **không có bất kỳ trường hợp nào** mà một cảnh báo tĩnh và
+một stack frame của test hỏng cùng trỏ về đúng một dòng. Hai frame production duy nhất của cả bộ
+test (`CartService:25`, `UserService:30`) đều nằm ở TP-11/TP-13 — đúng nhóm không công cụ nào bắt.
+Hệ quả: quan hệ `SUPPORTS` suy từ stack frame, **loại bằng chứng thuyết phục nhất** cho verdict
+`LIKELY_TRUE_POSITIVE`, không có mẫu nào để demo ở tuần 12-13 hay để đo ở tuần 15.
+
+Cặp TP-11 ↔ TP-16 còn có giá trị riêng cho báo cáo: hai lỗi **giống hệt nhau về bản chất**, chỉ
+khác cách viết, mà một cái bị bắt còn một cái không. Đó là minh hoạ gọn nhất cho việc phạm vi của
+phân tích tĩnh phụ thuộc vào hình dạng mã chứ không phụ thuộc mức nghiêm trọng của lỗi.
 
 **TP-14, TP-15 nằm ngoài dự kiến**: cả SpotBugs (kể cả find-sec-bugs) lẫn Semgrep `p/java` đều
 không báo hardcoded secret. Đây là **false negative có thật**, cần ghi vào phần hạn chế của công
@@ -102,7 +119,8 @@ Ba trạng thái bằng chứng đều phải xuất hiện được, nếu khô
 
 | Trạng thái | Ví dụ | Dùng để |
 |---|---|---|
-| Có cảnh báo + test hỏng trỏ đúng dòng | `UserService:30`, `PaginationHelper:21`, `CartService:25` | Bằng chứng `SUPPORTS` → `LIKELY_TRUE_POSITIVE` |
+| Có cảnh báo + test hỏng trỏ đúng dòng | `UserService.displayNameOf:66` (TP-16) | Bằng chứng `SUPPORTS` → `LIKELY_TRUE_POSITIVE` |
+| **Không** cảnh báo + test hỏng trỏ đúng dòng | `UserService:30`, `PaginationHelper:21`, `CartService:25` | Chỉ test bắt được — không có cảnh báo nào để `SUPPORTS` |
 | Có cảnh báo + test phủ và pass | `PasswordHasher:53`, `TextNormalizer:24` | Bằng chứng có thể `CONTRADICTS` |
 | Có cảnh báo + **không test nào phủ** | `SessionRegistry:24`, `ColorPicker:21`, `AuditLogger:24`, `AuthController:49` | → `INSUFFICIENT_EVIDENCE` |
 
@@ -123,11 +141,11 @@ chuỗi hằng, nhưng hàm vẫn sai — và test kế bên với chuỗi tạo
 
 ### Phát hiện ảnh hưởng tới thiết kế EvidenceLinker
 
-Chạy thật cho thấy chỉ **2 trong 5** test hỏng sinh ra stack trace trỏ về mã production:
+Chạy thật cho thấy chỉ **3 trong 6** test hỏng sinh ra stack trace trỏ về mã production:
 
 | Kiểu hỏng | Test | Stack trace trỏ về đâu |
 |---|---|---|
-| Ngoại lệ ném từ mã production | `CartServiceTest.averagePrice_gioRong`, `UserServiceTest.emailDomainOf_khongTonTai` | **Mã production** — `CartService:25`, `UserService:30` |
+| Ngoại lệ ném từ mã production | `CartServiceTest.averagePrice_gioRong`, `UserServiceTest.emailDomainOf_khongTonTai`, `UserServiceTest.displayNameOf_khongTonTai` | **Mã production** — `CartService:25`, `UserService:30`, `UserService:66` |
 | Assertion thất bại | 3 test còn lại | **Chỉ mã test** — không có frame nào của mã production |
 
 Lý do: `AssertionFailedError` được ném từ chính lớp test, nên chuỗi gọi không đi qua mã production
@@ -136,7 +154,18 @@ dù hàm đang kiểm thử có lỗi.
 Hệ quả cho tuần 3: **liên kết theo stack trace chỉ dùng được cho test hỏng kiểu ngoại lệ.** Với
 test hỏng kiểu assertion, phải liên kết bằng cách khác — theo độ phủ (dòng cảnh báo có nằm trong
 vùng test đó chạy qua không) hoặc theo quy ước tên (`FooTest` ↔ `Foo`). Nếu chỉ hiện thực liên
-kết theo stack trace thì sẽ mất 60% bằng chứng test hỏng mà không hề hay biết.
+kết theo stack trace thì sẽ mất phần lớn bằng chứng test hỏng mà không hề hay biết.
+
+**Bổ sung ở tuần 10-11 — có frame production là CHƯA ĐỦ.** Khi hiện thực EvidenceLinker tầng 3 mới
+lộ ra một điều kiện thứ hai mà bảng trên không nói: frame đó còn phải rơi vào **một dòng đã có
+cảnh báo**. Ở thời điểm tuần 8-9, cả hai frame production của vulnshop (`CartService:25`,
+`UserService:30`) đều thuộc TP-11/TP-13 — đúng nhóm **không công cụ nào bắt** — nên tầng 3 chạy
+đúng mà sinh **0 liên kết**.
+
+Nói cách khác, tỉ lệ dùng được của liên kết theo stack trace không phải 2/5 mà là **0/5**, cho tới
+khi TP-16 được gieo. Đây là lý do bảng ở mục 5 trước đây khai `UserService:30` là ca `SUPPORTS`
+trong khi mục 2 khai chính nó là "không công cụ nào bắt" — hai câu không thể cùng đúng, và mâu
+thuẫn đó chỉ lộ ra khi có mã thật đi đối chiếu.
 
 ---
 

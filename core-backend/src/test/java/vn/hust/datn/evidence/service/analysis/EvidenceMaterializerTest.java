@@ -91,18 +91,21 @@ class EvidenceMaterializerTest extends AbstractIntegrationTest {
         int tests = SampleArtifacts.expectedInt("tests", "total");
         int failedTests = SampleArtifacts.expectedInt("tests", "failed");
 
-        // 90 = 28 warning SpotBugs + 5 warning Semgrep + 33 test_case + 5 stack trace + 19 coverage.
+        // 94 = 29 warning SpotBugs + 5 warning Semgrep + 35 test_case + 6 stack trace + 19 coverage.
+        // Bốn số đầu đọc từ expected-analysis.json nên tự theo khi case study đổi; 19 là số
+        // sourcefile trong jacoco.xml, không có trong file đó.
         assertThat(result.evidenceCount()).isEqualTo(spotbugs + semgrep + tests + failedTests + 19);
         assertThat(jdbcTemplate.queryForObject(
                         "SELECT count(*) FROM evidence_record WHERE analysis_run_id = ?", Integer.class, runId))
                 .isEqualTo(result.evidenceCount());
 
         assertThat(countInRun("warning")).isEqualTo(spotbugs + semgrep);
-        assertThat(countInRun("warning_location")).isEqualTo(38);
+        // 40 = 35 vị trí SpotBugs (4 cảnh báo có nhiều vị trí) + 5 vị trí Semgrep.
+        assertThat(countInRun("warning_location")).isEqualTo(40);
         assertThat(countInRun("test_case")).isEqualTo(tests);
-        assertThat(countInRun("stack_frame")).isEqualTo(44);
+        assertThat(countInRun("stack_frame")).isEqualTo(49);
         assertThat(countInRun("coverage_line")).isEqualTo(SampleArtifacts.expectedInt("coverage", "total_lines"));
-        assertThat(countInRun("coverage_method")).isEqualTo(73);
+        assertThat(countInRun("coverage_method")).isEqualTo(74);
     }
 
     /**
@@ -230,12 +233,12 @@ class EvidenceMaterializerTest extends AbstractIntegrationTest {
 
         MaterializationResult result = materializer.materialize(runId, drafts, pathResolver);
 
-        // Nếu con số này bằng 0 thì hai assert dưới đây xanh một cách vô nghĩa: 2/5 test hỏng
-        // thật CÓ frame trỏ về mã production (CartService.java:25, UserService.java:30).
+        // Nếu con số này bằng 0 thì hai assert dưới đây xanh một cách vô nghĩa: 3/6 test hỏng
+        // thật CÓ frame trỏ về mã production (CartService:25, UserService:30, UserService:66).
         assertThat(frameCoTheDoiChieu).isPositive();
-        // 38 warning_location + 33 test_case + 19 coverage + frame thuộc dự án.
-        assertThat(result.locationCount()).isEqualTo(38 + 33 + 19 + (int) frameCoTheDoiChieu);
-        assertThat(result.locationCount()).isLessThan(38 + 33 + 19 + 44);
+        // 40 warning_location + 35 test_case + 19 coverage + frame thuộc dự án.
+        assertThat(result.locationCount()).isEqualTo(40 + 35 + 19 + (int) frameCoTheDoiChieu);
+        assertThat(result.locationCount()).isLessThan(40 + 35 + 19 + 49);
         assertThat(jdbcTemplate.queryForObject(
                         "SELECT count(*) FROM stack_frame f JOIN evidence_record e ON e.id = f.evidence_record_id "
                                 + "WHERE e.analysis_run_id = ? AND f.frame_kind = 'JDK' AND f.file_path IS NOT NULL",
@@ -293,10 +296,10 @@ class EvidenceMaterializerTest extends AbstractIntegrationTest {
                 """,
                 runId);
 
-        assertThat(phanBo.get("covered")).isEqualTo(77L);
+        assertThat(phanBo.get("covered")).isEqualTo(80L);
         assertThat(phanBo.get("partial")).isEqualTo(5L);
         assertThat(phanBo.get("missed")).isEqualTo(89L);
-        // "Được phủ" theo JaCoCo là ci > 0 = COVERED + PARTIAL. Ai "sửa" thành 77 thì đỏ ở đây.
+        // "Được phủ" theo JaCoCo là ci > 0 = COVERED + PARTIAL. Ai "sửa" thành 80 thì đỏ ở đây.
         assertThat((Long) phanBo.get("covered") + (Long) phanBo.get("partial"))
                 .isEqualTo((long) SampleArtifacts.expectedInt("coverage", "covered_lines"));
     }
@@ -313,11 +316,13 @@ class EvidenceMaterializerTest extends AbstractIntegrationTest {
 
         materializer.materialize(runId, drafts, pathResolver);
 
-        // 8/28 BugInstance thật thiếu @cweid. NULL và mảng RỖNG phải phân biệt được: "tool không
+        // 8/29 BugInstance thật thiếu @cweid. NULL và mảng RỖNG phải phân biệt được: "tool không
         // khai CWE" khác hẳn "tool khai một danh sách rỗng".
+        int tongCanhBao = SampleArtifacts.expectedInt("spotbugs", "findings")
+                + SampleArtifacts.expectedInt("semgrep", "findings");
         assertThat(thieuCweTrongDraft).isEqualTo(8);
         assertThat(countWarnings("w.cwe_ids IS NULL")).isEqualTo((int) thieuCweTrongDraft);
-        assertThat(countWarnings("array_length(w.cwe_ids, 1) >= 1")).isEqualTo(33 - (int) thieuCweTrongDraft);
+        assertThat(countWarnings("array_length(w.cwe_ids, 1) >= 1")).isEqualTo(tongCanhBao - (int) thieuCweTrongDraft);
         assertThat(countWarnings("w.cwe_ids = '{}'")).isZero();
         assertThat(jdbcTemplate.queryForObject(
                         "SELECT count(*) FROM warning w JOIN evidence_record e ON e.id = w.evidence_record_id "

@@ -81,7 +81,7 @@ class JacocoCoverageCollectorTest {
         long partial = lines.stream().filter(line -> line.status() == CoverageStatus.PARTIAL).count();
         long missed = lines.stream().filter(line -> line.status() == CoverageStatus.MISSED).count();
 
-        assertThat(covered).isEqualTo(77);
+        assertThat(covered).isEqualTo(80);
         assertThat(partial).isEqualTo(5);
         assertThat(missed).isEqualTo(89);
         assertThat(covered + partial).isEqualTo(SampleArtifacts.expectedInt("coverage", "covered_lines"));
@@ -93,7 +93,7 @@ class JacocoCoverageCollectorTest {
         int totalMethods =
                 drafts().stream().mapToInt(draft -> draft.methods().size()).sum();
 
-        assertThat(totalMethods).isEqualTo(73);
+        assertThat(totalMethods).isEqualTo(74);
         CoverageDraft orderStatusChecker = drafts().stream()
                 .filter(draft -> "OrderStatusChecker.java".equals(draft.sourceFileName()))
                 .findFirst()

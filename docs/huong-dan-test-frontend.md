@@ -37,7 +37,7 @@ Phân tích **tĩnh** = đọc mã nguồn mà không chạy nó. Hai công cụ
 - **SpotBugs** (kèm plugin **find-sec-bugs**) — đọc bytecode Java, tìm bug và lỗ hổng bảo mật
 - **Semgrep** — khớp mẫu trên mã nguồn theo bộ rule đã vendor trong `case-study/semgrep-rules/`
 
-Trên vulnshop chúng cho ra **33 cảnh báo** (28 + 5). Mỗi cảnh báo gồm: mã luật (`ruleId`), vị trí
+Trên vulnshop chúng cho ra **34 cảnh báo** (29 SpotBugs + 5 Semgrep). Mỗi cảnh báo gồm: mã luật (`ruleId`), vị trí
 `file:dòng`, và một câu tóm tắt. Ví dụ thật: `WEAK_MESSAGE_DIGEST_MD5` ở `PasswordHasher.java` —
 mật khẩu băm bằng MD5.
 
@@ -242,17 +242,17 @@ curl -X POST "http://localhost:8080/api/v1/snapshots/$SNAPSHOT_ID/analysis-runs"
 
 </details>
 
-**Kỳ vọng trong JSON trả về**: `"status":"SUCCEEDED"` · `"findingCount":33` ·
+**Kỳ vọng trong JSON trả về**: `"status":"SUCCEEDED"` · `"findingCount":34` ·
 `"unresolvedLocationCount":0`.
 
-`findingCount` **chỉ đếm cảnh báo tĩnh**, không đếm 90 bằng chứng (33 cảnh báo + 33 kết quả test +
-5 stack trace + 19 độ phủ) — cố ý như vậy, xem `MaterializationResult`.
+`findingCount` **chỉ đếm cảnh báo tĩnh**, không đếm 124 bằng chứng (34 cảnh báo + 35 kết quả test +
+6 stack trace + 19 độ phủ + 30 ngữ cảnh mã nguồn) — cố ý như vậy, xem `MaterializationResult`.
 
 ---
 
 ## 5. Sáu điều cần nhìn tận mắt
 
-Quay lại trình duyệt, mở lại trang snapshot. Giờ góc trên phải có link **"Cảnh báo (33)"**.
+Quay lại trình duyệt, mở lại trang snapshot. Giờ góc trên phải có link **"Cảnh báo (34)"**.
 
 ### ✅ 1. Màu severity thật sự hiện ra
 
@@ -261,7 +261,7 @@ Bấm vào link đó. Bảng cảnh báo phải có **nhãn nhiều màu khác n
 **Hỏng thì trông thế nào**: nhãn vẫn hiện đủ chữ `HIGH`/`MEDIUM`, nhưng **tất cả cùng một màu**
 hoặc không nền màu. Nghĩa là Tailwind không sinh ra class — 88 test vẫn xanh vì chúng đọc chữ.
 
-Đồng thời kiểm phần đầu trang: `33 cảnh báo tĩnh` và `.../… vị trí đối chiếu được với mã nguồn`,
+Đồng thời kiểm phần đầu trang: `34 cảnh báo tĩnh` và `.../… vị trí đối chiếu được với mã nguồn`,
 con số sau phải **bằng nhau** (0 vị trí hỏng).
 
 ### ✅ 2. Bấm một dòng thì cuộn tới đúng dòng

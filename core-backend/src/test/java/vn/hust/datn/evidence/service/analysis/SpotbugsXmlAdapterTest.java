@@ -36,7 +36,7 @@ class SpotbugsXmlAdapterTest {
     /**
      * Bẫy số một của cả đợt parser: {@code getElementsByTagName} trong Java là ĐỆ QUY, mà
      * {@code <SourceLine>} xuất hiện ở ba tầng lồng nhau (trong Class, trong Method, và con trực
-     * tiếp). Dùng nhầm sẽ ra 90 vị trí thay vì 33 — và không có gì báo lỗi.
+     * tiếp). Dùng nhầm sẽ ra gần ba lần số vị trí thật — và không có gì báo lỗi.
      */
     @Test
     void parse_sourceLineLongBaTang_chiLayConTrucTiep() {
@@ -44,17 +44,19 @@ class SpotbugsXmlAdapterTest {
                 .mapToInt(draft -> draft.locations().size())
                 .sum();
 
-        assertThat(totalLocations).isEqualTo(33);
+        assertThat(totalLocations).isEqualTo(35);
     }
 
-    /** 25/28 có đúng 1 vị trí, 3/28 có nhiều hơn — không nhét được vào một hàng 1:1. */
+    /** 25/29 có đúng 1 vị trí, 4/29 có nhiều hơn — không nhét được vào một hàng 1:1. */
     @Test
-    void parse_baBugCoNhieuViTri_sinhDuWarningLocation() {
+    void parse_bonBugCoNhieuViTri_sinhDuWarningLocation() {
         List<WarningDraft> multi = adapter.parse(artifact).stream()
                 .filter(draft -> draft.locations().size() > 1)
                 .toList();
 
-        assertThat(multi).hasSize(3);
+        // Cai thu tu la TP-16 (NP_NULL_ON_SOME_PATH): SpotBugs khai ca dong gan null lan dong
+        // giai tham chieu, nen mot canh bao ra hai vi tri.
+        assertThat(multi).hasSize(4);
 
         WarningDraft hashEquals = multi.stream()
                 .filter(draft -> "UNSAFE_HASH_EQUALS".equals(draft.ruleId()))
@@ -93,8 +95,9 @@ class SpotbugsXmlAdapterTest {
         assertThat(severityOf(drafts, "2")).containsOnly(WarningSeverity.MEDIUM);
         assertThat(severityOf(drafts, "3")).containsOnly(WarningSeverity.LOW);
 
-        // Phân phối thật của vulnshop, khớp <FindBugsSummary priority_1='5' priority_2='16' priority_3='7'>.
-        assertThat(severityOf(drafts, "1")).hasSize(5);
+        // Phân phối thật của vulnshop, khớp <FindBugsSummary priority_1='6' priority_2='16' priority_3='7'>.
+        // priority_1 lên 6 ở tuần 10-11: TP-16 (NP_NULL_ON_SOME_PATH) là cảnh báo mức cao.
+        assertThat(severityOf(drafts, "1")).hasSize(6);
         assertThat(severityOf(drafts, "2")).hasSize(16);
         assertThat(severityOf(drafts, "3")).hasSize(7);
     }
@@ -133,8 +136,8 @@ class SpotbugsXmlAdapterTest {
                 .toList();
 
         assertThat(roles).contains("SOURCE_LINE_KNOWN_NULL", "SOURCE_LINE_OBLIGATION_CREATED");
-        // 27/33 vị trí thật không có role.
-        assertThat(roles).hasSize(6);
+        // 27/35 vị trí thật không có role.
+        assertThat(roles).hasSize(8);
     }
 
     /**
