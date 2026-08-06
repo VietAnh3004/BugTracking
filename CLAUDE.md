@@ -350,6 +350,34 @@ assert "ném đúng exception" ở lần gọi đầu sẽ xanh giả. Sửa b�
 Bài học chung: **ghi-rồi-ném trong một method `@Transactional` luôn cần xét lại rollback rule**,
 không chỉ riêng refresh token.
 
+**`@Transactional(REQUIRES_NEW)` NUỐT MỌI UPDATE chưa commit của transaction bên ngoài.** Gặp thật
+ở tuần 10-11 và suýt vô hiệu hoá cả một cơ chế chống hỏng-im-lặng: `AnalysisRunPersistenceService
+.finalizeRun` là `REQUIRES_NEW`, nên nó **treo** transaction hiện tại rồi **đọc lại** hàng
+`analysis_run` trong một transaction mới. Một `UPDATE analysis_run SET link_count = ...` chưa commit
+từ bên ngoài là **vô hình** với nó, và dirty-check của Hibernate ghi đè cả hàng bằng giá trị cũ —
+bộ đếm về 0 trong im lặng, mọi guard "0 liên kết = lỗi" bị vô hiệu trong khi nhìn vẫn như đang chạy.
+Cách đúng: số đo đi **ngược lên** qua một record kết cục (`RunOutcome.withLinks`) để chính
+`finalizeRun` ghi. Cùng họ bài học với `@Transactional(noRollbackFor=...)` ở trên: **ranh giới
+transaction là chỗ dữ liệu biến mất mà không ai báo.**
+
+**JavaParser: PHẢI khai `ParserConfiguration.LanguageLevel` tường minh.** Mặc định thấp hơn Java 21
+sẽ parse hỏng `record` / `sealed` / pattern matching trong `switch`, và hỏng theo kiểu trả
+`ParseResult` không thành công cho **CẢ FILE** — mất sạch ngữ cảnh mã của file đó trong khi pipeline
+vẫn báo thành công. Dùng `new JavaParser(config)` chứ đừng dùng `StaticJavaParser`: nó là singleton
+toàn cục, cấu hình bị lớp khác đổi là hỏng ngầm.
+
+**Cột `vector` của pgvector cần ép kiểu `?::vector` trong JdbcTemplate**, y hệt `?::jsonb`. Thiếu ép
+kiểu là lỗi **runtime**, không phải lỗi biên dịch. Ngoài ra `vector` **không khai số chiều** thì
+KHÔNG tạo được index HNSW/IVFFlat (`ERROR: column does not have dimensions`) — đã đo trên chính
+Postgres của dự án, xem ADR 0009.
+
+**Suy tên lớp production từ tên lớp test: trả DANH SÁCH ứng viên, đừng đoán một giá trị.** Gặp thật:
+`UserRepositoryIntegrationTest` bỏ hậu tố `Test` ra `UserRepositoryIntegration` — một lớp không tồn
+tại — nên **toàn bộ bằng chứng kiểm thử của cạm bẫy trung tâm (`findByUsername`) biến mất trong im
+lặng**. Tên lớp test không đủ để biết ranh giới giữa tên lớp production và mô tả phạm vi
+(`Integration`/`Unit`/`E2E`/`Slice`); chỉ dữ liệu mới trả lời được lớp nào thật sự tồn tại. Xem
+`TestClassNameConvention.productionClassCandidates`.
+
 **Test class đặt tên `*IT.java` (hậu tố "Integration Test" kiểu Maven Failsafe) sẽ KHÔNG BAO GIỜ
 CHẠY trong repo này.** `pom.xml` chỉ cấu hình `maven-surefire-plugin` (bind vào phase `test`, mặc
 định chỉ include `**/Test*.java, **/*Test.java, **/*Tests.java, **/*TestCase.java`) — không có

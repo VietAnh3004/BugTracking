@@ -117,6 +117,14 @@ tuần 5-7. Nhân đôi taxonomy lỗi `binary-file`/`file-content-not-stored` l
    lớp từ `symbol` của CODE_CONTEXT bao quanh. Không có bước này thì mọi cảnh báo Semgrep tự động
    rơi khỏi tầng 2.
 
+5. **Suy tên lớp production phải trả DANH SÁCH ứng viên.** Phát hiện khi viết test trên dữ liệu
+   thật: `UserRepositoryIntegrationTest` bỏ hậu tố `Test` ra `UserRepositoryIntegration` — một lớp
+   không tồn tại — nên **toàn bộ bằng chứng kiểm thử của `findByUsername` biến mất trong im lặng**,
+   đúng cạm bẫy trung tâm mà case study dựng lên. Tên lớp test không đủ để biết ranh giới giữa tên
+   lớp production và mô tả phạm vi (`Integration`/`Unit`/`E2E`/`Slice`); chỉ *dữ liệu* mới trả lời
+   được lớp nào thật sự tồn tại và có cảnh báo. Nên sinh nhiều ứng viên, xếp cụ thể trước, và dừng
+   ở cái đầu tiên khớp.
+
 ## Hệ quả
 
 - Tỉ lệ liên kết yếu đọc thẳng từ `analysis_run.link_counts_by_method`, không phải tính lại bằng

@@ -114,6 +114,14 @@ Bốn điều dễ làm sai:
   `rationale` mang sẵn câu cảnh báo — đặt vào chính dữ liệu để nó đi theo bằng chứng tới mọi nơi.
 - **Bộ đếm liên kết đi qua `RunOutcome`** ở đường ingest, KHÔNG do linker tự UPDATE `analysis_run`:
   `finalizeRun` là `REQUIRES_NEW` nên nó treo transaction ngoài và sẽ ghi đè bằng giá trị cũ.
+- **Suy tên lớp production trả DANH SÁCH ứng viên**, không đoán một giá trị. `FooIntegrationTest`
+  có thể là test của `FooIntegration` hoặc test tích hợp của `Foo`, và chỉ dữ liệu mới trả lời
+  được. Đoán sai là mất bằng chứng mà không có gì báo.
+
+Ba bộ đếm `link_count` · `code_context_count` · `unlinked_warning_count` ra tới `AnalysisRunResponse`
+và hiện trên màn hình cảnh báo. Đó là phần thứ ba của cơ chế chống hỏng-im-lặng — hai phần kia là
+ràng buộc `ck_run_links_not_silently_empty` ở tầng DB và log WARN. Thiếu phần hiển thị thì muốn biết
+một run có 30/34 cảnh báo trơ trọi phải mở DB.
 
 `POST /api/v1/analysis-runs/{id}/links/rebuild` tính lại liên kết mà không cần chạy lại analyzer.
 Ranh giới: nó tính lại **cách khớp**, không tính lại **kết quả parse** — sửa `CodeContextExtractor`

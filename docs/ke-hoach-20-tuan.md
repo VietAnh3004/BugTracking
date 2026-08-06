@@ -369,7 +369,7 @@ từ 15 file · **123 liên kết, 0 cảnh báo trơ trọi**.
 Tỉ lệ liên kết chỉ dựa vào quy ước tên: **10/123 ≈ 8%** — con số tuần 15 phải báo cáo, nay đọc thẳng
 từ `analysis_run.link_counts_by_method` thay vì tính lại bằng SQL ad-hoc.
 
-364 test backend · 108 test frontend (14 file).
+384 test backend · 109 test frontend (14 file).
 
 #### Bốn chỗ dữ liệu thật buộc đi khác kế hoạch
 
@@ -380,6 +380,24 @@ từ `analysis_run.link_counts_by_method` thay vì tính lại bằng SQL ad-hoc
 2. **Tầng 2 mới là tầng gánh chính**, không phải phương án lùi: 50/123 liên kết đến từ nó.
 3. **`CONTRADICTS` nhiều gấp hơn 5 lần `SUPPORTS`.** Xem mục rủi ro dưới đây.
 4. **Semgrep không khai tên lớp** nên tầng 2 phải lấy từ `symbol` của CODE_CONTEXT bao quanh.
+5. **Quy ước tên phải sinh DANH SÁCH ứng viên.** `UserRepositoryIntegrationTest` bỏ hậu tố ra
+   `UserRepositoryIntegration` — lớp không tồn tại — nên bằng chứng kiểm thử của `findByUsername`,
+   cạm bẫy trung tâm của case study, biến mất trong im lặng. Chỉ lộ ra khi viết test trên dữ liệu
+   thật.
+
+#### Rà soát cuối tuần 10-11 — ba việc phải làm nốt
+
+Rà bằng cách đối chiếu kế hoạch với mã nguồn, không dựa vào trí nhớ:
+
+| Phát hiện | Xử lý |
+|---|---|
+| Bộ đếm linker có trong DB nhưng **không có trong `AnalysisRunResponse`** — cơ chế chống hỏng-im-lặng mới có hai phần ba, muốn biết 30/34 cảnh báo trơ trọi phải mở DB | Đưa ra API và hiện trên màn hình cảnh báo, cạnh tỉ lệ vị trí đối chiếu được |
+| `getCodeContext` vẫn còn nhánh fallback theo vị trí — trả item với `relation`/`method` NULL, **che một linker hỏng bằng dữ liệu trông hợp lý**. Quyết định bỏ đã ghi trong kế hoạch nhưng chưa thực thi | Bỏ hẳn; không có liên kết ⇒ trả `[]` và để bộ đếm nói ra vì sao |
+| Không test nào khoá số liệu linker trên dữ liệu thật, cũng không test nào chứng minh 5 tool đã hết rỗng | `EvidenceLinkerVulnshopTest` (9 ca) + `TestClassNameConventionTest` (10 ca) + ca mới trong `EvidenceToolControllerTest` |
+
+Chính test trên dữ liệu thật lôi ra lỗi số 5 ở trên, và lôi ra hai assertion ngây thơ của chính nó
+(một cái giả định mọi ngữ cảnh của cảnh báo ở `PasswordHasher` đều thuộc file đó — sai vì cảnh báo
+nhiều vị trí; một cái chạy `SELECT 1` rồi so hai số bằng nhau nên luôn xanh).
 
 #### Một khiếm khuyết của case study, đã sửa
 
