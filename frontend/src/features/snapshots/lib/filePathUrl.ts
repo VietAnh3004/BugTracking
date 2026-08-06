@@ -31,14 +31,59 @@ export function fromRouteParam(splat: string | undefined): string {
   return splat ?? '';
 }
 
-/** Số dòng trong hash URL: `#L42` → 42. Trả `null` nếu không có hoặc không hợp lệ. */
-export function parseLineHash(hash: string): number | null {
-  const match = /^#L(\d+)$/.exec(hash);
-  const digits = match?.[1];
-  if (digits === undefined) {
+/** Một khoảng dòng, 1-based và bao gồm cả hai đầu — cùng quy ước với `evidence_record`. */
+export interface LineRange {
+  fromLine: number;
+  toLine: number;
+}
+
+/**
+ * Khoảng dòng trong hash URL: `#L42` → {42, 42}, `#L40-L48` → {40, 48}.
+ *
+ * Trả `null` nếu không có hoặc không hợp lệ. Cú pháp khoảng lấy theo GitHub để URL vẫn đọc được
+ * bằng mắt và người dùng đoán được cách sửa tay.
+ *
+ * Dạng `#L42` cũ vẫn chạy y nguyên: mọi URL đã chia sẻ trước tuần 10-11 không hỏng.
+ */
+export function parseLineHash(hash: string): LineRange | null {
+  const match = /^#L(\d+)(?:-L(\d+))?$/.exec(hash);
+  if (match === null) {
     return null;
   }
-  const line = Number.parseInt(digits, 10);
+  const fromDigits = match[1];
+  if (fromDigits === undefined) {
+    return null;
+  }
+  const fromLine = Number.parseInt(fromDigits, 10);
   // Dòng đánh số từ 1 (khớp `evidence_record.start_line`), nên `#L0` là vô nghĩa.
-  return line >= 1 ? line : null;
+  if (fromLine < 1) {
+    return null;
+  }
+  const toDigits = match[2];
+  if (toDigits === undefined) {
+    return { fromLine, toLine: fromLine };
+  }
+  const toLine = Number.parseInt(toDigits, 10);
+  // Khoảng ngược (`#L48-L40`) là lỗi của người viết URL, không phải một khoảng rỗng cần suy diễn.
+  return toLine >= fromLine ? { fromLine, toLine } : null;
+}
+
+/**
+ * Chiều ngược lại: dựng hash từ khoảng dòng.
+ *
+ * MỌI nơi dựng hash phải đi qua đây, không ghép chuỗi tay. Trước tuần 10-11 chỉ có `WarningTable`
+ * tự ghép `#L${startLine}`; từ nay còn thẻ ngữ cảnh mã, frame stack trace, và citation của chatbot
+ * ở tuần 12-13 — mỗi chỗ tự ghép là mỗi chỗ có thể sai một kiểu khác nhau.
+ *
+ * Một dòng thì sinh `#L42` chứ không phải `#L42-L42`: URL ngắn hơn và tương thích với mọi link đã
+ * chia sẻ.
+ */
+export function toLineHash(startLine?: number | null, endLine?: number | null): string {
+  if (startLine === undefined || startLine === null || startLine < 1) {
+    return '';
+  }
+  if (endLine === undefined || endLine === null || endLine <= startLine) {
+    return `#L${startLine}`;
+  }
+  return `#L${startLine}-L${endLine}`;
 }

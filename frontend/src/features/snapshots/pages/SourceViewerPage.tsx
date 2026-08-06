@@ -29,7 +29,9 @@ export function SourceViewerPage() {
   const path = fromRouteParam(params['*']);
 
   const { data, isPending, isError, error } = useFileContent(snapshotId, path);
-  const targetLine = useLineTarget(data !== undefined);
+  // Khoảng, không phải một dòng: một bằng chứng thường trải trên cả method (`#L37-L44`), và tô
+  // đúng một dòng trong đó thì người đọc không thấy được phạm vi mà cảnh báo nói tới.
+  const targetRange = useLineTarget(data !== undefined);
 
   if (path === '') {
     return <p className="text-ink-muted">Chọn một file ở cây bên trái để xem nội dung.</p>;
@@ -66,7 +68,11 @@ export function SourceViewerPage() {
               key={lineNumber}
               lineNumber={lineNumber}
               text={text}
-              highlighted={lineNumber === targetLine}
+              highlighted={
+                targetRange !== null &&
+                lineNumber >= targetRange.fromLine &&
+                lineNumber <= targetRange.toLine
+              }
             />
           );
         })}

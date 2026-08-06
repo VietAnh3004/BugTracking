@@ -106,6 +106,55 @@ describe('SourceViewerPage', () => {
     expect(highlighted?.className).toContain('bg-line-highlight');
   });
 
+  it('làm nổi CẢ KHOẢNG dòng được trỏ bởi #L41-L43', async () => {
+    readFileContentMock.mockResolvedValue({
+      path: 'a.txt',
+      fromLine: 40,
+      toLine: 44,
+      totalLines: 100,
+      truncated: true,
+      lines: ['dong 40', 'dong 41', 'dong 42', 'dong 43', 'dong 44'],
+    });
+
+    const { container } = renderViewer('/snapshots/s1/files/a.txt#L41-L43');
+
+    await screen.findByText('dong 42');
+    for (const line of [41, 42, 43]) {
+      expect(container.querySelector(`#L${String(line)}`)?.className).toContain(
+        'bg-line-highlight',
+      );
+    }
+    // Hai dòng kề ngoài khoảng KHÔNG được tô — nếu không thì "vùng bằng chứng" mất hết nghĩa.
+    expect(container.querySelector('#L40')?.className).not.toContain('bg-line-highlight');
+    expect(container.querySelector('#L44')?.className).not.toContain('bg-line-highlight');
+  });
+
+  /**
+   * Bề mặt XSS THẬT của dự án, không phải rủi ro lý thuyết: source viewer render nội dung của file
+   * do người dùng upload, và một repo độc hại chứa file `.html` với payload là kịch bản hoàn toàn
+   * hiện thực trong chính luồng nghiệp vụ (ADR 0006).
+   *
+   * React tự escape khi render text node, nên test này canh việc KHÔNG ai mở cửa bằng
+   * `dangerouslySetInnerHTML` — kể cả khi sau này thêm tô màu cú pháp qua prop `render` của
+   * `CodeLine`.
+   */
+  it('render nội dung file như TEXT, không diễn giải thành HTML', async () => {
+    readFileContentMock.mockResolvedValue({
+      path: 'evil.html',
+      fromLine: 1,
+      toLine: 2,
+      totalLines: 2,
+      truncated: false,
+      lines: ['<img src=x onerror="alert(1)">', '<script>alert(2)</script>'],
+    });
+
+    const { container } = renderViewer('/snapshots/s1/files/evil.html');
+
+    expect(await screen.findByText('<img src=x onerror="alert(1)">')).toBeInTheDocument();
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.querySelector('script')).toBeNull();
+  });
+
   it('file nhị phân hiện thông báo thay vì rác đã ép sang UTF-8', async () => {
     readFileContentMock.mockRejectedValue(
       new ApiError(415, { type: 'https://datn.hust.vn/problems/binary-file' }),

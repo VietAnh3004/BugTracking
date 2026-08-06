@@ -11,7 +11,7 @@
 
 import { Link } from 'react-router-dom';
 
-import { toFilePathUrl } from '@/features/snapshots/lib/filePathUrl';
+import { toFilePathUrl, toLineHash } from '@/features/snapshots/lib/filePathUrl';
 import { SeverityBadge } from '@/features/warnings/components/SeverityBadge';
 
 import type { Warning } from '@/features/warnings/api/warningApi';
@@ -85,8 +85,12 @@ function WarningLocation({ warning, snapshotId }: { warning: Warning; snapshotId
   }
 
   // `toFilePathUrl` mã hoá TỪNG đoạn: `encodeURIComponent` cả chuỗi biến `/` thành `%2F` và phá
-  // splat route `files/*`. Hash `#L42` để `useLineTarget` cuộn tới đúng dòng.
-  const hash = warning.startLine === undefined ? '' : `#L${String(warning.startLine)}`;
+  // splat route `files/*`. Hash để `useLineTarget` cuộn tới đúng dòng.
+  //
+  // Dựng hash qua `toLineHash` chứ không ghép chuỗi tay: từ tuần 10-11 còn ba chỗ khác cùng dựng
+  // hash (thẻ ngữ cảnh mã, frame stack trace, citation của chatbot ở tuần 12-13), và mỗi chỗ tự
+  // ghép là mỗi chỗ có thể sai một kiểu khác nhau.
+  const hash = toLineHash(warning.startLine, warning.endLine);
   const suffix = warning.startLine === undefined ? '' : `:${String(warning.startLine)}`;
 
   // Tách thư mục khỏi tên file để dòng ngắt ở chỗ có nghĩa. Đường dẫn Java dài tới mức luôn phải

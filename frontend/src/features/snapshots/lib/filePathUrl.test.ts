@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromRouteParam, parseLineHash, toFilePathUrl } from '@/features/snapshots/lib/filePathUrl';
+import {
+  fromRouteParam,
+  parseLineHash,
+  toFilePathUrl,
+  toLineHash,
+} from '@/features/snapshots/lib/filePathUrl';
 
 describe('toFilePathUrl', () => {
   it('giữ nguyên dấu / phân tách thư mục', () => {
@@ -63,8 +68,17 @@ describe('round-trip', () => {
 });
 
 describe('parseLineHash', () => {
-  it('đọc được số dòng từ #L42', () => {
-    expect(parseLineHash('#L42')).toBe(42);
+  /** Dạng cũ phải chạy y nguyên: mọi URL đã chia sẻ trước tuần 10-11 không được hỏng. */
+  it('#L42 cho khoảng một dòng', () => {
+    expect(parseLineHash('#L42')).toEqual({ fromLine: 42, toLine: 42 });
+  });
+
+  it('đọc được khoảng dòng từ #L40-L48', () => {
+    expect(parseLineHash('#L40-L48')).toEqual({ fromLine: 40, toLine: 48 });
+  });
+
+  it('khoảng một dòng viết tường minh vẫn hợp lệ', () => {
+    expect(parseLineHash('#L7-L7')).toEqual({ fromLine: 7, toLine: 7 });
   });
 
   it('trả null khi không có hash', () => {
@@ -75,9 +89,48 @@ describe('parseLineHash', () => {
     expect(parseLineHash('#section-2')).toBeNull();
     expect(parseLineHash('#L')).toBeNull();
     expect(parseLineHash('#L4x')).toBeNull();
+    expect(parseLineHash('#L10-')).toBeNull();
+    expect(parseLineHash('#L10-20')).toBeNull();
   });
 
   it('trả null với #L0 vì dòng đánh số từ 1', () => {
     expect(parseLineHash('#L0')).toBeNull();
+  });
+
+  /** Khoảng ngược là lỗi của người viết URL, không phải một khoảng rỗng cần suy diễn. */
+  it('trả null với khoảng ngược #L48-L40', () => {
+    expect(parseLineHash('#L48-L40')).toBeNull();
+  });
+});
+
+describe('toLineHash', () => {
+  it('một dòng sinh #L42 chứ không phải #L42-L42', () => {
+    expect(toLineHash(42)).toBe('#L42');
+    expect(toLineHash(42, 42)).toBe('#L42');
+  });
+
+  it('khoảng nhiều dòng sinh #L40-L48', () => {
+    expect(toLineHash(40, 48)).toBe('#L40-L48');
+  });
+
+  it('không có dòng thì không sinh hash', () => {
+    expect(toLineHash(undefined)).toBe('');
+    expect(toLineHash(null)).toBe('');
+    expect(toLineHash(0)).toBe('');
+  });
+
+  /** endLine nhỏ hơn startLine là dữ liệu hỏng — không được sinh ra một URL mà parse lại thành null. */
+  it('endLine nhỏ hơn startLine thì rơi về một dòng', () => {
+    expect(toLineHash(40, 30)).toBe('#L40');
+  });
+
+  it('đi vòng qua parseLineHash cho lại đúng khoảng ban đầu', () => {
+    for (const [from, to] of [
+      [42, 42],
+      [40, 48],
+      [1, 2],
+    ] as const) {
+      expect(parseLineHash(toLineHash(from, to))).toEqual({ fromLine: from, toLine: to });
+    }
   });
 });
