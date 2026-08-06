@@ -25,6 +25,15 @@ public record MaterializationResult(
         Map<EvidenceType, Integer> countByType) {
 
     /**
+     * Số evidence {@link EvidenceType#CODE_CONTEXT} — tách ra vì nó là mẫu số của ràng buộc
+     * {@code ck_run_links_not_silently_empty}: có context mà 0 liên kết nghĩa là tầng 1 của
+     * EvidenceLinker hỏng, còn không có context nào thì 0 liên kết là hợp lệ.
+     */
+    public int codeContextCount() {
+        return countByType.getOrDefault(EvidenceType.CODE_CONTEXT, 0);
+    }
+
+    /**
      * Mọi vị trí đều hỏng. {@code ck_run_paths_not_all_unresolved} sẽ từ chối một run
      * {@code SUCCEEDED} ở trạng thái này — kiểm ở đây để báo lỗi có nghĩa thay vì để ràng buộc DB
      * nổ ra lúc flush.

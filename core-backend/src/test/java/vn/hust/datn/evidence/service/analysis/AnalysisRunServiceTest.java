@@ -51,7 +51,7 @@ class AnalysisRunServiceTest extends AbstractIntegrationTest {
         User owner = fixtures.user("analysis-" + UUID.randomUUID() + "@test.local");
         Project project = fixtures.project("analysis-" + UUID.randomUUID(), owner);
         ownerId = owner.getId();
-        snapshot = fixtures.readySnapshotWithFiles(project, SampleArtifacts.vulnshopSourcePaths());
+        snapshot = fixtures.readySnapshotWithContent(project, SampleArtifacts.vulnshopSourceContents());
     }
 
     private NamedArtifact surefireZip() {
@@ -92,11 +92,23 @@ class AnalysisRunServiceTest extends AbstractIntegrationTest {
         assertThat(run.getFindingCount()).isEqualTo(canhBaoTinh);
         assertThat(run.getErrorMessage()).isNull();
         assertThat(run.getFinishedAt()).isNotNull();
-        assertThat(countEvidence(run.getId())).isEqualTo(90);
+
+        // 90 evidence TỪ ARTIFACT (28 SpotBugs + 5 Semgrep + 33 test + 5 stack trace + 19 coverage).
+        // Đếm riêng CODE_CONTEXT vì nó không đến từ artifact mà từ JavaParser đọc mã nguồn — trộn
+        // vào một con số thì mọi lần chỉnh heuristic của extractor lại làm đỏ một test vốn canh
+        // parser artifact.
+        assertThat(countEvidence(run.getId()) - run.getCodeContextCount()).isEqualTo(90);
 
         // Tiêu chí nghiệm thu của kế hoạch: 0 vị trí hỏng trên cây nguồn thật.
         assertThat(run.getLocationCount()).isPositive();
         assertThat(run.getUnresolvedLocationCount()).isZero();
+
+        // Assert theo TÍNH CHẤT, không theo số tuyệt đối: heuristic của JavaParser và của linker
+        // sẽ còn sửa, nhưng "có cảnh báo đối chiếu được thì phải có ngữ cảnh và phải có liên kết"
+        // là bất biến — chính là thứ ck_run_links_not_silently_empty ép ở tầng DB.
+        assertThat(run.getCodeContextCount()).isPositive();
+        assertThat(run.getLinkCount()).isPositive();
+        assertThat(run.getLinkCountsByMethod()).isNotEmpty();
     }
 
     /** JaCoCo không khai phiên bản — khoá vắng mặt là bình thường, không phải thiếu dữ liệu. */
@@ -124,8 +136,12 @@ class AnalysisRunServiceTest extends AbstractIntegrationTest {
                 "SELECT source FROM evidence_record WHERE analysis_run_id = ? ORDER BY seq_in_run",
                 String.class,
                 run.getId());
-        assertThat(nguon).startsWith("spotbugs").endsWith("jacoco");
-        assertThat(nguon.stream().distinct()).containsExactly("spotbugs", "semgrep", "surefire", "jacoco");
+        // 'parser' đứng cuối vì CODE_CONTEXT được nối vào SAU cùng, khi đã biết vị trí nào đối
+        // chiếu được — nó không phải một artifact người dùng gửi lên nên không nằm trong thứ tự
+        // nạp chuẩn của AnalyzerRegistry.
+        assertThat(nguon).startsWith("spotbugs").endsWith("parser");
+        assertThat(nguon.stream().distinct())
+                .containsExactly("spotbugs", "semgrep", "surefire", "jacoco", "parser");
     }
 
     @Test

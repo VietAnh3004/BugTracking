@@ -25,6 +25,8 @@ import vn.hust.datn.evidence.service.analysis.sandbox.SandboxRunner;
 import vn.hust.datn.evidence.service.analysis.sandbox.SanityVerdict;
 import vn.hust.datn.evidence.service.analysis.sandbox.SourceTree;
 import vn.hust.datn.evidence.service.analysis.sandbox.SourceTreeBuilder;
+import vn.hust.datn.evidence.service.linker.EvidenceLinker;
+import vn.hust.datn.evidence.service.linker.LinkResult;
 
 /**
  * Điều phối một lần phân tích: nhận dạng artifact → parse → materialize → quyết định trạng thái.
@@ -61,6 +63,8 @@ public class AnalysisRunService {
     private final SnapshotFileRepository snapshotFileRepository;
     private final AnalyzerRegistry registry;
     private final SurefireArchiveReader surefireArchiveReader;
+    private final CodeContextCollector codeContextCollector;
+    private final EvidenceLinker evidenceLinker;
     private final EvidenceMaterializer materializer;
     private final AnalysisRunPersistenceService persistence;
     private final SandboxRunner sandboxRunner;
@@ -73,6 +77,8 @@ public class AnalysisRunService {
             SnapshotFileRepository snapshotFileRepository,
             AnalyzerRegistry registry,
             SurefireArchiveReader surefireArchiveReader,
+            CodeContextCollector codeContextCollector,
+            EvidenceLinker evidenceLinker,
             EvidenceMaterializer materializer,
             AnalysisRunPersistenceService persistence,
             SandboxRunner sandboxRunner,
@@ -83,6 +89,8 @@ public class AnalysisRunService {
         this.snapshotFileRepository = snapshotFileRepository;
         this.registry = registry;
         this.surefireArchiveReader = surefireArchiveReader;
+        this.codeContextCollector = codeContextCollector;
+        this.evidenceLinker = evidenceLinker;
         this.materializer = materializer;
         this.persistence = persistence;
         this.sandboxRunner = sandboxRunner;
@@ -251,18 +259,33 @@ public class AnalysisRunService {
 
         SnapshotPathResolver pathResolver =
                 SnapshotPathResolver.of(snapshotFileRepository.findFilePathsBySnapshotId(snapshotId));
+
+        // CODE_CONTEXT sinh TRƯỚC materialize và nối vào chính danh sách draft — materializer là
+        // nơi duy nhất cấp seq_in_run, và seq_in_run sinh ra short_id mà LLM trích dẫn. Xem
+        // Javadoc CodeContextDraft.
+        CodeContextCollector.Result contexts = codeContextCollector.collect(snapshotId, drafts, pathResolver);
+        drafts.addAll(contexts.drafts());
+
         MaterializationResult result = materializer.materialize(runId, drafts, pathResolver);
 
+        // Liên kết NGAY sau materialize và TRƯỚC finalizeRun: lúc này run vẫn RUNNING, mà
+        // ensureRunQueryable từ chối RUNNING — nên trạng thái "có evidence, chưa có liên kết"
+        // không bao giờ quan sát được qua API. Invariant đạt bằng TRẠNG THÁI RUN, không phải bằng
+        // một transaction bao ngoài (class này cố ý không mang @Transactional).
+        LinkResult links = evidenceLinker.link(runId);
+
         log.info(
-                "Run {}: {} evidence ({} canh bao tinh), {}/{} vi tri doi chieu duoc, tool {}",
+                "Run {}: {} evidence ({} canh bao tinh), {}/{} vi tri doi chieu duoc, {} ngu canh ma nguon tu {} file, tool {}",
                 runId,
                 result.evidenceCount(),
                 result.findingCount(),
                 result.locationCount() - result.unresolvedLocationCount(),
                 result.locationCount(),
+                result.codeContextCount(),
+                contexts.fileCount(),
                 toolVersions);
 
-        return decide(detected, result, toolVersions);
+        return decide(detected, result, toolVersions).withLinks(links);
     }
 
     /**
@@ -289,6 +312,23 @@ public class AnalysisRunService {
                     "Khong doi chieu duoc vi tri nao (%d/%d) voi cay file cua snapshot. Nhieu kha nang artifact "
                                     .formatted(result.unresolvedLocationCount(), result.locationCount())
                             + "duoc sinh tu mot ma nguon KHAC voi snapshot nay.",
+                    result,
+                    toolVersions);
+        }
+
+        if (result.findingCount() > 0 && result.locationCount() > result.unresolvedLocationCount()
+                && result.codeContextCount() == 0) {
+            // Có cảnh báo, và có vị trí đối chiếu ĐƯỢC với snapshot, mà không dựng nổi một ngữ cảnh
+            // mã nguồn nào — nghĩa là JavaParser không chạy hoặc đọc nhầm cây nguồn. Hậu quả:
+            // EvidenceLinker tầng 1 sinh 0 liên kết, và cả ba panel của Evidence Explorer trống
+            // trơn y hệt như khi "dự án này thật sự không có bằng chứng liên quan".
+            //
+            // Không bắt được ở đây thì lỗi chỉ lộ ra ở tuần 12-13, dưới dạng agent luôn trả lời
+            // INSUFFICIENT_EVIDENCE mà không ai biết vì sao.
+            return RunOutcome.failed(
+                    "Co %d canh bao voi vi tri doi chieu duoc nhung khong dung duoc ngu canh ma nguon nao. "
+                                    .formatted(result.findingCount())
+                            + "Nhieu kha nang cay nguon Java khong doc duoc, hoac artifact sinh tu mot ma nguon khac.",
                     result,
                     toolVersions);
         }

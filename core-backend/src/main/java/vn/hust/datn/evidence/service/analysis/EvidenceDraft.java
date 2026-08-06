@@ -17,7 +17,8 @@ import vn.hust.datn.evidence.domain.EvidenceType;
  * quên xử lý sẽ là lỗi biên dịch, không phải một nhánh bị bỏ quên trong im lặng. Danh sách
  * {@code permits} mở rộng dần qua từng commit của đợt 8-9.
  */
-public sealed interface EvidenceDraft permits WarningDraft, TestCaseDraft, StackTraceDraft, CoverageDraft {
+public sealed interface EvidenceDraft
+        permits WarningDraft, TestCaseDraft, StackTraceDraft, CoverageDraft, CodeContextDraft {
 
     EvidenceType type();
 

@@ -3,6 +3,7 @@ package vn.hust.datn.evidence.service.analysis;
 import java.util.Map;
 
 import vn.hust.datn.evidence.domain.AnalysisRunStatus;
+import vn.hust.datn.evidence.service.linker.LinkResult;
 
 /**
  * Kết cục đã QUYẾT ĐỊNH XONG của một lần phân tích, trước khi chạm vào DB.
@@ -25,18 +26,19 @@ public record RunOutcome(
         String errorMessage,
         MaterializationResult result,
         Map<String, String> toolVersions,
-        SandboxInfo sandbox) {
+        SandboxInfo sandbox,
+        LinkResult links) {
 
     public static RunOutcome succeeded(MaterializationResult result, Map<String, String> toolVersions) {
-        return new RunOutcome(AnalysisRunStatus.SUCCEEDED, null, null, result, toolVersions, null);
+        return new RunOutcome(AnalysisRunStatus.SUCCEEDED, null, null, result, toolVersions, null, null);
     }
 
     public static RunOutcome clean(String cleanAckNote, MaterializationResult result, Map<String, String> toolVersions) {
-        return new RunOutcome(AnalysisRunStatus.SUCCEEDED_CLEAN, cleanAckNote, null, result, toolVersions, null);
+        return new RunOutcome(AnalysisRunStatus.SUCCEEDED_CLEAN, cleanAckNote, null, result, toolVersions, null, null);
     }
 
     public static RunOutcome failed(String errorMessage, MaterializationResult result, Map<String, String> toolVersions) {
-        return new RunOutcome(AnalysisRunStatus.FAILED, null, errorMessage, result, toolVersions, null);
+        return new RunOutcome(AnalysisRunStatus.FAILED, null, errorMessage, result, toolVersions, null, null);
     }
 
     /**
@@ -46,6 +48,18 @@ public record RunOutcome(
      * dấu vết sandbox là dữ liệu đi kèm, không được tham gia vào việc chọn trạng thái.
      */
     public RunOutcome withSandbox(SandboxInfo info) {
-        return new RunOutcome(status, cleanAckNote, errorMessage, result, toolVersions, info);
+        return new RunOutcome(status, cleanAckNote, errorMessage, result, toolVersions, info, links);
+    }
+
+    /**
+     * Gắn số đo liên kết vào một kết cục ĐÃ quyết định xong.
+     *
+     * <p>Bộ đếm phải đi đường này chứ không để {@code EvidenceLinker} tự UPDATE
+     * {@code analysis_run}: {@code finalizeRun} là {@code REQUIRES_NEW} nên nó TREO transaction
+     * ngoài và không thấy một UPDATE chưa commit — dirty-check của Hibernate sẽ ghi đè bằng giá
+     * trị cũ, và bộ đếm về 0 trong im lặng. Xem Javadoc {@link LinkResult}.
+     */
+    public RunOutcome withLinks(LinkResult linkResult) {
+        return new RunOutcome(status, cleanAckNote, errorMessage, result, toolVersions, sandbox, linkResult);
     }
 }

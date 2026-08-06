@@ -24,6 +24,11 @@
     <minio.version>8.5.17</minio.version>
     <commons-compress.version>1.27.1</commons-compress.version>
     <commons-io.version>2.18.0</commons-io.version>
+    <!-- CHỈ javaparser-core, KHÔNG lấy javaparser-symbol-solver-core: symbol solver đòi classpath
+         đầy đủ của dự án người dùng (jar phụ thuộc) mà snapshot không giữ lại, và nó hỏng theo
+         kiểu "resolve được một nửa" — đúng loại hỏng im lặng dự án này chống. Ta chỉ cần
+         class/method BAO QUANH một dòng, thứ suy được thuần cú pháp từ AST + khai báo package. -->
+    <javaparser.version>3.26.3</javaparser.version>
     <!-- Phải khớp phiên bản Testcontainers ${testcontainers.version} kéo về — xem chú thích ở dependency. -->
     <docker-java.version>3.4.2</docker-java.version>
     <!-- Ghi đè bản Testcontainers mà Spring Boot 3.5.0 quản lý (1.21.0): bản đó không đọc được
@@ -123,6 +128,17 @@
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>${commons-io.version}</version>
+    </dependency>
+
+    <!--
+        Nguồn sự thật cho câu hỏi "dòng 42 thuộc method nào". JaCoCo KHÔNG trả lời được (cấu trúc
+        kép, method chỉ có dòng đầu, không theo thứ tự dòng — docs/evidence-model.md phát hiện 3),
+        nên CODE_CONTEXT phải parse mã nguồn thật.
+    -->
+    <dependency>
+      <groupId>com.github.javaparser</groupId>
+      <artifactId>javaparser-core</artifactId>
+      <version>${javaparser.version}</version>
     </dependency>
 
     <!-- Migration: schema chỉ thay đổi qua Flyway, ddl-auto luôn là 'validate'. -->

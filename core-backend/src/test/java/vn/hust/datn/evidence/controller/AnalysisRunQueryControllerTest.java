@@ -42,7 +42,7 @@ class AnalysisRunQueryControllerTest extends AbstractWebIntegrationTest {
     void napMotRunThat() throws Exception {
         owner = fixtures.user("query-%d@test.local".formatted(System.nanoTime()));
         Project project = fixtures.project("query-%d".formatted(System.nanoTime()), owner);
-        snapshot = fixtures.readySnapshotWithFiles(project, SampleArtifacts.vulnshopSourcePaths());
+        snapshot = fixtures.readySnapshotWithContent(project, SampleArtifacts.vulnshopSourceContents());
 
         ZipBuilder zip = new ZipBuilder();
         for (Path report : SampleArtifacts.surefireReports()) {

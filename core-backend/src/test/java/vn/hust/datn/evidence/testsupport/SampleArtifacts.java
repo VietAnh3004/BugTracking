@@ -1,9 +1,12 @@
 package vn.hust.datn.evidence.testsupport;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -90,6 +93,41 @@ public final class SampleArtifacts {
                     .toList();
         } catch (IOException e) {
             throw new UncheckedIOException("Khong duyet duoc cay nguon " + root, e);
+        }
+    }
+
+    /**
+     * Toàn bộ cây nguồn vulnshop kèm NỘI DUNG, dùng cho fixture snapshot có object thật.
+     *
+     * <p>Từ tuần 10-11 pipeline phân tích đọc mã nguồn thật (JavaParser dựng {@code CODE_CONTEXT}),
+     * nên một snapshot chỉ có chỉ mục đường dẫn không còn đủ để test đường ingest: nó sẽ cho ra 0
+     * ngữ cảnh và run bị {@code decide()} đánh FAILED — đúng như thiết kế, nhưng không phải thứ
+     * test muốn kiểm.
+     */
+    public static Map<String, String> vulnshopSourceContents() {
+        Map<String, String> contents = new LinkedHashMap<>();
+        for (String path : vulnshopSourcePaths()) {
+            contents.put(path, vulnshopSourceText(path));
+        }
+        return contents;
+    }
+
+    /**
+     * Nội dung một file trong cây nguồn vulnshop, đọc UTF-8.
+     *
+     * <p>Đi kèm {@link #vulnshopSourcePaths()}: cái kia cho danh sách đường dẫn để dựng chỉ mục
+     * snapshot, cái này cho nội dung để {@code CodeContextExtractor} có thứ mà parse. Dùng mã
+     * nguồn THẬT vì mã tự bịa luôn sạch hơn thực tế — không có comment tiếng Việt có dấu, không
+     * có generic lồng nhau, không có annotation Spring.
+     *
+     * @param relativePath đường dẫn tương đối gốc {@code case-study/vulnshop}, dùng dấu {@code /}
+     */
+    public static String vulnshopSourceText(String relativePath) {
+        Path path = repoRoot().resolve("case-study").resolve("vulnshop").resolve(relativePath.replace('/', File.separatorChar));
+        try {
+            return Files.readString(path, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Khong doc duoc " + path, e);
         }
     }
 

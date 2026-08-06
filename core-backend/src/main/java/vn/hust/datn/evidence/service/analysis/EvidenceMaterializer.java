@@ -252,6 +252,10 @@ public class EvidenceMaterializer {
                                 rows, id, testCase, pathResolver, stackTraceIdByCorrelation);
                         case StackTraceDraft trace -> prepareStackTrace(rows, id, trace, pathResolver);
                         case CoverageDraft coverage -> prepareCoverage(rows, id, coverage, pathResolver);
+                        // Không có bảng mở rộng: CODE_CONTEXT sống trọn trong evidence_record +
+                        // content. Đường dẫn KHÔNG qua pathResolver vì nó lấy thẳng từ
+                        // snapshot_file.path — xem PathMatchKind.SELF.
+                        case CodeContextDraft context -> ResolvedPath.self(context.rawFilePath());
                     };
 
             rows.evidence.add(new Object[] {

@@ -25,5 +25,15 @@ public enum PathMatchKind {
      * trace của JDK/JUnit/thư viện. Nếu tính, tỉ lệ thất bại của một run hoàn toàn đúng vẫn là
      * ~84% (37/44 frame của vulnshop) và bộ đếm mất sạch giá trị cảnh báo.
      */
-    NOT_APPLICABLE
+    NOT_APPLICABLE,
+    /**
+     * Không có phép đối chiếu nào diễn ra vì đường dẫn LẤY THẲNG từ {@code snapshot_file.path} —
+     * trường hợp của {@code CODE_CONTEXT}, thứ ta tự sinh chứ không do analyzer khai.
+     *
+     * <p>Khác {@link #EXACT} ở chỗ EXACT là một phép khớp ĐÃ THÀNH CÔNG (có thể thất bại), còn đây
+     * là không có gì để khớp. Khác {@link #NOT_APPLICABLE} ở chỗ {@code filePath} vẫn có giá trị.
+     * Không tính vào {@code location_count}: cộng những đường dẫn chắc chắn đúng vào mẫu số sẽ
+     * PHA LOÃNG tỉ lệ thất bại và làm hỏng chính chỉ số sức khoẻ của chuẩn hoá đường dẫn.
+     */
+    SELF
 }

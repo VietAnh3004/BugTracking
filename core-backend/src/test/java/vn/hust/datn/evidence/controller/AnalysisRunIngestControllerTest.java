@@ -40,7 +40,7 @@ class AnalysisRunIngestControllerTest extends AbstractWebIntegrationTest {
     void chuanBi() {
         owner = fixtures.user("ingest-%d@test.local".formatted(System.nanoTime()));
         Project project = fixtures.project("ingest-%d".formatted(System.nanoTime()), owner);
-        snapshot = fixtures.readySnapshotWithFiles(project, SampleArtifacts.vulnshopSourcePaths());
+        snapshot = fixtures.readySnapshotWithContent(project, SampleArtifacts.vulnshopSourceContents());
     }
 
     private MockMultipartFile part(String fileName, byte[] content) {

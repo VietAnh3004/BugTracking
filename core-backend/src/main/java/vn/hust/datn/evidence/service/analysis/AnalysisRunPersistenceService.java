@@ -77,9 +77,21 @@ public class AnalysisRunPersistenceService {
             run.setFindingCount(result.findingCount());
             run.setLocationCount(result.locationCount());
             run.setUnresolvedLocationCount(result.unresolvedLocationCount());
+            // Mẫu số của ck_run_links_not_silently_empty. Phải ghi Ở ĐÂY chứ không để
+            // EvidenceLinker tự UPDATE analysis_run: method này là REQUIRES_NEW, nó TREO
+            // transaction ngoài rồi đọc lại hàng trong một transaction mới — nên một UPDATE chưa
+            // commit từ bên ngoài là vô hình với nó, và dirty-check của Hibernate sẽ ghi đè cả
+            // hàng bằng giá trị cũ. Bộ đếm về 0 trong im lặng thì mọi guard "0 link = lỗi" bị vô
+            // hiệu mà nhìn vẫn như đang chạy.
+            run.setCodeContextCount(result.codeContextCount());
         }
         if (outcome.toolVersions() != null && !outcome.toolVersions().isEmpty()) {
             run.setToolVersions(new LinkedHashMap<String, Object>(outcome.toolVersions()));
+        }
+        if (outcome.links() != null) {
+            run.setLinkCount(outcome.links().linkCount());
+            run.setUnlinkedWarningCount(outcome.links().unlinkedWarningCount());
+            run.setLinkCountsByMethod(new LinkedHashMap<>(outcome.links().countByMethod()));
         }
         SandboxInfo sandbox = outcome.sandbox();
         if (sandbox != null) {
