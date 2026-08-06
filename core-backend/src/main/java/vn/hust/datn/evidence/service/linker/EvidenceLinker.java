@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,6 +25,9 @@ import vn.hust.datn.evidence.domain.EvidenceLinkMethod;
 import vn.hust.datn.evidence.domain.EvidenceLinkRelation;
 import vn.hust.datn.evidence.domain.EvidenceRecord;
 import vn.hust.datn.evidence.domain.EvidenceType;
+import vn.hust.datn.evidence.domain.TestCaseStatus;
+import vn.hust.datn.evidence.repository.CoverageLineRepository;
+import vn.hust.datn.evidence.repository.CoverageMethodRepository;
 import vn.hust.datn.evidence.repository.EvidenceRecordRepository;
 import vn.hust.datn.evidence.repository.StackFrameRepository;
 import vn.hust.datn.evidence.repository.TestCaseRepository;
@@ -73,23 +77,51 @@ public class EvidenceLinker {
 
     private static final int BATCH_CHUNK = 1000;
 
+    /**
+     * Bán kính tìm dòng executable gần nhất khi chính dòng cảnh báo không có hàng độ phủ.
+     *
+     * <p>Hẹp có chủ đích: nới rộng ra thì "vùng gần đó có chạy" mất hết ý nghĩa, mà liên kết vẫn
+     * cứ sinh ra — tức là đổi một khoảng trống thành một bằng chứng giả.
+     */
+    private static final int NEAREST_LINE_RADIUS = 3;
+
     private final JdbcTemplate jdbcTemplate;
     private final EvidenceRecordRepository evidenceRecordRepository;
     private final WarningLocationRepository warningLocationRepository;
     private final StackFrameRepository stackFrameRepository;
     private final TestCaseRepository testCaseRepository;
+    private final CoverageLineRepository coverageLineRepository;
+    private final CoverageMethodRepository coverageMethodRepository;
 
     public EvidenceLinker(
             JdbcTemplate jdbcTemplate,
             EvidenceRecordRepository evidenceRecordRepository,
             WarningLocationRepository warningLocationRepository,
             StackFrameRepository stackFrameRepository,
-            TestCaseRepository testCaseRepository) {
+            TestCaseRepository testCaseRepository,
+            CoverageLineRepository coverageLineRepository,
+            CoverageMethodRepository coverageMethodRepository) {
         this.jdbcTemplate = jdbcTemplate;
         this.evidenceRecordRepository = evidenceRecordRepository;
         this.warningLocationRepository = warningLocationRepository;
         this.stackFrameRepository = stackFrameRepository;
         this.testCaseRepository = testCaseRepository;
+        this.coverageLineRepository = coverageLineRepository;
+        this.coverageMethodRepository = coverageMethodRepository;
+    }
+
+    /** Chia khối để không vượt trần 65535 bind parameter của Postgres trên repo lớn. */
+    private List<CoverageLineRow> readCoverageLines(UUID runId, Set<String> filePaths) {
+        if (filePaths.isEmpty()) {
+            return List.of();
+        }
+        List<String> paths = List.copyOf(filePaths);
+        List<CoverageLineRow> all = new ArrayList<>();
+        for (int from = 0; from < paths.size(); from += BATCH_CHUNK) {
+            all.addAll(coverageLineRepository.findByRunAndFilePaths(
+                    runId, paths.subList(from, Math.min(from + BATCH_CHUNK, paths.size()))));
+        }
+        return all;
     }
 
     @Transactional
@@ -104,9 +136,21 @@ public class EvidenceLinker {
         List<StackFrameRow> frames = stackFrameRepository.findProductionFramesByRun(runId);
         List<TestCaseRow> testCases = testCaseRepository.findRowsByRun(runId);
 
+        // Chỉ nạp độ phủ của những FILE CÓ CẢNH BÁO — xem Javadoc CoverageLineRepository.
+        Set<String> filesWithWarnings =
+                locations.stream().map(WarningLocationRow::filePath).collect(Collectors.toCollection(LinkedHashSet::new));
+        List<CoverageLineRow> coverageLines = readCoverageLines(runId, filesWithWarnings);
+        List<CoverageMethodRow> coverageMethods = coverageMethodRepository.findRowsByRun(runId);
+
         LinkAccumulator accumulator = new LinkAccumulator();
         accumulator.addAll(locatedIn(locations, contexts));
         accumulator.addAll(supportsByStackFrame(locations, frames, testCases));
+        accumulator.addAll(covers(locations, coverageLines));
+
+        // Pass cuối CẦN biết những tầng trước đã sinh SUPPORTS cho cảnh báo nào, nên nó chạy trên
+        // KẾT QUẢ ĐÃ DEDUP chứ không song song với các tầng.
+        List<LinkCandidate> soFar = accumulator.candidates();
+        accumulator.addAll(byTestNaming(locations, contexts, testCases, coverageMethods, coverageLines, soFar));
 
         List<LinkCandidate> candidates = accumulator.candidates();
         write(runId, candidates);
@@ -129,12 +173,23 @@ public class EvidenceLinker {
                         LinkedHashMap::new,
                         Collectors.collectingAndThen(Collectors.counting(), Long::intValue)));
 
+        // Phân bố theo QUAN HỆ đi kèm phân bố theo phương pháp: cái sau nói "tin được tới đâu",
+        // cái trước nói "nói lên điều gì". Riêng số CONTRADICTS là câu trả lời trực tiếp cho câu
+        // hỏi "có bằng chứng nào mâu thuẫn không?" của đề cương mục 3.5 — không log ra thì mỗi
+        // lần muốn biết phải mở DB.
+        Map<String, Integer> countByRelation = candidates.stream()
+                .collect(Collectors.groupingBy(
+                        candidate -> candidate.relation().name(),
+                        LinkedHashMap::new,
+                        Collectors.collectingAndThen(Collectors.counting(), Long::intValue)));
+
         log.info(
-                "Run {}: {} lien ket ({} canh bao khong co lien ket nao), xoa {} lien ket cu, phan bo {}",
+                "Run {}: {} lien ket ({} canh bao khong co lien ket nao), xoa {} lien ket cu, quan he {}, phuong phap {}",
                 runId,
                 candidates.size(),
                 unlinked,
                 deleted,
+                countByRelation,
                 countByMethod);
 
         return new LinkResult(candidates.size(), unlinked, deleted, Map.copyOf(countByMethod));
@@ -256,6 +311,218 @@ public class EvidenceLinker {
             }
         }
         return candidates;
+    }
+
+    /**
+     * Tầng 2a — {@code COVERS}: dòng bị cảnh báo có được test chạy qua hay không.
+     *
+     * <p><b>Sinh liên kết KỂ CẢ khi dòng không được chạy</b> ({@code ci = 0}). "Không có test nào
+     * đi qua dòng này" là bằng chứng quan trọng bậc nhất cho verdict {@code INSUFFICIENT_EVIDENCE}
+     * — bỏ nó đi thì agent không phân biệt được "chưa ai kiểm" với "chưa nối được bằng chứng".
+     *
+     * <p>Trạng thái phủ (COVERED/PARTIAL/MISSED kèm mi/ci/mb/cb) đi vào {@code rationale}, KHÔNG
+     * đi vào {@code weight}: weight là độ tin cậy của LIÊN KẾT, không phải mức độ phủ. Trộn hai
+     * thứ đó thì mọi xếp hạng bằng chứng ở tuần 12-13 sai.
+     *
+     * <p>Hướng: {@code coverage → warning}, đọc là "bằng chứng độ phủ này phủ dòng của cảnh báo".
+     */
+    private List<LinkCandidate> covers(List<WarningLocationRow> locations, List<CoverageLineRow> coverageLines) {
+        if (coverageLines.isEmpty()) {
+            return List.of();
+        }
+        Map<String, List<CoverageLineRow>> byFile =
+                coverageLines.stream().collect(Collectors.groupingBy(CoverageLineRow::filePath));
+
+        List<LinkCandidate> candidates = new ArrayList<>();
+        for (WarningLocationRow location : locations) {
+            List<CoverageLineRow> inFile = byFile.get(location.filePath());
+            if (inFile == null) {
+                continue;
+            }
+            int line = location.startLine();
+
+            Optional<CoverageLineRow> exact =
+                    inFile.stream().filter(row -> row.lineNumber() == line).findFirst();
+            if (exact.isPresent()) {
+                CoverageLineRow row = exact.get();
+                candidates.add(new LinkCandidate(
+                        row.evidenceRecordId(),
+                        location.evidenceRecordId(),
+                        EvidenceLinkRelation.COVERS,
+                        EvidenceLinkMethod.LINE_EXACT,
+                        1.0,
+                        "Dong %d: %s (ci=%d mi=%d mb=%d cb=%d)"
+                                .formatted(line, row.statusLabel(), row.ci(), row.mi(), row.mb(), row.cb())));
+                continue;
+            }
+
+            // Dòng cảnh báo không executable (khai báo, dấu ngoặc, comment) nên JaCoCo không có
+            // hàng cho nó. Lấy dòng executable GẦN NHẤT trong bán kính hẹp — đủ để trả lời "vùng
+            // này có được chạy không", nhưng phải hạ mức tin cậy vì nó không còn là chính dòng đó.
+            Optional<CoverageLineRow> nearest = inFile.stream()
+                    .filter(row -> Math.abs(row.lineNumber() - line) <= NEAREST_LINE_RADIUS)
+                    .min(Comparator.comparingInt(row -> Math.abs(row.lineNumber() - line)));
+            nearest.ifPresent(row -> candidates.add(new LinkCandidate(
+                    row.evidenceRecordId(),
+                    location.evidenceRecordId(),
+                    EvidenceLinkRelation.COVERS,
+                    EvidenceLinkMethod.LINE_NEAREST_EXECUTABLE,
+                    0.6,
+                    "Dong %d khong thuc thi duoc; dong gan nhat co do phu la %d: %s"
+                            .formatted(line, row.lineNumber(), row.statusLabel()))));
+        }
+        return candidates;
+    }
+
+    /**
+     * Tầng 2b — liên kết test ↔ cảnh báo theo QUY ƯỚC TÊN, và pass {@code CONTRADICTS}.
+     *
+     * <p>Đây là tầng phục hồi phần lớn bằng chứng test hỏng: 3/6 test hỏng của vulnshop không có
+     * frame nào trỏ về mã production (chúng ném {@code AssertionFailedError} từ chính lớp test),
+     * nên tầng 3 không với tới được.
+     *
+     * <p>Hai mức tin cậy, phân biệt rõ để tuần 15 đo được:
+     *
+     * <ul>
+     *   <li>{@code METHOD_AGGREGATE} — ngoài trùng tên lớp, còn có {@code coverage_method} của
+     *       đúng method bị cảnh báo và method đó ĐÃ THỰC SỰ CHẠY. Có dữ liệu chống lưng.
+     *   <li>{@code NAMING_CONVENTION} — chỉ trùng tên lớp. Không có gì trong artifact chống lưng.
+     * </ul>
+     *
+     * <p><b>{@code CONTRADICTS} đòi cả ba điều kiện</b>, và đây là chỗ dễ làm sai nhất:
+     *
+     * <ol>
+     *   <li>Dòng cảnh báo THỰC SỰ được chạy ({@code ci > 0}). Test xanh mà không đi qua dòng đó
+     *       thì không phản bác được gì.
+     *   <li>Cảnh báo chưa có {@code SUPPORTS} nào. Có bằng chứng ủng hộ rồi thì một test xanh
+     *       không lật ngược được.
+     *   <li>Có ít nhất một test PASSED khớp theo quy ước tên.
+     * </ol>
+     *
+     * <p><b>CONTRADICTS KHÔNG có nghĩa là false positive.</b> vulnshop cố tình đặt bẫy đúng chỗ
+     * này: {@code findByUsername} có SQL injection thật, test đường đi bình thường vẫn xanh, và có
+     * một test xanh khác còn CHỨNG MINH lỗ hổng có thật. Vì vậy weight của CONTRADICTS luôn thấp
+     * hơn SUPPORTS, và {@code rationale} nói thẳng điều đó ra cho LLM đọc.
+     */
+    private List<LinkCandidate> byTestNaming(
+            List<WarningLocationRow> locations,
+            List<EvidenceRecord> contexts,
+            List<TestCaseRow> testCases,
+            List<CoverageMethodRow> coverageMethods,
+            List<CoverageLineRow> coverageLines,
+            List<LinkCandidate> soFar) {
+
+        Map<String, List<TestCaseRow>> testsByProductionClass = new LinkedHashMap<>();
+        int unmatched = 0;
+        for (TestCaseRow testCase : testCases) {
+            Optional<String> production = TestClassNameConvention.productionClassOf(testCase.className());
+            if (production.isEmpty()) {
+                unmatched++;
+                continue;
+            }
+            testsByProductionClass
+                    .computeIfAbsent(TestClassNameConvention.canonical(production.get()), key -> new ArrayList<>())
+                    .add(testCase);
+        }
+        if (unmatched > 0) {
+            // Không nuốt: quy ước đặt tên của repo khác giả định ở đây thì bằng chứng mất trong
+            // im lặng, và triệu chứng bên ngoài y hệt "dự án này không có test liên quan".
+            log.info("{} lop test khong suy duoc ra lop production nao theo quy uoc ten", unmatched);
+        }
+        if (testsByProductionClass.isEmpty()) {
+            return List.of();
+        }
+
+        Set<UUID> warningsWithSupports = soFar.stream()
+                .filter(candidate -> candidate.relation() == EvidenceLinkRelation.SUPPORTS)
+                .map(LinkCandidate::toEvidenceId)
+                .collect(Collectors.toSet());
+
+        Set<String> executedMethodKeys = coverageMethods.stream()
+                .filter(CoverageMethodRow::executed)
+                .map(row -> TestClassNameConvention.canonical(row.className()) + "#" + row.methodName())
+                .collect(Collectors.toSet());
+
+        Set<String> executedLineKeys = coverageLines.stream()
+                .filter(CoverageLineRow::executed)
+                .map(row -> row.filePath() + ":" + row.lineNumber())
+                .collect(Collectors.toSet());
+
+        List<LinkCandidate> candidates = new ArrayList<>();
+        for (WarningLocationRow location : locations) {
+            String productionClass = classOf(location, contexts);
+            if (productionClass == null) {
+                continue;
+            }
+            List<TestCaseRow> matching = testsByProductionClass.get(TestClassNameConvention.canonical(productionClass));
+            if (matching == null) {
+                continue;
+            }
+            boolean methodExecuted = location.methodName() != null
+                    && executedMethodKeys.contains(
+                            TestClassNameConvention.canonical(productionClass) + "#" + location.methodName());
+            boolean lineExecuted = executedLineKeys.contains(location.filePath() + ":" + location.startLine());
+
+            for (TestCaseRow testCase : matching) {
+                boolean failed = testCase.status() == TestCaseStatus.FAILED;
+                if (!failed) {
+                    // Chỉ test XANH mới có thể phản bác, và chỉ khi ba điều kiện ở Javadoc đủ.
+                    if (!lineExecuted || warningsWithSupports.contains(location.evidenceRecordId())) {
+                        continue;
+                    }
+                }
+                EvidenceLinkMethod method =
+                        methodExecuted ? EvidenceLinkMethod.METHOD_AGGREGATE : EvidenceLinkMethod.NAMING_CONVENTION;
+                double weight = failed
+                        ? (methodExecuted ? 0.6 : 0.3)
+                        : (methodExecuted ? 0.5 : 0.25);
+                String rationale = failed
+                        ? "Test hong %s#%s thuoc lop test cua %s%s"
+                                .formatted(
+                                        testCase.className(),
+                                        testCase.methodName(),
+                                        productionClass,
+                                        methodExecuted ? " va da chay qua method bi canh bao" : " (chi khop theo ten lop)")
+                        : "Test xanh %s#%s phu dong nay. KHONG chung minh canh bao sai — vulnshop co test "
+                                        .formatted(testCase.className(), testCase.methodName())
+                                + "xanh CHUNG MINH lo hong co that.";
+
+                candidates.add(new LinkCandidate(
+                        testCase.evidenceRecordId(),
+                        location.evidenceRecordId(),
+                        failed ? EvidenceLinkRelation.SUPPORTS : EvidenceLinkRelation.CONTRADICTS,
+                        method,
+                        weight,
+                        rationale));
+            }
+        }
+        return candidates;
+    }
+
+    /**
+     * Lớp production của một vị trí cảnh báo. SpotBugs khai {@code classname} thẳng; Semgrep không
+     * có, nên phải lấy từ {@code symbol} của CODE_CONTEXT bao quanh — thứ JavaParser suy ra.
+     */
+    private static String classOf(WarningLocationRow location, List<EvidenceRecord> contexts) {
+        if (location.className() != null && !location.className().isBlank()) {
+            return location.className();
+        }
+        // Semgrep không khai tên lớp (SARIF không có logicalLocations trong artifact thật), nên
+        // lấy từ symbol của CODE_CONTEXT bao quanh — thứ JavaParser suy được thuần cú pháp. Không
+        // có bước này thì mọi cảnh báo Semgrep tự động rơi khỏi tầng 2.
+        return contexts.stream()
+                .filter(context -> context.getSymbol() != null)
+                .filter(context -> location.filePath().equals(context.getFilePath()))
+                .filter(context -> context.getStartLine() != null && context.getEndLine() != null)
+                .filter(context -> context.getStartLine() <= location.startLine()
+                        && location.startLine() <= context.getEndLine())
+                .min(Comparator.comparingInt(context -> context.getEndLine() - context.getStartLine()))
+                .map(context -> {
+                    String symbol = context.getSymbol();
+                    int hash = symbol.indexOf('#');
+                    return hash < 0 ? symbol : symbol.substring(0, hash);
+                })
+                .orElse(null);
     }
 
     private void write(UUID runId, List<LinkCandidate> candidates) {

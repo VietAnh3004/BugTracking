@@ -25,6 +25,9 @@ import vn.hust.datn.evidence.domain.TestFailureKind;
 import vn.hust.datn.evidence.domain.WarningSeverity;
 import vn.hust.datn.evidence.domain.WarningTool;
 import vn.hust.datn.evidence.service.analysis.CodeContextDraft;
+import vn.hust.datn.evidence.service.analysis.CoverageDraft;
+import vn.hust.datn.evidence.service.analysis.CoverageLineDraft;
+import vn.hust.datn.evidence.service.analysis.CoverageMethodDraft;
 import vn.hust.datn.evidence.service.analysis.EvidenceDraft;
 import vn.hust.datn.evidence.service.analysis.EvidenceMaterializer;
 import vn.hust.datn.evidence.service.analysis.SnapshotPathResolver;
@@ -220,8 +223,16 @@ class EvidenceLinkerTest extends AbstractIntegrationTest {
         assertThat(result.countByMethod()).containsEntry(EvidenceLinkMethod.STACK_FRAME.name(), 1);
     }
 
+    /**
+     * Frame ở dòng khác thì tầng 3 KHÔNG được sinh liên kết.
+     *
+     * <p>Vẫn có một {@code SUPPORTS} khác trong kết quả — của tầng 2, khớp theo quy ước tên
+     * ({@code FooTest} ↔ {@code Foo}). Đó chính là việc tầng 2 sinh ra để làm: vớt lại những test
+     * hỏng mà stack trace không trỏ về đúng dòng. Nên assertion phải nhắm vào {@code method}, chứ
+     * "không có SUPPORTS nào" là một kỳ vọng sai kể từ khi có tầng 2.
+     */
     @Test
-    void tang3_frameOFileKhacKhongLienQuan_khongSinhLienKet() {
+    void tang3_frameOFileKhacKhongLienQuan_khongSinhLienKetStackFrame() {
         List<EvidenceDraft> drafts = new java.util.ArrayList<>(List.of(warning(10), codeContext(5, 20)));
         drafts.addAll(failedTestWithFrameAt(77, "trace-1"));
 
@@ -229,7 +240,11 @@ class EvidenceLinkerTest extends AbstractIntegrationTest {
         linker.link(run.getId());
 
         assertThat(linksOf(run.getId()))
-                .noneMatch(link -> EvidenceLinkRelation.SUPPORTS.name().equals(link.get("relation")));
+                .noneMatch(link -> EvidenceLinkMethod.STACK_FRAME.name().equals(link.get("method")));
+        // Nhung van phai co bang chung tu test do — qua tang 2.
+        assertThat(linksOf(run.getId()))
+                .anyMatch(link -> EvidenceLinkRelation.SUPPORTS.name().equals(link.get("relation"))
+                        && EvidenceLinkMethod.NAMING_CONVENTION.name().equals(link.get("method")));
     }
 
     /**
@@ -302,5 +317,175 @@ class EvidenceLinkerTest extends AbstractIntegrationTest {
     @Test
     void bangThuBacPhuHetMoiGiaTriCuaEnum() {
         assertThat(LinkAccumulator.precedence()).containsExactlyInAnyOrder(EvidenceLinkMethod.values());
+    }
+
+    // ----------------------------------------------------------------------------------------
+    // Tầng 2 — COVERS và liên kết theo quy ước tên
+    // ----------------------------------------------------------------------------------------
+
+    private CoverageDraft coverage(Map<Integer, int[]> lines, String className, String methodName, int coveredInstructions) {
+        List<CoverageLineDraft> lineDrafts = lines.entrySet().stream()
+                .map(entry -> new CoverageLineDraft(
+                        entry.getKey(), entry.getValue()[0], entry.getValue()[1], entry.getValue()[2], entry.getValue()[3]))
+                .toList();
+        List<CoverageMethodDraft> methodDrafts = className == null
+                ? List.of()
+                : List.of(new CoverageMethodDraft(className, methodName, "()V", 5, 0, coveredInstructions, 0, 0, 0, 1));
+
+        return new CoverageDraft(
+                EvidenceType.COVERAGE_INFORMATION,
+                EvidenceSource.jacoco,
+                FILE,
+                null,
+                null,
+                null,
+                "Do phu Foo.java",
+                Map.of(),
+                "app",
+                "Foo.java",
+                lineDrafts,
+                methodDrafts);
+    }
+
+    private TestCaseDraft passedTest(String className, String methodName) {
+        return new TestCaseDraft(
+                EvidenceType.TEST_RESULT,
+                EvidenceSource.surefire,
+                TEST_FILE,
+                1,
+                1,
+                className + "#" + methodName,
+                "Test xanh " + className + "#" + methodName,
+                Map.of(),
+                className,
+                methodName,
+                methodName,
+                TestCaseStatus.PASSED,
+                null,
+                null,
+                null,
+                null,
+                1,
+                "TEST-" + className + ".xml",
+                null);
+    }
+
+    /** Dòng cảnh báo có hàng độ phủ → liên kết COVERS mức tin cậy cao nhất. */
+    @Test
+    void tang2_dongCanhBaoCoDoPhu_sinhCoversLineExact() {
+        materializer.materialize(
+                run.getId(),
+                List.of(warning(10), codeContext(5, 20), coverage(Map.of(10, new int[] {0, 7, 0, 0}), null, null, 0)),
+                pathResolver);
+
+        linker.link(run.getId());
+
+        Map<String, Object> covers = linksOf(run.getId()).stream()
+                .filter(link -> EvidenceLinkRelation.COVERS.name().equals(link.get("relation")))
+                .findFirst()
+                .orElseThrow();
+        assertThat(covers.get("method")).isEqualTo(EvidenceLinkMethod.LINE_EXACT.name());
+        assertThat(covers.get("from_type")).isEqualTo(EvidenceType.COVERAGE_INFORMATION.name());
+        assertThat(covers.get("to_type")).isEqualTo(EvidenceType.STATIC_WARNING.name());
+        assertThat((String) covers.get("rationale")).contains("COVERED");
+    }
+
+    /**
+     * Dòng KHÔNG được chạy vẫn phải sinh liên kết. "Không test nào đi qua dòng này" là bằng chứng
+     * quan trọng bậc nhất cho {@code INSUFFICIENT_EVIDENCE} — bỏ nó thì agent không phân biệt được
+     * "chưa ai kiểm" với "chưa nối được bằng chứng".
+     */
+    @Test
+    void tang2_dongKhongDuocChay_vanSinhCoversVaNoiRoLaMissed() {
+        materializer.materialize(
+                run.getId(),
+                List.of(warning(10), codeContext(5, 20), coverage(Map.of(10, new int[] {9, 0, 0, 0}), null, null, 0)),
+                pathResolver);
+
+        linker.link(run.getId());
+
+        Map<String, Object> covers = linksOf(run.getId()).stream()
+                .filter(link -> EvidenceLinkRelation.COVERS.name().equals(link.get("relation")))
+                .findFirst()
+                .orElseThrow();
+        assertThat((String) covers.get("rationale")).contains("MISSED");
+    }
+
+    /** Có coverage_method của đúng method và method đó ĐÃ CHẠY → mức tin cậy cao hơn quy ước tên trần. */
+    @Test
+    void tang2_coCoverageMethodDaChay_dungMethodAggregateThayViNamingConvention() {
+        List<EvidenceDraft> drafts = new java.util.ArrayList<>(List.of(
+                warning(10), codeContext(5, 20), coverage(Map.of(10, new int[] {0, 7, 0, 0}), "app/Foo", "doThing", 7)));
+        drafts.addAll(failedTestWithFrameAt(77, "trace-1"));
+
+        materializer.materialize(run.getId(), drafts, pathResolver);
+        linker.link(run.getId());
+
+        assertThat(linksOf(run.getId()))
+                .anyMatch(link -> EvidenceLinkRelation.SUPPORTS.name().equals(link.get("relation"))
+                        && EvidenceLinkMethod.METHOD_AGGREGATE.name().equals(link.get("method")));
+    }
+
+    /** Test XANH phủ dòng cảnh báo, không có SUPPORTS nào → sinh CONTRADICTS. */
+    @Test
+    void tang2_testXanhPhuDongCanhBao_sinhContradicts() {
+        materializer.materialize(
+                run.getId(),
+                List.of(
+                        warning(10),
+                        codeContext(5, 20),
+                        coverage(Map.of(10, new int[] {0, 7, 0, 0}), null, null, 0),
+                        passedTest("app.FooTest", "doThing_binhThuong")),
+                pathResolver);
+
+        linker.link(run.getId());
+
+        Map<String, Object> contradicts = linksOf(run.getId()).stream()
+                .filter(link -> EvidenceLinkRelation.CONTRADICTS.name().equals(link.get("relation")))
+                .findFirst()
+                .orElseThrow();
+        assertThat(contradicts.get("from_type")).isEqualTo(EvidenceType.TEST_RESULT.name());
+        // Cạm bẫy trung tâm của vulnshop phải nói thẳng ra cho LLM đọc, không để nó tự suy.
+        assertThat((String) contradicts.get("rationale")).contains("KHONG chung minh canh bao sai");
+    }
+
+    /**
+     * Dòng cảnh báo KHÔNG được chạy thì một test xanh không phản bác được gì — nó có chạy qua đâu.
+     * Đây là điều kiện dễ quên nhất của CONTRADICTS.
+     */
+    @Test
+    void tang2_testXanhNhungDongKhongDuocChay_khongSinhContradicts() {
+        materializer.materialize(
+                run.getId(),
+                List.of(
+                        warning(10),
+                        codeContext(5, 20),
+                        coverage(Map.of(10, new int[] {9, 0, 0, 0}), null, null, 0),
+                        passedTest("app.FooTest", "doThing_binhThuong")),
+                pathResolver);
+
+        linker.link(run.getId());
+
+        assertThat(linksOf(run.getId()))
+                .noneMatch(link -> EvidenceLinkRelation.CONTRADICTS.name().equals(link.get("relation")));
+    }
+
+    /** Đã có bằng chứng ỦNG HỘ thì một test xanh không lật ngược được — không sinh CONTRADICTS. */
+    @Test
+    void tang2_daCoSupports_thiTestXanhKhongSinhContradicts() {
+        List<EvidenceDraft> drafts = new java.util.ArrayList<>(List.of(
+                warning(10),
+                codeContext(5, 20),
+                coverage(Map.of(10, new int[] {0, 7, 0, 0}), null, null, 0),
+                passedTest("app.FooTest", "doThing_binhThuong")));
+        drafts.addAll(failedTestWithFrameAt(10, "trace-1"));
+
+        materializer.materialize(run.getId(), drafts, pathResolver);
+        linker.link(run.getId());
+
+        assertThat(linksOf(run.getId()))
+                .anyMatch(link -> EvidenceLinkMethod.STACK_FRAME.name().equals(link.get("method")));
+        assertThat(linksOf(run.getId()))
+                .noneMatch(link -> EvidenceLinkRelation.CONTRADICTS.name().equals(link.get("relation")));
     }
 }
