@@ -250,7 +250,7 @@ curl -X POST "http://localhost:8080/api/v1/snapshots/$SNAPSHOT_ID/analysis-runs"
 
 ---
 
-## 5. Sáu điều cần nhìn tận mắt
+## 5. Chín điều cần nhìn tận mắt
 
 Quay lại trình duyệt, mở lại trang snapshot. Giờ góc trên phải có link **"Cảnh báo (34)"**.
 
@@ -296,6 +296,52 @@ Phải thấy **đúng một** request `/auth/refresh`. Nhiều hơn nghĩa là 
 
 Trên màn hình cảnh báo, chọn **Công cụ = semgrep** → còn **5** dòng. Chọn **Mức = HIGH** → chỉ còn
 dòng đỏ. Xoá lọc → về 33.
+
+---
+
+### ✅ 7. Mở một cảnh báo thì thấy đủ chuỗi bằng chứng
+
+Đây là **deliverable của tuần 10-11**. Trên bảng cảnh báo, cột "Luật" giờ có mã `EV-xxxx` màu xanh
+bên cạnh tên luật — bấm vào đó.
+
+Tìm cảnh báo `NP_NULL_ON_SOME_PATH` (TP-16, ở `UserService.java:66`) vì nó là ca **duy nhất** của
+vulnshop có đủ cả ba loại bằng chứng. Phải thấy:
+
+- **Ngữ cảnh mã nguồn** — một thẻ `CODE_CONTEXT` trỏ tới `UserService#displayNameOf`
+- **Test liên quan** — thẻ test hỏng `UserServiceTest#displayNameOf_khongTonTai`, nhãn
+  **`STACK_FRAME`** với ba chấm đặc `●●●` và weight `1.00`
+- **Độ phủ** — thẻ `COVERAGE_INFORMATION` với `rationale` nói rõ dòng 66 `COVERED`/`PARTIAL` kèm
+  bốn bộ đếm
+
+**Hỏng thì trông thế nào**: cả ba nhóm cùng rỗng trong khi cảnh báo có vị trí bấm được. Nghĩa là
+linker không chạy — kiểm `linkCount` trong `GET /api/v1/analysis-runs/{id}`.
+
+### ✅ 8. Bằng chứng yếu phải nhìn là biết yếu
+
+Mở một cảnh báo bất kỳ trong `PasswordHasher` hoặc `TextNormalizer`. Trong nhóm "Test liên quan"
+phải có thẻ mang nhãn **`NAMING_CONVENTION`**, một chấm đặc `●○○`, và chữ **⚠ liên kết yếu**.
+
+Đây là điều quan trọng nhất của màn hình về mặt phương pháp: một liên kết `STACK_FRAME` (một lần
+chạy thật đã đi qua đúng dòng lỗi) và một liên kết `NAMING_CONVENTION` (lớp test tình cờ cùng tên)
+**không được trông giống nhau**. Trên vulnshop tỉ lệ liên kết yếu là 10/123 ≈ 8%, và người chấm phải
+thấy được nó ngay trên màn hình.
+
+Cũng ở đây, đọc `rationale` của một thẻ **`CONTRADICTS`**: nó phải nói thẳng *"KHÔNG chứng minh cảnh
+báo sai"*. Câu đó nằm trong chính dữ liệu chứ không chỉ trong prompt — vì vulnshop cố tình gài bẫy
+`findByUsername` (SQL injection thật, test vẫn xanh).
+
+### ✅ 9. Rỗng là một kết luận, không phải một khoảng trống
+
+Mở một cảnh báo ở `SessionRegistry`, `ColorPicker`, `AuditLogger` hoặc `AuthController` — bốn file
+**cố ý không có test nào phủ**.
+
+Nhóm "Test liên quan" phải hiện một khung **viền đứt nét** với câu "Không có test nào liên quan tới
+bằng chứng này", chữ mực thường. Nếu không có liên kết nào cả thì hiện khung lớn nói rõ đây là một
+**kết quả** và agent sẽ kết luận `INSUFFICIENT_EVIDENCE`.
+
+**Hỏng thì trông thế nào**: nhóm rỗng biến mất im lặng, hoặc hiện chữ xám nhạt đọc như "không có gì
+đáng chú ý". Sự vắng mặt của bằng chứng chính là cơ sở của một trong ba verdict của hệ thống — giấu
+nó đi là giấu đúng thứ quan trọng nhất mà màn hình này nói được.
 
 ---
 

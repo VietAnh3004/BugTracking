@@ -90,6 +90,36 @@ Bốn điều dễ làm sai, đều thuộc loại hỏng-im-lặng:
   chứ không chỉ bằng code. Một pipeline "thành công" với Evidence Store rỗng nguy hiểm hơn nhiều
   so với báo lỗi thẳng.
 
+## Nối bằng chứng rời rạc thành chuỗi bằng chứng
+
+`service/linker/EvidenceLinker` sinh `evidence_link` theo ba tầng, mỗi tầng một `method` riêng để
+phân biệt được bằng chứng mạnh với bằng chứng suy ra. Quyết định và bốn chỗ dữ liệu thật buộc đi
+khác kế hoạch: [ADR 0009](../docs/adr/0009-lien-ket-bang-chung-ba-tang.md).
+
+| Tầng | Quan hệ | `method` mạnh nhất → yếu nhất |
+|---|---|---|
+| 1 — vị trí | `LOCATED_IN` | `LINE_EXACT` · `RANGE_OVERLAP` |
+| 2 — độ phủ + quy ước tên | `COVERS` · `SUPPORTS` · `CONTRADICTS` | `LINE_EXACT` · `METHOD_AGGREGATE` · `LINE_NEAREST_EXECUTABLE` · `NAMING_CONVENTION` |
+| 3 — stack trace | `SUPPORTS` | `STACK_FRAME` |
+
+Bốn điều dễ làm sai:
+
+- **`weight` là độ tin cậy của LIÊN KẾT**, không phải mức độ phủ và không phải mức nghiêm trọng của
+  cảnh báo. Trạng thái phủ nằm ở `rationale`.
+- **Không dùng `ON CONFLICT DO NOTHING`.** `UNIQUE (from, to, relation)` vỡ khi hai tầng cùng đề
+  xuất một cặp; `ON CONFLICT` để thứ tự chèn quyết định độ tin cậy được ghi lại, và một liên kết
+  `STACK_FRAME` có thể bị `NAMING_CONVENTION` chiếm chỗ. Dedup ở `LinkAccumulator`; trùng sau dedup
+  nghĩa là bug và phải nổ.
+- **`CONTRADICTS` không có nghĩa là false positive.** vulnshop cố tình đặt bẫy đúng chỗ này, nên
+  `rationale` mang sẵn câu cảnh báo — đặt vào chính dữ liệu để nó đi theo bằng chứng tới mọi nơi.
+- **Bộ đếm liên kết đi qua `RunOutcome`** ở đường ingest, KHÔNG do linker tự UPDATE `analysis_run`:
+  `finalizeRun` là `REQUIRES_NEW` nên nó treo transaction ngoài và sẽ ghi đè bằng giá trị cũ.
+
+`POST /api/v1/analysis-runs/{id}/links/rebuild` tính lại liên kết mà không cần chạy lại analyzer.
+Ranh giới: nó tính lại **cách khớp**, không tính lại **kết quả parse** — sửa `CodeContextExtractor`
+hay chuẩn hoá đường dẫn thì phải phân tích lại từ đầu, vì chúng sinh ra `evidence_record` mà
+`short_id` là thứ LLM đã trích dẫn.
+
 ## Chạy analyzer trong Docker sandbox
 
 `POST /api/v1/snapshots/{id}/analysis-runs/sandbox` dựng cây mã nguồn thành tar, chạy hai image

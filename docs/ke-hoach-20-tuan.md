@@ -17,7 +17,7 @@
 
 ## Trạng thái tiến độ
 
-*Cập nhật: 05/08/2026*
+*Cập nhật: 06/08/2026*
 
 | Giai đoạn | Trạng thái |
 |---|---|
@@ -27,7 +27,7 @@
 | **Tuần 4** — API contract + OpenAPI | ✅ Xong (xem §E2) |
 | **Tuần 5-7** — core backend CRUD + JWT auth + frontend routing | ✅ Xong (xem §G) |
 | **Tuần 8-9** — parser analyzer → Evidence Store + Docker sandbox | ✅ Xong: A, B, C, D (xem §H) |
-| **Tuần 10-11** — EvidenceLinker 3 tầng, CODE_CONTEXT, pgvector, Evidence Explorer | ⬜ Chưa bắt đầu |
+| **Tuần 10-11** — EvidenceLinker 3 tầng, CODE_CONTEXT, pgvector, Evidence Explorer | ✅ Xong (xem §I) |
 
 ### §G — Tuần 5-7: tiến độ chi tiết (đã xong)
 
@@ -335,6 +335,89 @@ cấp quyền root trên máy chủ.
   vào nội dung file, bốn trường có tên sẽ là một lời hứa sai.
 - **Route màn hình cảnh báo đặt NGOÀI `snapshots/:snapshotId`** dù URL lồng nhau: bảng cảnh báo
   chiếm toàn bộ bề ngang, không cần cây file bên trái.
+
+---
+
+### §I — Tuần 10-11: tiến độ chi tiết (đã xong)
+
+Deliverable của lộ trình — *"mở 1 warning → thấy code context + test liên quan + coverage"* — đã
+đạt, và nhìn thấy được bằng mắt. Quyết định kiến trúc ở
+[ADR 0009](adr/0009-lien-ket-bang-chung-ba-tang.md).
+
+| # | Hạng mục | Trạng thái |
+|---|---|---|
+| 1 | Sửa `relatedEvidence` ghi đè mất link khi một cặp có nhiều quan hệ | ✅ Xong |
+| 2 | V7: `evidence_embedding`, bộ đếm linker, `evidence_link.analysis_run_id` | ✅ Xong |
+| 3 | CODE_CONTEXT bằng JavaParser + EvidenceLinker tầng 1 (`LOCATED_IN`) | ✅ Xong |
+| 4 | EvidenceLinker tầng 3 (`SUPPORTS` theo stack frame) | ✅ Xong |
+| 5 | Gieo TP-16 để vulnshop có một ca `SUPPORTS` thật | ✅ Xong |
+| 6 | EvidenceLinker tầng 2 (`COVERS` + quy ước tên) + `CONTRADICTS` | ✅ Xong |
+| 7 | REST UI chi tiết evidence | ✅ Xong |
+| 8 | Endpoint chạy lại linker | ✅ Xong |
+| 9-11 | Frontend: bề ngang, deep-link khoảng dòng, Evidence Explorer | ✅ Xong |
+
+**Số liệu thật trên vulnshop**: 124 evidence · 103/103 vị trí đối chiếu được · 30 ngữ cảnh mã nguồn
+từ 15 file · **123 liên kết, 0 cảnh báo trơ trọi**.
+
+| Quan hệ | | Phương pháp | |
+|---|---|---|---|
+| `LOCATED_IN` | 36 | `LINE_EXACT` | 67 |
+| `COVERS` | 36 | `METHOD_AGGREGATE` | 40 |
+| `SUPPORTS` | 8 | `NAMING_CONVENTION` | 10 |
+| `CONTRADICTS` | 43 | `RANGE_OVERLAP` · `STACK_FRAME` · `LINE_NEAREST_EXECUTABLE` | 4 · 1 · 1 |
+
+Tỉ lệ liên kết chỉ dựa vào quy ước tên: **10/123 ≈ 8%** — con số tuần 15 phải báo cáo, nay đọc thẳng
+từ `analysis_run.link_counts_by_method` thay vì tính lại bằng SQL ad-hoc.
+
+364 test backend · 108 test frontend (14 file).
+
+#### Bốn chỗ dữ liệu thật buộc đi khác kế hoạch
+
+1. **Tầng 3 phục hồi 0%, không phải ~40%.** `evidence-model.md` phát hiện 2 ghi "3/5 test hỏng
+   không có frame production", ngụ ý 2/5 còn lại dùng được. Thực tế cả hai frame đó trỏ vào
+   `CartService:25` và `UserService:30` — **không analyzer nào cảnh báo trên hai file đó**. Có frame
+   production mới là điều kiện *cần*; frame còn phải rơi vào một dòng đã có cảnh báo.
+2. **Tầng 2 mới là tầng gánh chính**, không phải phương án lùi: 50/123 liên kết đến từ nó.
+3. **`CONTRADICTS` nhiều gấp hơn 5 lần `SUPPORTS`.** Xem mục rủi ro dưới đây.
+4. **Semgrep không khai tên lớp** nên tầng 2 phải lấy từ `symbol` của CODE_CONTEXT bao quanh.
+
+#### Một khiếm khuyết của case study, đã sửa
+
+Tới hết tuần 8-9, vulnshop **không có bất kỳ trường hợp nào** mà một cảnh báo tĩnh và một stack
+frame của test hỏng cùng trỏ về đúng một dòng — nên quan hệ `SUPPORTS` suy từ stack frame, loại bằng
+chứng thuyết phục nhất cho verdict `LIKELY_TRUE_POSITIVE`, không có mẫu nào để demo ở tuần 12-13 hay
+để đo ở tuần 15.
+
+Đã gieo **TP-16** (`UserService.displayNameOf:66`): cùng lỗi NPE với TP-11 nhưng phép kiểm null nằm
+trong cùng method, nên SpotBugs bắt được. Cặp TP-11 ↔ TP-16 còn có giá trị riêng cho báo cáo: hai
+lỗi **giống hệt nhau về bản chất, chỉ khác cách viết**, mà một cái bị bắt còn một cái không.
+
+Số liệu vulnshop đổi theo: `33 → 35` test (`5 → 6` hỏng) · `28 → 29` cảnh báo SpotBugs ·
+`82/171 → 85/174` dòng phủ. Lịch sử thay đổi ghi trong `expected-analysis.json`.
+
+Việc này cũng lộ ra hai lỗi tồn đọng: `SEEDED.md` **tự mâu thuẫn** từ tuần 2 (bảng mục 5 khai
+`UserService:30` là ca `SUPPORTS` trong khi TP-11 khai chính nó là "không công cụ nào bắt"), và
+`infra/analyzer/build.sh` **không sinh lại được** bộ mẫu sandbox (README bảo copy từ thư mục tạm mà
+thư mục đó bị `trap cleanup EXIT` xoá) — nay có cờ `--emit-samples`.
+
+#### Rủi ro cần theo dõi ở tuần 12-13
+
+`CONTRADICTS` (43) nhiều gấp hơn 5 lần `SUPPORTS` (8), vì mỗi test xanh trong lớp test khớp đều sinh
+một liên kết. Về dữ liệu là đúng — mỗi test là một bằng chứng riêng — nhưng một LLM đọc 43 dòng
+*"test xanh phủ dòng này"* rất dễ nghiêng về `LIKELY_FALSE_POSITIVE`, **đúng cái bẫy vulnshop cố ý
+gài** (`findByUsername` có SQL injection thật mà test vẫn xanh).
+
+Hai lớp chống đã có: weight của `CONTRADICTS` luôn thấp hơn `SUPPORTS`, và `rationale` viết thẳng
+câu cảnh báo vào chính dữ liệu để LLM đọc chứ không phải tự suy. Nếu chưa đủ thì phải gom nhóm hoặc
+cắt theo weight ở tầng prompt builder.
+
+#### Món còn nợ có chủ đích
+
+| Món | Vì sao hoãn |
+|---|---|
+| Chưa sinh vector embedding | Số chiều do mô hình quyết định, mà mô hình chỉ chốt ở tuần 12-13 khi có agent loop để đo retrieval có tốt hơn thật không. Schema và test tích hợp đã sẵn |
+| Chưa có nút "chạy lại liên kết" trên UI | Endpoint đã xong; nút chỉ có nghĩa khi đã có người sửa heuristic, tức là từ tuần 12-13 |
+| Chưa tô màu cú pháp trong khối mã | Prop `render` của `CodeLine` vẫn để trống: "vùng bằng chứng" là nhiều DÒNG, mà mô hình dữ liệu không có `start_col`/`end_col`. Dùng `render` bây giờ là bịa ranh giới cột |
 
 ---
 

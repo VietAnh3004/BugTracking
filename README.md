@@ -49,17 +49,18 @@ Hai quyết định kiến trúc đáng chú ý:
 ## Hiện chạy được tới đâu
 
 **Trên giao diện web**: đăng nhập → tạo dự án → tải mã nguồn (`.zip`) lên → duyệt cây file và xem
-mã theo dòng → xem danh sách cảnh báo đã chuẩn hoá của một lần phân tích, bấm để nhảy tới đúng
-dòng nguồn.
+mã theo dòng → xem danh sách cảnh báo đã chuẩn hoá → **mở một cảnh báo và thấy chuỗi bằng chứng của
+nó**: ngữ cảnh mã nguồn bao quanh, test liên quan (ủng hộ hay phản bác), và độ phủ — mỗi liên kết
+kèm mức tin cậy và lý do, bấm được để nhảy tới đúng khoảng dòng.
 
 **Chỉ gọi được bằng API, chưa có nút bấm**: nạp artifact analyzer
 (`POST /api/v1/snapshots/{id}/analysis-runs`) và chạy analyzer trong Docker sandbox
 (`.../analysis-runs/sandbox`). Cả hai đã chạy thật; phần còn thiếu là nút trên UI. Các bước nghiệm
 thu bằng `curl`: [docs/huong-dan-test-frontend.md](docs/huong-dan-test-frontend.md).
 
-**Chưa có**: liên kết bằng chứng ba tầng, `CODE_CONTEXT` qua JavaParser, Evidence Explorer, agent
-loop và giao diện hội thoại — `agent-service` mới có khung cấu hình, `LlmProvider` trừu tượng và
-lược đồ phản hồi.
+**Chưa có**: sinh vector embedding (schema đã sẵn, mô hình chốt ở tuần 12-13), agent loop và giao
+diện hội thoại — `agent-service` mới có khung cấu hình, `LlmProvider` trừu tượng và lược đồ phản
+hồi.
 
 Trạng thái chi tiết theo từng tuần và từng hạng mục: [docs/ke-hoach-20-tuan.md](docs/ke-hoach-20-tuan.md).
 Đó là **nguồn sự thật duy nhất về tiến độ**; mục này chỉ mô tả định tính để khỏi lệch số.
@@ -125,7 +126,9 @@ container), không phải lúc build — nên một image dùng được cho m�
   (nguồn sự thật duy nhất về tiến độ; các file khác không chép lại con số)
 - [docs/evidence-model.md](docs/evidence-model.md) — Unified Evidence Model: bảng provenance từng
   cột trỏ về đúng chỗ trong artifact thật, ERD, và cách kiểm chứng tự động
-- [docs/adr/](docs/adr/) — các quyết định kiến trúc và lý do
+- [docs/adr/](docs/adr/) — các quyết định kiến trúc và lý do, trong đó
+  [ADR 0009](docs/adr/0009-lien-ket-bang-chung-ba-tang.md) ghi cách liên kết bằng chứng ba tầng và
+  bốn chỗ dữ liệu thật buộc đi khác kế hoạch
 - [docs/spike-tuan-1.md](docs/spike-tuan-1.md) — xác thực rủi ro: 3 nguồn bằng chứng khớp `file:line`
 - [docs/spike-spotbugs-cli.md](docs/spike-spotbugs-cli.md) — SpotBugs CLI cho kết quả trùng khít
   Maven plugin, tiền đề của Docker sandbox

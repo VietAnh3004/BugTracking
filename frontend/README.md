@@ -1,8 +1,8 @@
 # frontend
 
 SPA tĩnh: đăng nhập, quản lý dự án, tải mã nguồn lên, duyệt cây file và xem mã nguồn theo dòng,
-xem danh sách cảnh báo đã chuẩn hoá của một lần phân tích. Evidence Explorer và chat với AI Agent
-sẽ thêm ở các tuần sau.
+xem danh sách cảnh báo đã chuẩn hoá, và **Evidence Explorer** — mở một cảnh báo để thấy chuỗi bằng
+chứng của nó. Chat với AI Agent sẽ thêm ở tuần 12-13.
 
 ## Deploy độc lập
 
@@ -22,6 +22,7 @@ src/
 │   ├── projects/   { components/ hooks/ pages/ }
 │   ├── snapshots/  { api/ components/ hooks/ layouts/ lib/ pages/ }
 │   ├── warnings/   { api/ components/ hooks/ pages/ }
+│   ├── evidence/   { api/ components/ hooks/ lib/ pages/ }
 │   └── system/     { components/ hooks/ }
 ├── shared/
 │   ├── ui/         Thuần trình bày — không gọi API, không biết nghiệp vụ
@@ -46,6 +47,16 @@ Quy ước:
 Dùng data router (`createBrowserRouter`) nhưng **không dùng `loader`/`action`**: mọi request đi qua
 `apiClient` + TanStack Query, thêm `loader` là dựng tầng cache thứ hai chạy song song. Lý do đầy đủ
 ở đầu `src/app/routes.tsx`.
+
+Bề ngang chia theo nhóm route bằng hai **layout route không có path**: `NarrowContent` (880px, cho
+màn hình một cột) và `WideContent` (cho bảng cảnh báo, Evidence Explorer, khung duyệt mã nguồn).
+Chúng không chiếm đoạn URL nào — `/projects` vẫn là `/projects` — nên thêm/đổi nhóm không làm hỏng
+test định tuyến. Ràng buộc trên `RootLayout` chỉ còn là trần chung 1400px.
+
+Deep-link tới mã nguồn dùng `#L42` hoặc `#L40-L48`, dựng và đọc **chỉ qua** `toLineHash` /
+`parseLineHash` trong `features/snapshots/lib/filePathUrl.ts`. Bốn chỗ cùng dựng hash (bảng cảnh
+báo, thẻ ngữ cảnh mã, frame stack trace, và citation của chatbot ở tuần 12-13), nên ghép chuỗi tay
+ở từng chỗ là mỗi chỗ sai một kiểu.
 
 Access token giữ trong bộ nhớ, refresh token trong `localStorage` (`shared/lib/tokenStorage.ts` là
 nơi duy nhất chạm `localStorage`). `apiClient` tự làm mới token khi gặp 401, gom mọi lời gọi refresh
