@@ -5,11 +5,13 @@ import java.util.UUID;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import vn.hust.datn.evidence.config.security.CurrentUser;
 import vn.hust.datn.evidence.dto.EvidenceDetailResponse;
+import vn.hust.datn.evidence.dto.LinkRebuildResponse;
 import vn.hust.datn.evidence.service.EvidenceDetailService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,5 +58,28 @@ public class EvidenceController {
     public EvidenceDetailResponse detail(
             @PathVariable UUID runId, @PathVariable String shortId, @AuthenticationPrincipal CurrentUser currentUser) {
         return evidenceDetailService.detail(runId, shortId, currentUser.id());
+    }
+
+    /**
+     * Tính lại toàn bộ liên kết của một lần phân tích, không cần chạy lại analyzer.
+     *
+     * <p>Tồn tại vì heuristic của linker (khớp dòng, quy ước tên, phân loại frame) CHẮC CHẮN phải
+     * sửa, và sửa xong mà phải chạy lại cả sandbox thì rất tốn — nhất là với repo lớn.
+     *
+     * <p><b>Ranh giới của việc chạy lại</b>: nó tính lại CÁCH KHỚP, không tính lại KẾT QUẢ PARSE.
+     * Sửa {@code CodeContextExtractor}, {@code StackTraceParser} hay chuẩn hoá đường dẫn thì phải
+     * phân tích lại từ đầu, vì chúng sinh ra {@code evidence_record} — mà {@code short_id} của
+     * evidence là thứ LLM đã trích dẫn và không được phép đổi.
+     *
+     * <p>Đồng bộ và trả 200, không phải 202: thao tác thuần DB, trên vulnshop chạy dưới một giây.
+     * Nếu về sau repo lớn làm nó chậm thì đổi sang 202 kèm theo dõi qua {@code GET /analysis-runs/{id}}.
+     *
+     * <p>Là thao tác GHI nên đi đường JWT của người dùng, KHÔNG mở cho service token: năm tool
+     * theo ADR 0005 đều là tool ĐỌC.
+     */
+    @PostMapping("/analysis-runs/{runId}/links/rebuild")
+    @Operation(summary = "Tính lại liên kết bằng chứng của một lần phân tích")
+    public LinkRebuildResponse rebuildLinks(@PathVariable UUID runId, @AuthenticationPrincipal CurrentUser currentUser) {
+        return evidenceDetailService.rebuildLinks(runId, currentUser.id());
     }
 }

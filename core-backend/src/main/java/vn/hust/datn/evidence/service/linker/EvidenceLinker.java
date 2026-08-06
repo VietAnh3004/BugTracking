@@ -21,11 +21,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import vn.hust.datn.evidence.domain.EvidenceLinkMethod;
 import vn.hust.datn.evidence.domain.EvidenceLinkRelation;
 import vn.hust.datn.evidence.domain.EvidenceRecord;
 import vn.hust.datn.evidence.domain.EvidenceType;
 import vn.hust.datn.evidence.domain.TestCaseStatus;
+import vn.hust.datn.evidence.exception.LinkerProducedNothingException;
 import vn.hust.datn.evidence.repository.CoverageLineRepository;
 import vn.hust.datn.evidence.repository.CoverageMethodRepository;
 import vn.hust.datn.evidence.repository.EvidenceRecordRepository;
@@ -77,6 +81,8 @@ public class EvidenceLinker {
 
     private static final int BATCH_CHUNK = 1000;
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     /**
      * Bán kính tìm dòng executable gần nhất khi chính dòng cảnh báo không có hàng độ phủ.
      *
@@ -122,6 +128,53 @@ public class EvidenceLinker {
                     runId, paths.subList(from, Math.min(from + BATCH_CHUNK, paths.size()))));
         }
         return all;
+    }
+
+    /**
+     * Chạy lại toàn bộ liên kết cho một run ĐÃ XONG, rồi tự ghi bộ đếm.
+     *
+     * <p>Khác {@link #link(UUID)} ở hai chỗ, và cả hai đều bắt buộc:
+     *
+     * <ul>
+     *   <li><b>Tự UPDATE {@code analysis_run}</b>. Ở đường ingest thì không được phép — bộ đếm
+     *       phải đi qua {@code RunOutcome} vì {@code finalizeRun} là {@code REQUIRES_NEW} và sẽ
+     *       ghi đè. Ở đây không có {@code finalizeRun} nào chạy sau, nên tự ghi là đúng và là cách
+     *       duy nhất.
+     *   <li><b>Khoá hàng run bằng {@code FOR UPDATE}</b>. Hai lần rebuild song song sẽ cùng xoá
+     *       rồi cùng chèn, và cái chạy sau đâm vào {@code UNIQUE (from, to, relation)} — một lỗi
+     *       500 khó hiểu cho một thao tác lẽ ra idempotent.
+     * </ul>
+     *
+     * <p>Toàn bộ nằm trong MỘT transaction: ra 0 liên kết trong khi có ngữ cảnh mã nguồn thì ném,
+     * transaction rollback, và liên kết cũ còn nguyên.
+     */
+    @Transactional
+    public LinkResult relink(UUID runId) {
+        Integer codeContextCount = jdbcTemplate.queryForObject(
+                "SELECT code_context_count FROM analysis_run WHERE id = ? FOR UPDATE", Integer.class, runId);
+
+        LinkResult result = link(runId);
+
+        if (result.linkCount() == 0 && codeContextCount != null && codeContextCount > 0) {
+            throw new LinkerProducedNothingException(runId, codeContextCount);
+        }
+
+        jdbcTemplate.update(
+                "UPDATE analysis_run SET link_count = ?, unlinked_warning_count = ?, link_counts_by_method = ?::jsonb "
+                        + "WHERE id = ?",
+                result.linkCount(),
+                result.unlinkedWarningCount(),
+                toJson(result.countByMethod()),
+                runId);
+        return result;
+    }
+
+    private String toJson(Map<String, Object> value) {
+        try {
+            return OBJECT_MAPPER.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Khong serialize duoc phan bo lien ket", e);
+        }
     }
 
     @Transactional

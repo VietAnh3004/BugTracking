@@ -544,6 +544,34 @@
         "security" : [ ]
       }
     },
+    "/api/v1/analysis-runs/{runId}/links/rebuild" : {
+      "post" : {
+        "tags" : [ "evidence" ],
+        "summary" : "Tính lại liên kết bằng chứng của một lần phân tích",
+        "operationId" : "rebuildLinks",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LinkRebuildResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/snapshots/{snapshotId}" : {
       "get" : {
         "tags" : [ "snapshots" ],
@@ -1294,6 +1322,37 @@
           }
         },
         "required" : [ "email", "password" ]
+      },
+      "LinkRebuildResponse" : {
+        "type" : "object",
+        "properties" : {
+          "runId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "deletedCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số liên kết cũ đã xoá trước khi ghi lại"
+          },
+          "linkCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "unlinkedWarningCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số cảnh báo không nhận được liên kết nào"
+          },
+          "countByMethod" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "description" : "Phân bố theo EvidenceLinkMethod — nguồn số liệu tỉ lệ liên kết yếu"
+          }
+        },
+        "required" : [ "countByMethod", "deletedCount", "linkCount", "runId", "unlinkedWarningCount" ]
       },
       "SnapshotFileResponse" : {
         "type" : "object",

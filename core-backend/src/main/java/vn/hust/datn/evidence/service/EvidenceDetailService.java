@@ -19,6 +19,7 @@ import vn.hust.datn.evidence.domain.TestCase;
 import vn.hust.datn.evidence.domain.Warning;
 import vn.hust.datn.evidence.domain.WarningLocation;
 import vn.hust.datn.evidence.dto.EvidenceDetailResponse;
+import vn.hust.datn.evidence.dto.LinkRebuildResponse;
 import vn.hust.datn.evidence.dto.RelatedEvidenceView;
 import vn.hust.datn.evidence.dto.TestCaseSummaryView;
 import vn.hust.datn.evidence.dto.WarningDetailView;
@@ -27,6 +28,8 @@ import vn.hust.datn.evidence.repository.EvidenceRecordRepository;
 import vn.hust.datn.evidence.repository.TestCaseRepository;
 import vn.hust.datn.evidence.repository.WarningLocationRepository;
 import vn.hust.datn.evidence.repository.WarningRepository;
+import vn.hust.datn.evidence.service.linker.EvidenceLinker;
+import vn.hust.datn.evidence.service.linker.LinkResult;
 
 /**
  * Ráp dữ liệu cho màn hình Evidence Explorer.
@@ -52,18 +55,21 @@ public class EvidenceDetailService {
     private final WarningRepository warningRepository;
     private final WarningLocationRepository warningLocationRepository;
     private final TestCaseRepository testCaseRepository;
+    private final EvidenceLinker evidenceLinker;
 
     public EvidenceDetailService(
             EvidenceQueryService evidenceQueryService,
             EvidenceRecordRepository evidenceRecordRepository,
             WarningRepository warningRepository,
             WarningLocationRepository warningLocationRepository,
-            TestCaseRepository testCaseRepository) {
+            TestCaseRepository testCaseRepository,
+            EvidenceLinker evidenceLinker) {
         this.evidenceQueryService = evidenceQueryService;
         this.evidenceRecordRepository = evidenceRecordRepository;
         this.warningRepository = warningRepository;
         this.warningLocationRepository = warningLocationRepository;
         this.testCaseRepository = testCaseRepository;
+        this.evidenceLinker = evidenceLinker;
     }
 
     /**
@@ -118,6 +124,26 @@ public class EvidenceDetailService {
                 toViews(coverage, testCaseById),
                 toViews(other, testCaseById),
                 tatCa.size());
+    }
+
+    /**
+     * Tính lại liên kết cho một run đã xong.
+     *
+     * <p>Đòi {@code SUCCEEDED}/{@code SUCCEEDED_CLEAN} qua {@code ensureRunQueryable}: chạy lại
+     * liên kết trên một run đang RUNNING sẽ đua với chính pipeline đang ghi evidence.
+     */
+    @Transactional
+    public LinkRebuildResponse rebuildLinks(UUID runId, UUID ownerId) {
+        evidenceQueryService.requireRunOwnedBy(runId, ownerId);
+        evidenceQueryService.ensureRunQueryable(runId);
+
+        LinkResult result = evidenceLinker.relink(runId);
+        return new LinkRebuildResponse(
+                runId,
+                result.deletedCount(),
+                result.linkCount(),
+                result.unlinkedWarningCount(),
+                result.countByMethod());
     }
 
     private WarningDetailView warningDetail(UUID evidenceId) {

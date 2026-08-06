@@ -215,6 +215,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis-runs/{runId}/links/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Tính lại liên kết bằng chứng của một lần phân tích */
+        post: operations["rebuildLinks"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/snapshots/{snapshotId}": {
         parameters: {
             query?: never;
@@ -539,6 +556,26 @@ export interface components {
         LoginRequest: {
             email: string;
             password: string;
+        };
+        LinkRebuildResponse: {
+            /** Format: uuid */
+            runId: string;
+            /**
+             * Format: int32
+             * @description Số liên kết cũ đã xoá trước khi ghi lại
+             */
+            deletedCount: number;
+            /** Format: int32 */
+            linkCount: number;
+            /**
+             * Format: int32
+             * @description Số cảnh báo không nhận được liên kết nào
+             */
+            unlinkedWarningCount: number;
+            /** @description Phân bố theo EvidenceLinkMethod — nguồn số liệu tỉ lệ liên kết yếu */
+            countByMethod: {
+                [key: string]: Record<string, never>;
+            };
         };
         SnapshotFileResponse: {
             path: string;
@@ -1159,6 +1196,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthTokensResponse"];
+                };
+            };
+        };
+    };
+    rebuildLinks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LinkRebuildResponse"];
                 };
             };
         };

@@ -66,6 +66,18 @@ public class GlobalExceptionHandler {
         return problem(HttpStatus.CONFLICT, "run-not-queryable", "Run chưa thể truy vấn", ex.getMessage(), request);
     }
 
+    /**
+     * Chạy lại liên kết ra 0 trong khi có ngữ cảnh mã nguồn — bất biến cấu trúc bị vi phạm.
+     *
+     * <p>409 chứ không 500: đây là trạng thái của DỮ LIỆU, không phải lỗi lập trình, và người vận
+     * hành xử lý được (chạy lại phân tích). Liên kết cũ vẫn còn nguyên nhờ rollback.
+     */
+    @ExceptionHandler(LinkerProducedNothingException.class)
+    public ProblemDetail handleLinkerProducedNothing(LinkerProducedNothingException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.CONFLICT, "linker-produced-nothing", "Không sinh được liên kết nào", ex.getMessage(), request);
+    }
+
     @ExceptionHandler(EmailAlreadyUsedException.class)
     public ProblemDetail handleEmailAlreadyUsed(EmailAlreadyUsedException ex, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "email-already-used", "Email đã được đăng ký", ex.getMessage(), request);

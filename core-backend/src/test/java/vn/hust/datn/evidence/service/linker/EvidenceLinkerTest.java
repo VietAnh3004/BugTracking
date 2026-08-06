@@ -1,6 +1,7 @@
 package vn.hust.datn.evidence.service.linker;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import vn.hust.datn.evidence.domain.TestCaseStatus;
 import vn.hust.datn.evidence.domain.TestFailureKind;
 import vn.hust.datn.evidence.domain.WarningSeverity;
 import vn.hust.datn.evidence.domain.WarningTool;
+import vn.hust.datn.evidence.exception.LinkerProducedNothingException;
 import vn.hust.datn.evidence.service.analysis.CodeContextDraft;
 import vn.hust.datn.evidence.service.analysis.CoverageDraft;
 import vn.hust.datn.evidence.service.analysis.CoverageLineDraft;
@@ -317,6 +319,56 @@ class EvidenceLinkerTest extends AbstractIntegrationTest {
     @Test
     void bangThuBacPhuHetMoiGiaTriCuaEnum() {
         assertThat(LinkAccumulator.precedence()).containsExactlyInAnyOrder(EvidenceLinkMethod.values());
+    }
+
+    // ----------------------------------------------------------------------------------------
+    // relink() — chạy lại được
+    // ----------------------------------------------------------------------------------------
+
+    /** Chạy lại phải GHI bộ đếm xuống {@code analysis_run} — đường ingest thì không được phép. */
+    @Test
+    void relink_ghiBoDemXuongAnalysisRun() {
+        materializer.materialize(run.getId(), List.of(warning(10), codeContext(5, 20)), pathResolver);
+        jdbcTemplate.update(
+                "UPDATE analysis_run SET status = 'SUCCEEDED', finding_count = 1, code_context_count = 1, link_count = 1 WHERE id = ?",
+                run.getId());
+
+        LinkResult result = linker.relink(run.getId());
+
+        Map<String, Object> row = jdbcTemplate.queryForMap(
+                "SELECT link_count, unlinked_warning_count, link_counts_by_method FROM analysis_run WHERE id = ?",
+                run.getId());
+        assertThat(row.get("link_count")).isEqualTo(result.linkCount());
+        assertThat(row.get("unlinked_warning_count")).isEqualTo(0);
+        // JDBC trả JSONB thành PGobject, không phải String.
+        assertThat(String.valueOf(row.get("link_counts_by_method"))).contains("LINE_EXACT");
+    }
+
+    /**
+     * Ra 0 liên kết trong khi có ngữ cảnh mã nguồn là bất biến cấu trúc bị vi phạm — phải NÉM.
+     *
+     * <p>Và vì rebuild xoá liên kết cũ TRƯỚC khi ghi lại, ném ở đây còn phải kéo theo rollback:
+     * một lần chạy lại xoá sạch rồi báo thành công với 0 liên kết là mất dữ liệu trong im lặng.
+     */
+    @Test
+    void relink_raKhongLienKetTrongKhiCoNguCanh_nemVaGiuNguyenLienKetCu() {
+        materializer.materialize(run.getId(), List.of(warning(10), codeContext(5, 20)), pathResolver);
+        jdbcTemplate.update(
+                "UPDATE analysis_run SET status = 'SUCCEEDED', finding_count = 1, code_context_count = 1, link_count = 1 WHERE id = ?",
+                run.getId());
+        int truoc = linker.relink(run.getId()).linkCount();
+        assertThat(truoc).isPositive();
+
+        // Đẩy ngữ cảnh ra khỏi tầm với của cảnh báo: linker sẽ không nối được gì nữa.
+        jdbcTemplate.update(
+                "UPDATE evidence_record SET start_line = 900, end_line = 950 WHERE type = 'CODE_CONTEXT' AND analysis_run_id = ?",
+                run.getId());
+
+        assertThatThrownBy(() -> linker.relink(run.getId())).isInstanceOf(LinkerProducedNothingException.class);
+
+        Integer conLai = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM evidence_link WHERE analysis_run_id = ?", Integer.class, run.getId());
+        assertThat(conLai).isEqualTo(truoc);
     }
 
     // ----------------------------------------------------------------------------------------

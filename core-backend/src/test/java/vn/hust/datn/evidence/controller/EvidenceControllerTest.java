@@ -1,6 +1,7 @@
 package vn.hust.datn.evidence.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -180,5 +181,71 @@ class EvidenceControllerTest extends AbstractWebIntegrationTest {
     @Test
     void chiTiet_khongCoToken_tra401() throws Exception {
         getMockMvc().perform(get(url(run.getId(), shortId()))).andExpect(status().isUnauthorized());
+    }
+
+    private String rebuildUrl(Object runId) {
+        return "/api/v1/analysis-runs/%s/links/rebuild".formatted(runId);
+    }
+
+    /**
+     * Run không có ngữ cảnh mã nguồn nào thì 0 liên kết là HỢP LỆ — ràng buộc "0 liên kết = lỗi"
+     * chỉ áp khi {@code code_context_count > 0}. Nếu không, mọi repo không có file Java đều bị
+     * từ chối oan.
+     */
+    @Test
+    void rebuild_runKhongCoNguCanh_traVe200VoiKhongLienKet() throws Exception {
+        getMockMvc()
+                .perform(post(rebuildUrl(run.getId())).with(authenticatedAs(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.runId").value(run.getId().toString()))
+                .andExpect(jsonPath("$.linkCount").value(0))
+                .andExpect(jsonPath("$.deletedCount").value(0));
+    }
+
+    /** Chạy lại hai lần cho kết quả GIỐNG HỆT và không vỡ {@code UNIQUE (from, to, relation)}. */
+    @Test
+    void rebuild_chayHaiLan_ketQuaGiongHetVaBaoSoDaXoa() throws Exception {
+        EvidenceRecord context =
+                fixtures.evidenceRecord(run, EvidenceType.CODE_CONTEXT, EvidenceSource.parser, "PasswordHasher.java", 37);
+        fixtures.link(
+                warning.getEvidenceRecord(), context, EvidenceLinkRelation.LOCATED_IN, EvidenceLinkMethod.LINE_EXACT, 1.0);
+
+        getMockMvc()
+                .perform(post(rebuildUrl(run.getId())).with(authenticatedAs(owner)))
+                .andExpect(status().isOk())
+                // Liên kết dựng tay bị xoá rồi tính lại: fixture không có warning_location nên
+                // linker không dựng lại được, và đó là hành vi đúng.
+                .andExpect(jsonPath("$.deletedCount").value(1));
+
+        getMockMvc()
+                .perform(post(rebuildUrl(run.getId())).with(authenticatedAs(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deletedCount").value(0));
+    }
+
+    @Test
+    void rebuild_runCuaNguoiKhac_tra404() throws Exception {
+        User nguoiKhac = fixtures.user("khac2-%d@test.local".formatted(System.nanoTime()));
+
+        getMockMvc()
+                .perform(post(rebuildUrl(run.getId())).with(authenticatedAs(nguoiKhac)))
+                .andExpect(status().isNotFound());
+    }
+
+    /** Chạy lại trên run đang RUNNING sẽ đua với chính pipeline đang ghi evidence. */
+    @Test
+    void rebuild_runDangChay_tra409() throws Exception {
+        Project project = fixtures.project("ev4-%d".formatted(System.nanoTime()), owner);
+        AnalysisRun dangChay = fixtures.runWithStatus(fixtures.snapshot(project), AnalysisRunStatus.RUNNING);
+
+        getMockMvc()
+                .perform(post(rebuildUrl(dangChay.getId())).with(authenticatedAs(owner)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.type").value("https://datn.hust.vn/problems/run-not-queryable"));
+    }
+
+    @Test
+    void rebuild_khongCoToken_tra401() throws Exception {
+        getMockMvc().perform(post(rebuildUrl(run.getId()))).andExpect(status().isUnauthorized());
     }
 }
