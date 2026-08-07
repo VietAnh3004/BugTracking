@@ -8,18 +8,14 @@ với cùng một đoạn mã.
 from abc import ABC, abstractmethod
 from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 Role = Literal["system", "user", "assistant", "tool"]
 
-
-class Message(BaseModel):
-    """Một lượt trong hội thoại gửi tới model."""
-
-    role: Role
-    content: str
-    tool_call_id: str | None = None
-    name: str | None = None
+# Tên tool tổng hợp mà provider tự thêm vào khi cần ép định dạng đầu ra. Ép bằng tool-call thay
+# vì bằng cơ chế structured-output riêng của từng hãng là chủ ý: nó chạy như nhau trên cả ba
+# provider, nên thực nghiệm tuần 15 so được kết quả giữa chúng mà không đổi mã.
+SUBMIT_TOOL_NAME = "submit_analysis"
 
 
 class ToolCall(BaseModel):
@@ -30,6 +26,20 @@ class ToolCall(BaseModel):
     arguments: dict[str, Any]
 
 
+class Message(BaseModel):
+    """Một lượt trong hội thoại gửi tới model."""
+
+    role: Role
+    content: str
+    # Chỉ có ở lượt ``assistant``. Phải giữ lại khi ghi lịch sử hội thoại: bỏ đi thì lượt
+    # ``tool`` phía sau không còn tham chiếu được tới yêu cầu đã sinh ra nó, và mọi provider
+    # đều từ chối cặp không khớp.
+    tool_calls: list[ToolCall] = Field(default_factory=list)
+    # Chỉ có ở lượt ``tool``: id của tool call mà lượt này trả lời.
+    tool_call_id: str | None = None
+    name: str | None = None
+
+
 class LlmResponse(BaseModel):
     """Kết quả một lượt gọi model.
 
@@ -37,7 +47,7 @@ class LlmResponse(BaseModel):
     """
 
     content: str | None
-    tool_calls: list[ToolCall] = []
+    tool_calls: list[ToolCall] = Field(default_factory=list)
     input_tokens: int = 0
     output_tokens: int = 0
     stop_reason: str | None = None
@@ -59,7 +69,8 @@ class LlmProvider(ABC):
             messages: Lịch sử hội thoại, phần tử đầu thường là system prompt.
             tools: Khai báo tool theo JSON Schema; ``None`` nghĩa là cấm gọi tool.
                 Cấu hình LLM-Code và LLM-Static trong thực nghiệm truyền ``None`` ở đây.
-            response_schema: JSON Schema ép định dạng đầu ra khi không còn tool nào được gọi.
+            response_schema: JSON Schema ép định dạng đầu ra. Khi có, provider ép model gọi
+                đúng tool ``submit_analysis`` và trả JSON đó trong ``content``.
 
         Returns:
             Nội dung trả lời hoặc danh sách tool cần gọi, kèm số token đã dùng.
@@ -69,3 +80,8 @@ class LlmProvider(ABC):
     @abstractmethod
     def model_name(self) -> str:
         """Định danh model, ghi kèm vào log để truy vết kết quả thực nghiệm."""
+
+    @property
+    @abstractmethod
+    def provider_name(self) -> str:
+        """Tên nhà cung cấp, ghi vào ``llm_trace`` cùng với model."""

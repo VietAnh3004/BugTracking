@@ -11,10 +11,13 @@ from agent_service.config import Settings
 
 REQUIRED_ENV = {
     "CORE_API_URL": "http://localhost:8080",
+    "SERVICE_TOKEN": "bi-mat-chia-se",
     "LLM_PROVIDER": "anthropic",
     "LLM_API_KEY": "test-key",
     "LLM_MODEL": "claude-sonnet-5",
 }
+
+OPTIONAL_ENV = ("LLM_TEMPERATURE", "MAX_TOOL_ITERATIONS", "PROMPT_VERSION", "LLM_MAX_TOKENS")
 
 
 @pytest.fixture(autouse=True)
@@ -23,7 +26,7 @@ def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
     Việc bỏ qua file .env do ``Settings(_env_file=None)`` ở từng test đảm nhiệm.
     """
-    for name in (*REQUIRED_ENV, "LLM_TEMPERATURE", "MAX_TOOL_ITERATIONS"):
+    for name in (*REQUIRED_ENV, *OPTIONAL_ENV):
         monkeypatch.delenv(name, raising=False)
 
 
@@ -35,8 +38,20 @@ def test_nap_duoc_khi_du_bien(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert settings.llm_provider == "anthropic"
     assert settings.llm_model == "claude-sonnet-5"
-    # Mặc định temperature là 0 để kết quả thực nghiệm bớt dao động giữa các lần chạy.
-    assert settings.llm_temperature == 0.0
+    assert settings.prompt_version == "v1"
+
+
+def test_temperature_mac_dinh_la_khong_gui(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mặc định phải là None, KHÔNG phải 0.0.
+
+    Các model từ Claude Opus 4.7 trở đi trả lời 400 cho ``temperature``. Một giá trị mặc định
+    khác None nghĩa là mọi request đều hỏng ngay khi bật provider thật — đúng loại lỗi chỉ lộ
+    ra lúc chạy mà cấu hình fail-fast sinh ra để chặn.
+    """
+    for name, value in REQUIRED_ENV.items():
+        monkeypatch.setenv(name, value)
+
+    assert Settings(_env_file=None).llm_temperature is None  # type: ignore[call-arg]
 
 
 @pytest.mark.parametrize("missing", sorted(REQUIRED_ENV))

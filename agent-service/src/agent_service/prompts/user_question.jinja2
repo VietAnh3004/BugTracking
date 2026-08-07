@@ -1,0 +1,12 @@
+{% if focus_short_id -%}
+Cảnh báo đang xét: {{ focus_short_id }}
+{% endif -%}
+{% if history -%}
+
+Các lượt trước trong phiên này:
+{% for turn in history %}
+{{ turn.role }}: {{ turn.content }}
+{% endfor %}
+{%- endif %}
+
+Câu hỏi: {{ question }}
