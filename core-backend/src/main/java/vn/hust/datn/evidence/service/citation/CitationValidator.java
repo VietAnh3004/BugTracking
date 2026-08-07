@@ -66,7 +66,8 @@ public class CitationValidator {
                 downgradedFrom(draft.verdict(), verdict),
                 draft.summary(),
                 List.copyOf(claims),
-                List.copyOf(draft.contradictingShortIds()));
+                List.copyOf(draft.contradictingShortIds()),
+                List.copyOf(draft.suggestedNextChecks()));
     }
 
     private ValidatedAnswer.ValidatedClaim validateClaim(

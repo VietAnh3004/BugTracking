@@ -78,6 +78,23 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT, "linker-produced-nothing", "Không sinh được liên kết nào", ex.getMessage(), request);
     }
 
+    /**
+     * agent-service chết hoặc trả về thứ không đọc nổi.
+     *
+     * <p>503 chứ không phải 500: đây là lỗi HẠ TẦNG của một service KHÁC. Trả 500 sẽ khiến người
+     * vận hành đi tìm bug trong core-backend trong khi thứ cần khởi động lại nằm chỗ khác — cùng
+     * lý do với 503 khi Docker sandbox đang tắt.
+     *
+     * <p>Chỉ áp cho các đường KHÔNG stream. Một lượt hỏi đáp đã bắt đầu stream thì header đã gửi
+     * đi rồi, không đổi mã trạng thái được nữa; ở đó lỗi ra dưới dạng sự kiện SSE {@code error}.
+     */
+    @ExceptionHandler(AgentUnavailableException.class)
+    public ProblemDetail handleAgentUnavailable(AgentUnavailableException ex, HttpServletRequest request) {
+        log.warn("agent-service khong dung duoc: {}", ex.getMessage());
+        return problem(
+                HttpStatus.SERVICE_UNAVAILABLE, "agent-unavailable", "Agent không khả dụng", ex.getMessage(), request);
+    }
+
     @ExceptionHandler(EmailAlreadyUsedException.class)
     public ProblemDetail handleEmailAlreadyUsed(EmailAlreadyUsedException ex, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "email-already-used", "Email đã được đăng ký", ex.getMessage(), request);

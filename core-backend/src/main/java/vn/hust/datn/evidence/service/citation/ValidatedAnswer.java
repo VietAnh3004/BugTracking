@@ -19,13 +19,15 @@ import vn.hust.datn.evidence.domain.ClaimVerdict;
  * @param summary giữ nguyên văn của LLM
  * @param claims mọi nhận định, kèm kết quả tra từng trích dẫn
  * @param contradictingShortIds giữ nguyên văn; không thuộc mẫu số của chỉ số nào
+ * @param suggestedNextChecks giữ nguyên văn
  */
 public record ValidatedAnswer(
         ClaimVerdict verdict,
         ClaimVerdict downgradedFrom,
         String summary,
         List<ValidatedClaim> claims,
-        List<String> contradictingShortIds) {
+        List<String> contradictingShortIds,
+        List<String> suggestedNextChecks) {
 
     /**
      * Một nhận định sau hậu kiểm.

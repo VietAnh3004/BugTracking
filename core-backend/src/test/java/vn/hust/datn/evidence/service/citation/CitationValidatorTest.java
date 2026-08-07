@@ -53,7 +53,7 @@ class CitationValidatorTest extends AbstractIntegrationTest {
     }
 
     private AnswerDraft answer(ClaimVerdict verdict, ClaimDraft... claims) {
-        return new AnswerDraft(verdict, "tom tat", List.of(claims), List.of());
+        return new AnswerDraft(verdict, "tom tat", List.of(claims), List.of(), List.of());
     }
 
     private ClaimDraft claim(String text, String... citedIds) {

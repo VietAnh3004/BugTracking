@@ -18,9 +18,14 @@ import vn.hust.datn.evidence.domain.ClaimVerdict;
  * @param claims các nhận định, theo đúng thứ tự LLM sinh ra
  * @param contradictingShortIds bằng chứng phản bác — KHÔNG đi qua {@code claim_citation}, xem
  *     {@link vn.hust.datn.evidence.domain.Message#getContradictingShortIds()}
+ * @param suggestedNextChecks việc người dùng nên kiểm thêm; chuỗi thuần, không trích dẫn
  */
 public record AnswerDraft(
-        ClaimVerdict verdict, String summary, List<ClaimDraft> claims, List<String> contradictingShortIds) {
+        ClaimVerdict verdict,
+        String summary,
+        List<ClaimDraft> claims,
+        List<String> contradictingShortIds,
+        List<String> suggestedNextChecks) {
 
     /** Một nhận định đơn lẻ kèm danh sách Evidence ID nguyên văn LLM viết ra. */
     public record ClaimDraft(String text, List<String> citedShortIds, BigDecimal confidence) {}

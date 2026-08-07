@@ -412,6 +412,73 @@
         }
       }
     },
+    "/api/v1/conversations/{conversationId}/messages" : {
+      "get" : {
+        "tags" : [ "conversations" ],
+        "summary" : "Toàn bộ lượt của một phiên, đã qua hậu kiểm trích dẫn",
+        "operationId" : "messages",
+        "parameters" : [ {
+          "name" : "conversationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ChatMessageResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "conversations" ],
+        "summary" : "Hỏi Agent một câu, nhận tiến trình và câu trả lời qua SSE",
+        "operationId" : "ask",
+        "parameters" : [ {
+          "name" : "conversationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AskRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/event-stream" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SseEmitter"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/register" : {
       "post" : {
         "tags" : [ "auth" ],
@@ -565,6 +632,73 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/LinkRebuildResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-runs/{runId}/conversations" : {
+      "get" : {
+        "tags" : [ "conversations" ],
+        "summary" : "Các phiên hỏi đáp của một lần phân tích",
+        "operationId" : "list_1",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConversationResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "conversations" ],
+        "summary" : "Mở một phiên hỏi đáp về một lần phân tích",
+        "operationId" : "create_1",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateConversationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConversationResponse"
                 }
               }
             }
@@ -1256,6 +1390,27 @@
         },
         "required" : [ "createdAt", "fileCount", "id", "projectId", "sourceType", "status", "totalSizeBytes" ]
       },
+      "AskRequest" : {
+        "type" : "object",
+        "description" : "Câu hỏi gửi cho Agent",
+        "properties" : {
+          "question" : {
+            "type" : "string",
+            "maxLength" : 4000,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "question" ]
+      },
+      "SseEmitter" : {
+        "type" : "object",
+        "properties" : {
+          "timeout" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
       "RegisterRequest" : {
         "type" : "object",
         "properties" : {
@@ -1375,6 +1530,53 @@
           }
         },
         "required" : [ "countByMethod", "deletedCount", "linkCount", "runId", "unlinkedWarningCount" ]
+      },
+      "CreateConversationRequest" : {
+        "type" : "object",
+        "description" : "Mở một phiên hỏi đáp mới",
+        "properties" : {
+          "focusShortId" : {
+            "type" : "string",
+            "description" : "Cảnh báo muốn bàn tới, dạng EV-XXXX",
+            "pattern" : "^EV-[0-9A-Fa-f]{4}$"
+          },
+          "title" : {
+            "type" : "string",
+            "description" : "Tiêu đề hiển thị; bỏ trống thì sinh tự động",
+            "maxLength" : 200,
+            "minLength" : 0
+          }
+        }
+      },
+      "ConversationResponse" : {
+        "type" : "object",
+        "description" : "Phiên hỏi đáp với Agent, gắn với một lần phân tích",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "analysisRunId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "focusShortId" : {
+            "type" : "string",
+            "description" : "Cảnh báo đang bàn tới (EV-XXXX); null nghĩa là hỏi ở phạm vi cả run"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "analysisRunId", "createdAt", "id", "title", "updatedAt" ]
       },
       "SnapshotFileResponse" : {
         "type" : "object",
@@ -1540,6 +1742,110 @@
           }
         },
         "required" : [ "items", "page", "size", "total" ]
+      },
+      "ChatMessageResponse" : {
+        "type" : "object",
+        "description" : "Một lượt hỏi hoặc đáp, đã qua hậu kiểm trích dẫn",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "ordinal" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "role" : {
+            "type" : "string",
+            "enum" : [ "USER", "ASSISTANT" ]
+          },
+          "content" : {
+            "type" : "string"
+          },
+          "verdict" : {
+            "type" : "string",
+            "description" : "Chỉ có ở lượt của Agent",
+            "enum" : [ "LIKELY_TRUE_POSITIVE", "LIKELY_FALSE_POSITIVE", "INSUFFICIENT_EVIDENCE" ]
+          },
+          "downgradedFromVerdict" : {
+            "type" : "string",
+            "description" : "Verdict gốc trước khi bị hạ cấp vì thiếu trích dẫn hợp lệ",
+            "enum" : [ "LIKELY_TRUE_POSITIVE", "LIKELY_FALSE_POSITIVE", "INSUFFICIENT_EVIDENCE" ]
+          },
+          "suggestedNextChecks" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "contradictingShortIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "claims" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ClaimView"
+            }
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "claims", "content", "contradictingShortIds", "createdAt", "id", "ordinal", "role", "suggestedNextChecks" ]
+      },
+      "CitationView" : {
+        "type" : "object",
+        "description" : "Một Evidence ID được trích dẫn, kèm kết quả tra",
+        "properties" : {
+          "citedShortIdRaw" : {
+            "type" : "string"
+          },
+          "resolution" : {
+            "type" : "string",
+            "enum" : [ "RESOLVED", "UNKNOWN_ID", "WRONG_RUN", "MALFORMED" ]
+          },
+          "shortId" : {
+            "type" : "string",
+            "description" : "Chỉ khác null khi resolution=RESOLVED; dùng để mở Evidence Explorer"
+          }
+        },
+        "required" : [ "citedShortIdRaw", "resolution" ]
+      },
+      "ClaimView" : {
+        "type" : "object",
+        "description" : "Một nhận định kèm kết quả hậu kiểm trích dẫn",
+        "properties" : {
+          "ordinal" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "text" : {
+            "type" : "string"
+          },
+          "verdict" : {
+            "type" : "string",
+            "enum" : [ "LIKELY_TRUE_POSITIVE", "LIKELY_FALSE_POSITIVE", "INSUFFICIENT_EVIDENCE" ]
+          },
+          "downgradedFromVerdict" : {
+            "type" : "string",
+            "description" : "Khác null nghĩa là nhận định này không có trích dẫn nào tra được",
+            "enum" : [ "LIKELY_TRUE_POSITIVE", "LIKELY_FALSE_POSITIVE", "INSUFFICIENT_EVIDENCE" ]
+          },
+          "confidence" : {
+            "type" : "number"
+          },
+          "citations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CitationView"
+            }
+          }
+        },
+        "required" : [ "citations", "ordinal", "text", "verdict" ]
       },
       "PageResponseWarningView" : {
         "type" : "object",

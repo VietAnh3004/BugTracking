@@ -151,6 +151,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conversations/{conversationId}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Toàn bộ lượt của một phiên, đã qua hậu kiểm trích dẫn */
+        get: operations["messages"];
+        put?: never;
+        /** Hỏi Agent một câu, nhận tiến trình và câu trả lời qua SSE */
+        post: operations["ask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -226,6 +244,24 @@ export interface paths {
         put?: never;
         /** Tính lại liên kết bằng chứng của một lần phân tích */
         post: operations["rebuildLinks"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis-runs/{runId}/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Các phiên hỏi đáp của một lần phân tích */
+        get: operations["list_1"];
+        put?: never;
+        /** Mở một phiên hỏi đáp về một lần phân tích */
+        post: operations["create_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -546,6 +582,14 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        /** @description Câu hỏi gửi cho Agent */
+        AskRequest: {
+            question: string;
+        };
+        SseEmitter: {
+            /** Format: int64 */
+            timeout?: number;
+        };
         RegisterRequest: {
             email: string;
             password: string;
@@ -595,6 +639,27 @@ export interface components {
             countByMethod: {
                 [key: string]: Record<string, never>;
             };
+        };
+        /** @description Mở một phiên hỏi đáp mới */
+        CreateConversationRequest: {
+            /** @description Cảnh báo muốn bàn tới, dạng EV-XXXX */
+            focusShortId?: string;
+            /** @description Tiêu đề hiển thị; bỏ trống thì sinh tự động */
+            title?: string;
+        };
+        /** @description Phiên hỏi đáp với Agent, gắn với một lần phân tích */
+        ConversationResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            analysisRunId: string;
+            /** @description Cảnh báo đang bàn tới (EV-XXXX); null nghĩa là hỏi ở phạm vi cả run */
+            focusShortId?: string;
+            title: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
         };
         SnapshotFileResponse: {
             path: string;
@@ -668,6 +733,54 @@ export interface components {
             size: number;
             /** Format: int64 */
             total: number;
+        };
+        /** @description Một lượt hỏi hoặc đáp, đã qua hậu kiểm trích dẫn */
+        ChatMessageResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            ordinal: number;
+            /** @enum {string} */
+            role: "USER" | "ASSISTANT";
+            content: string;
+            /**
+             * @description Chỉ có ở lượt của Agent
+             * @enum {string}
+             */
+            verdict?: "LIKELY_TRUE_POSITIVE" | "LIKELY_FALSE_POSITIVE" | "INSUFFICIENT_EVIDENCE";
+            /**
+             * @description Verdict gốc trước khi bị hạ cấp vì thiếu trích dẫn hợp lệ
+             * @enum {string}
+             */
+            downgradedFromVerdict?: "LIKELY_TRUE_POSITIVE" | "LIKELY_FALSE_POSITIVE" | "INSUFFICIENT_EVIDENCE";
+            suggestedNextChecks: string[];
+            contradictingShortIds: string[];
+            claims: components["schemas"]["ClaimView"][];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @description Một Evidence ID được trích dẫn, kèm kết quả tra */
+        CitationView: {
+            citedShortIdRaw: string;
+            /** @enum {string} */
+            resolution: "RESOLVED" | "UNKNOWN_ID" | "WRONG_RUN" | "MALFORMED";
+            /** @description Chỉ khác null khi resolution=RESOLVED; dùng để mở Evidence Explorer */
+            shortId?: string;
+        };
+        /** @description Một nhận định kèm kết quả hậu kiểm trích dẫn */
+        ClaimView: {
+            /** Format: int32 */
+            ordinal: number;
+            text: string;
+            /** @enum {string} */
+            verdict: "LIKELY_TRUE_POSITIVE" | "LIKELY_FALSE_POSITIVE" | "INSUFFICIENT_EVIDENCE";
+            /**
+             * @description Khác null nghĩa là nhận định này không có trích dẫn nào tra được
+             * @enum {string}
+             */
+            downgradedFromVerdict?: "LIKELY_TRUE_POSITIVE" | "LIKELY_FALSE_POSITIVE" | "INSUFFICIENT_EVIDENCE";
+            confidence?: number;
+            citations: components["schemas"]["CitationView"][];
         };
         PageResponseWarningView: {
             items: components["schemas"]["WarningView"][];
@@ -1119,6 +1232,54 @@ export interface operations {
             };
         };
     };
+    messages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChatMessageResponse"][];
+                };
+            };
+        };
+    };
+    ask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["SseEmitter"];
+                };
+            };
+        };
+    };
     register: {
         parameters: {
             query?: never;
@@ -1237,6 +1398,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["LinkRebuildResponse"];
+                };
+            };
+        };
+    };
+    list_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConversationResponse"][];
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateConversationRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConversationResponse"];
                 };
             };
         };
