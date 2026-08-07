@@ -44,8 +44,35 @@ public class AgentClient {
     private final ObjectMapper objectMapper;
 
     public AgentClient(AgentServiceProperties properties, ObjectMapper objectMapper) {
-        this.restClient = RestClient.builder().baseUrl(properties.baseUrl()).build();
+        this.restClient = RestClient.builder()
+                .requestFactory(http11RequestFactory(properties))
+                .baseUrl(properties.baseUrl())
+                .build();
         this.objectMapper = objectMapper;
+    }
+
+    /**
+     * GHIM HTTP/1.1. Đây là bản vá cho một lỗi hỏng-im-lặng, không phải tinh chỉnh.
+     *
+     * <p>Không có Apache/Jetty/Netty trên classpath nên Spring chọn {@code HttpClient} của JDK,
+     * và client đó mặc định thử nâng cấp lên HTTP/2 bằng cơ chế {@code h2c}: nó gửi request kèm
+     * {@code Upgrade: h2c} và {@code Transfer-Encoding: chunked} — <b>nhưng KHÔNG gửi thân
+     * request</b>. Phía uvicorn (HTTP/1.1) nhận được một POST rỗng và trả 422 "Field required".
+     *
+     * <p>Không có lỗi nào ở phía Java: request "thành công" theo mọi nghĩa nó biết. Bắt được bằng
+     * cách dựng một server nghe thử và in nguyên văn thứ đi qua dây.
+     */
+    private static org.springframework.http.client.ClientHttpRequestFactory http11RequestFactory(
+            AgentServiceProperties properties) {
+        java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
+                .version(java.net.http.HttpClient.Version.HTTP_1_1)
+                .build();
+        var factory = new org.springframework.http.client.JdkClientHttpRequestFactory(httpClient);
+        // Hàng rào thời gian cho CẢ lượt, lấy từ app.agent.timeout (mặc định 120s). Một lượt suy
+        // luận đi qua nhiều vòng gọi model nên nó phải rộng — nhưng vô hạn thì một agent treo sẽ
+        // giữ luôn một luồng của agentExecutor cho tới khi tắt ứng dụng.
+        factory.setReadTimeout(properties.timeout());
+        return factory;
     }
 
     /**
@@ -65,13 +92,26 @@ public class AgentClient {
                 .exchange(
                         (req, response) -> {
                             if (response.getStatusCode().isError()) {
-                                throw new AgentUnavailableException(
-                                        "agent-service tra ve " + response.getStatusCode());
+                                // Kèm THÂN response, không chỉ mã trạng thái: 422 của FastAPI nói
+                                // rõ trường nào sai, và bỏ nó đi biến một lỗi hợp đồng sửa được
+                                // trong một phút thành một cuộc điều tra.
+                                throw new AgentUnavailableException("agent-service tra ve %s: %s"
+                                        .formatted(response.getStatusCode(), readBody(response)));
                             }
                             readStream(response.getBody(), onEvent);
                             return null;
                         },
                         false);
+    }
+
+    /** Thân response lỗi, cắt ngắn — đủ để biết trường nào sai, không đủ để làm ngập log. */
+    private static String readBody(org.springframework.http.client.ClientHttpResponse response) {
+        try (java.io.InputStream body = response.getBody()) {
+            String text = new String(body.readAllBytes(), StandardCharsets.UTF_8);
+            return text.length() > 500 ? text.substring(0, 500) + "…" : text;
+        } catch (IOException e) {
+            return "(khong doc duoc than response)";
+        }
     }
 
     /**

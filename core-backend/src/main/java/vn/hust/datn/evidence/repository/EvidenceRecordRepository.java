@@ -1,5 +1,6 @@
 package vn.hust.datn.evidence.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,15 +43,33 @@ public interface EvidenceRecordRepository extends JpaRepository<EvidenceRecord, 
             @Param("fromLine") int fromLine,
             @Param("toLine") int toLine);
 
-    // search_evidence tuần 4: ILIKE thuần, không BM25/vector (ADR 0004 §7 cố ý chưa chốt số chiều
-    // embedding).
+    /**
+     * search_evidence: ILIKE thuần, không BM25/vector (ADR 0004 §7 cố ý chưa chốt số chiều
+     * embedding).
+     *
+     * <p>Lọc {@code types} nằm TRONG truy vấn, không lọc sau khi đã lấy về. Lọc sau thì
+     * {@code LIMIT} cắt trước bộ lọc: hỏi 3 cảnh báo tĩnh có thể trả về RỖNG dù trong run có
+     * hàng chục — và với LLM thì "không tìm thấy" là một câu trả lời sai mà nó tin ngay.
+     * Gặp thật khi chạy end-to-end tuần 12-13.
+     *
+     * <p>{@code ORDER BY seqInRun} cũng bắt buộc: không có nó, cùng một truy vấn cho ra thứ tự
+     * khác nhau giữa các lần chạy, nên {@code LIMIT} trả về tập khác nhau. Thực nghiệm tuần 15
+     * chạy mỗi cảnh báo 3 lần và cần chúng so sánh được với nhau.
+     */
     @Query("""
             select e from EvidenceRecord e
             where e.analysisRunId = :runId
               and (:filePath is null or e.filePath = :filePath)
+              and (:#{#types == null} = true or e.type in :types)
               and (lower(e.summary) like lower(concat('%', :query, '%'))
                    or lower(e.filePath) like lower(concat('%', :query, '%'))
                    or lower(e.symbol) like lower(concat('%', :query, '%')))
+            order by e.seqInRun
             """)
-    List<EvidenceRecord> search(@Param("runId") UUID runId, @Param("query") String query, @Param("filePath") String filePath, Pageable pageable);
+    List<EvidenceRecord> search(
+            @Param("runId") UUID runId,
+            @Param("query") String query,
+            @Param("types") Collection<EvidenceType> types,
+            @Param("filePath") String filePath,
+            Pageable pageable);
 }

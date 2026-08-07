@@ -136,11 +136,11 @@ public class EvidenceQueryService {
 
     public List<EvidenceRecord> searchEvidence(UUID runId, String query, Set<EvidenceType> types, String filePath, int limit) {
         ensureRunQueryable(runId);
-        List<EvidenceRecord> results = evidenceRecordRepository.search(runId, query, filePath, PageRequest.of(0, limit));
-        if (types == null || types.isEmpty()) {
-            return results;
-        }
-        return results.stream().filter(e -> types.contains(e.getType())).toList();
+        // Bộ lọc loại đi XUỐNG truy vấn, không lọc sau khi lấy về: lọc sau thì LIMIT cắt trước
+        // bộ lọc, nên hỏi 3 cảnh báo tĩnh có thể trả RỖNG dù run có hàng chục. Với LLM, "không
+        // tìm thấy" là một câu trả lời sai mà nó tin ngay và không hỏi lại.
+        Set<EvidenceType> effectiveTypes = types == null || types.isEmpty() ? null : types;
+        return evidenceRecordRepository.search(runId, query, effectiveTypes, filePath, PageRequest.of(0, limit));
     }
 
     /**

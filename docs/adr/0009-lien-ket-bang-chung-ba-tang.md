@@ -106,12 +106,12 @@ tuần 5-7. Nhân đôi taxonomy lỗi `binary-file`/`file-content-not-stored` l
    Có frame production mới là điều kiện *cần*; frame còn phải rơi vào một dòng đã có cảnh báo.
    Đã gieo TP-16 để vulnshop có một ca `SUPPORTS` thật (xem `SEEDED.md`).
 
-2. **Tầng 2 mới là tầng gánh chính**, không phải phương án lùi. Trên vulnshop: 40
-   `METHOD_AGGREGATE` + 10 `NAMING_CONVENTION` so với 1 `STACK_FRAME`.
+2. **Tầng 2 mới là tầng gánh chính**, không phải phương án lùi. Trên vulnshop: 46
+   `METHOD_AGGREGATE` + 13 `NAMING_CONVENTION` so với 1 `STACK_FRAME`.
 
-3. **`CONTRADICTS` nhiều gấp hơn 5 lần `SUPPORTS`** (43 so với 8), vì mỗi test xanh trong lớp test
+3. **`CONTRADICTS` nhiều gấp hơn 6 lần `SUPPORTS`** (52 so với 8), vì mỗi test xanh trong lớp test
    khớp đều sinh một liên kết. Về dữ liệu là đúng, nhưng tuần 12-13 phải cân nhắc khi dựng prompt:
-   một LLM đọc 43 dòng "test xanh phủ dòng này" rất dễ nghiêng về `LIKELY_FALSE_POSITIVE`.
+   một LLM đọc 52 dòng "test xanh phủ dòng này" rất dễ nghiêng về `LIKELY_FALSE_POSITIVE`.
 
 4. **Semgrep không khai tên lớp** (SARIF thật không có `logicalLocations`), nên tầng 2 phải lấy tên
    lớp từ `symbol` của CODE_CONTEXT bao quanh. Không có bước này thì mọi cảnh báo Semgrep tự động

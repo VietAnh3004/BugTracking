@@ -14,8 +14,8 @@ from typing import Any
 from agent_service.config import Settings
 from agent_service.providers.base import LlmProvider, LlmResponse, Message
 
-# Kịch bản mặc định khi chạy LLM_PROVIDER=scripted mà không nạp kịch bản riêng: một vòng gọi
-# get_warning rồi nộp câu trả lời. Đủ để nghiệm thu đường đi, không giả vờ là suy luận thật.
+# Kịch bản mặc định khi chạy LLM_PROVIDER=scripted mà không nạp kịch bản riêng. Đủ để nghiệm thu
+# đường đi, không giả vờ là suy luận thật.
 _DEFAULT_ANSWER: dict[str, Any] = {
     "verdict": "INSUFFICIENT_EVIDENCE",
     "summary": "Provider gia dang duoc dung — day khong phai ket luan cua mot mo hinh that.",
@@ -29,17 +29,29 @@ class ScriptedProvider(LlmProvider):
     """Trả lần lượt các phản hồi đã nạp sẵn, và ghi lại mọi lượt gọi để test kiểm."""
 
     def __init__(
-        self, responses: list[LlmResponse] | None = None, model: str = "scripted-model"
+        self,
+        responses: list[LlmResponse] | None = None,
+        model: str = "scripted-model",
+        repeat_last: bool = False,
     ) -> None:
         self._responses = list(responses) if responses else []
         self._model = model
+        self._repeat_last = repeat_last
         self.calls: list[dict[str, Any]] = []
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "ScriptedProvider":
+        """Bản dùng khi CHẠY THẬT với ``LLM_PROVIDER=scripted``.
+
+        ``repeat_last=True`` là bắt buộc chứ không phải tiện tay: một lượt hỏi đáp gọi model ÍT
+        NHẤT hai lần (vòng truy xuất, rồi lượt nộp có ép lược đồ). Một kịch bản một phản hồi sẽ
+        chết ở lượt thứ hai — và chết đúng ở đường mà tài liệu bảo dùng để nghiệm thu end-to-end.
+        Chỉ phát hiện được bằng cách chạy thật; không test nào của agent loop đi qua nhánh này.
+        """
         return cls(
             responses=[LlmResponse(content=json.dumps(_DEFAULT_ANSWER, ensure_ascii=False))],
             model=settings.llm_model,
+            repeat_last=True,
         )
 
     @property
@@ -63,9 +75,12 @@ class ScriptedProvider(LlmProvider):
                 "forced_submit": response_schema is not None,
             }
         )
+        if len(self._responses) == 1 and self._repeat_last:
+            return self._responses[0]
         if not self._responses:
-            # Hết kịch bản nghĩa là agent loop chạy nhiều vòng hơn test dự liệu. Ném ra chứ
-            # đừng lặp lại phản hồi cuối: lặp lại sẽ biến một vòng lặp vô hạn thành test xanh.
+            # Trong TEST (repeat_last=False) hết kịch bản nghĩa là agent loop chạy nhiều vòng hơn
+            # test dự liệu. Ném ra chứ đừng lặp lại phản hồi cuối: lặp lại sẽ biến một vòng lặp
+            # vô hạn thành test xanh.
             raise AssertionError(
                 f"ScriptedProvider het kich ban o luot thu {len(self.calls)} — agent loop chay "
                 "nhieu vong hon test du lieu."

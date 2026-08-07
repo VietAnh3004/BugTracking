@@ -266,3 +266,22 @@ async def test_thieu_truong_bat_buoc_thi_thanh_loi(settings: Settings, thieu: st
     events = await _collect(loop)
 
     assert isinstance(events[-1], ErrorEvent)
+
+
+@respx.mock
+async def test_provider_scripted_chay_that_khong_het_kich_ban(settings: Settings) -> None:
+    """``LLM_PROVIDER=scripted`` phải đi hết một lượt hỏi đáp.
+
+    Một lượt gọi model ÍT NHẤT hai lần (vòng truy xuất, rồi lượt nộp có ép lược đồ), nên kịch bản
+    mặc định một phản hồi sẽ chết ở lượt thứ hai — và chết đúng ở đường mà tài liệu bảo dùng để
+    nghiệm thu end-to-end. Lỗi này chỉ lộ ra khi chạy thật, không test nào của agent loop cũ đi
+    qua nhánh `from_settings`.
+    """
+    provider = ScriptedProvider.from_settings(settings)
+    loop = AgentLoop(provider, EvidenceToolClient(settings), settings)
+
+    events = [event async for event in loop.run(RUN_ID, "Cau hoi bat ky")]
+
+    assert isinstance(events[-1], AnswerEvent)
+    assert events[-1].answer.verdict == "INSUFFICIENT_EVIDENCE"
+    assert len(provider.calls) == 2

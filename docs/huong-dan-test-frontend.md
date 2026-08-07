@@ -323,7 +323,7 @@ phải có thẻ mang nhãn **`NAMING_CONVENTION`**, một chấm đặc `●○
 
 Đây là điều quan trọng nhất của màn hình về mặt phương pháp: một liên kết `STACK_FRAME` (một lần
 chạy thật đã đi qua đúng dòng lỗi) và một liên kết `NAMING_CONVENTION` (lớp test tình cờ cùng tên)
-**không được trông giống nhau**. Trên vulnshop tỉ lệ liên kết yếu là 10/123 ≈ 8%, và người chấm phải
+**không được trông giống nhau**. Trên vulnshop tỉ lệ liên kết yếu là 13/132 ≈ 10%, và người chấm phải
 thấy được nó ngay trên màn hình.
 
 Cũng ở đây, đọc `rationale` của một thẻ **`CONTRADICTS`**: nó phải nói thẳng *"KHÔNG chứng minh cảnh

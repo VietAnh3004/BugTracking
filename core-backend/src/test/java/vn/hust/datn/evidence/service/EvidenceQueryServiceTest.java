@@ -233,6 +233,53 @@ class EvidenceQueryServiceTest extends AbstractIntegrationTest {
         assertThat(results).isNotEmpty();
     }
 
+    /**
+     * Bộ lọc loại phải nằm TRONG truy vấn, không lọc sau khi đã lấy về.
+     *
+     * <p>Lọc sau thì {@code LIMIT} cắt trước bộ lọc: ở đây có 5 bằng chứng khớp từ khoá, trong đó
+     * 2 cái đầu KHÔNG phải cảnh báo tĩnh — nên hỏi 2 cảnh báo tĩnh sẽ trả về RỖNG. Gặp thật khi
+     * chạy end-to-end tuần 12-13, và với LLM thì "không tìm thấy" là một câu trả lời sai mà nó
+     * tin ngay rồi kết luận `INSUFFICIENT_EVIDENCE` nhầm.
+     */
+    @Test
+    void locTheoLoaiKhongBiLimitCatTruoc() {
+        Project project = fixtures.project("p-" + System.nanoTime());
+        RepositorySnapshot snapshot = fixtures.snapshot(project);
+        AnalysisRun run = fixtures.succeededRun(snapshot, 1);
+        fixtures.evidenceRecord(run, EvidenceType.TEST_RESULT, EvidenceSource.surefire, "UserServiceTest.java", 10);
+        fixtures.evidenceRecord(run, EvidenceType.STACK_TRACE, EvidenceSource.surefire, "UserService.java", 20);
+        fixtures.evidenceRecord(run, EvidenceType.STATIC_WARNING, EvidenceSource.spotbugs, "UserService.java", 30);
+        fixtures.evidenceRecord(run, EvidenceType.STATIC_WARNING, EvidenceSource.spotbugs, "UserService.java", 40);
+        fixtures.evidenceRecord(run, EvidenceType.CODE_CONTEXT, EvidenceSource.parser, "UserService.java", 50);
+
+        var results = service.searchEvidence(run.getId(), "UserService", Set.of(EvidenceType.STATIC_WARNING), null, 2);
+
+        assertThat(results).hasSize(2);
+        assertThat(results).allMatch(e -> e.getType() == EvidenceType.STATIC_WARNING);
+    }
+
+    /**
+     * Thứ tự phải ổn định giữa các lần chạy: thực nghiệm tuần 15 chạy mỗi cảnh báo 3 lần và cần
+     * so sánh được các lần với nhau. Không có {@code ORDER BY} thì {@code LIMIT} trả về tập khác
+     * nhau mỗi lần mà không có gì báo.
+     */
+    @Test
+    void ketQuaTimKiemCoThuTuOnDinh() {
+        Project project = fixtures.project("p-" + System.nanoTime());
+        RepositorySnapshot snapshot = fixtures.snapshot(project);
+        AnalysisRun run = fixtures.succeededRun(snapshot, 1);
+        for (int line = 10; line <= 60; line += 10) {
+            fixtures.evidenceRecord(run, EvidenceType.STATIC_WARNING, EvidenceSource.spotbugs, "CartService.java", line);
+        }
+
+        var lanMot = service.searchEvidence(run.getId(), "CartService", null, null, 3);
+        var lanHai = service.searchEvidence(run.getId(), "CartService", null, null, 3);
+
+        assertThat(lanMot).extracting(EvidenceRecord::getShortId).isEqualTo(lanHai.stream()
+                .map(EvidenceRecord::getShortId)
+                .toList());
+    }
+
     @Test
     void moiToolValidateRunTruocKhiTraKetQuaRong() {
         Project project = fixtures.project("p-" + System.nanoTime());

@@ -380,6 +380,33 @@ gọi LLM. Nay mặc định là "không gửi", và `AnthropicProvider` **nổ 
 này. Muốn kết quả ổn định giữa các lần chạy thì chạy lặp rồi đo phương sai, đừng tìm một tham số
 để ép — API không còn nhận nữa. Trước khi viết mã gọi LLM, **nạp skill `claude-api`**.
 
+**`RestClient` của Spring dùng JDK HttpClient, và nó THỬ NÂNG CẤP h2c — LÀM MẤT THÂN REQUEST.**
+Không có Apache/Jetty/Netty trên classpath thì Spring chọn `HttpClient` của JDK, vốn mặc định
+`Version.HTTP_2`. Với một server HTTP/1.1 (uvicorn), nó gửi `Upgrade: h2c` +
+`Transfer-Encoding: chunked` **nhưng không gửi thân request**. Triệu chứng gặp thật ở tuần 12-13:
+FastAPI trả `422 {"loc":["body"],"msg":"Field required"}` cho một `POST` mà phía Java tin là đã
+gửi đủ — không có lỗi, không có cảnh báo, chỉ là một request rỗng. Chỉ tìm ra bằng cách dựng một
+server nghe thử rồi in nguyên văn thứ đi qua dây. Cách chữa: ghim
+`HttpClient.newBuilder().version(HTTP_1_1)` rồi truyền vào `JdkClientHttpRequestFactory`. Xem
+`AgentClient`.
+
+**Kèm THÂN response vào thông báo lỗi khi gọi service khác, đừng chỉ kèm mã trạng thái.** Cùng ca
+trên: `"agent-service tra ve 422"` không nói được gì và biến một lỗi hợp đồng sửa trong một phút
+thành một cuộc điều tra; `"...: {'loc':['body'],'msg':'Field required'}"` chỉ thẳng nguyên nhân.
+
+**Lọc SAU khi đã `LIMIT` là lọc sai — và với LLM thì sai âm thầm.** `EvidenceQueryService
+.searchEvidence` từng lấy `limit` bản ghi rồi mới lọc theo `types` trong Java: hỏi 3 cảnh báo tĩnh
+có thể trả **rỗng** dù run có hàng chục. Tệ hơn, truy vấn không có `ORDER BY` nên **cùng một lời
+gọi cho kết quả khác nhau giữa các lần chạy** — đúng lúc tôi tưởng mình đã kiểm chứng bản vá thì
+thật ra chỉ gặp may. LLM nhận "không tìm thấy" là tin ngay và kết luận `INSUFFICIENT_EVIDENCE`
+nhầm. Bộ lọc phải xuống truy vấn, và mọi truy vấn có `LIMIT` phải có `ORDER BY` ổn định.
+
+**`mvn spring-boot:run` chạy nền: TaskStop giết wrapper nhưng KHÔNG giết JVM đã fork.** Lần khởi
+động sau thất bại vì cổng 8080 còn bị giữ, `/actuator/health` vẫn trả `UP` (của tiến trình CŨ),
+nên nhìn như đã restart. Hậu quả: nghiệm thu một bản vá trên mã chưa hề được nạp. Kiểm bằng
+`Get-NetTCPConnection -LocalPort 8080` rồi `Stop-Process` đúng PID, và luôn xác nhận
+`grep -c "Started CoreBackendApplication" run.log` bằng 1.
+
 **Ép structured output và cho phép gọi tool LOẠI TRỪ NHAU.** Ép model nộp đúng lược đồ nghĩa là
 buộc nó gọi đúng một tool (`tool_choice: {type: "tool", name: ...}`). Bật từ vòng đầu của agent
 loop thì nó **không bao giờ truy xuất được bằng chứng nào** — mà vẫn trả về một câu trả lời đúng

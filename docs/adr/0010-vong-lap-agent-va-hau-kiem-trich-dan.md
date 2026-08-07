@@ -9,7 +9,7 @@
 
 ## Bối cảnh
 
-Hết tuần 10-11, Evidence Store đã đầy đủ: 124 bằng chứng và 123 liên kết trên vulnshop, năm
+Hết tuần 10-11, Evidence Store đã đầy đủ: 124 bằng chứng và 132 liên kết trên vulnshop, năm
 evidence tool trả dữ liệu thật. Nhưng chưa có gì *dùng* chúng — `agent-service` mới có phần khung,
 và bảng `claim` / `claim_citation` mà V2 dựng sẵn chưa có writer nào.
 
@@ -88,9 +88,9 @@ hợp lệ.
 
 ### 5. Prompt phải nói thẳng về cái bẫy `CONTRADICTS`
 
-ADR 0009 phát hiện 3 đo được trên vulnshop: **`CONTRADICTS` nhiều gấp hơn 5 lần `SUPPORTS`**
-(43 so với 8), vì mỗi test xanh trong lớp test khớp đều sinh một liên kết. Đó là dữ liệu đúng,
-nhưng một LLM đọc 43 dòng "test xanh phủ dòng này" rất dễ nghiêng về `LIKELY_FALSE_POSITIVE` —
+ADR 0009 phát hiện 3 đo được trên vulnshop: **`CONTRADICTS` nhiều gấp hơn 6 lần `SUPPORTS`**
+(52 so với 8), vì mỗi test xanh trong lớp test khớp đều sinh một liên kết. Đó là dữ liệu đúng,
+nhưng một LLM đọc 52 dòng "test xanh phủ dòng này" rất dễ nghiêng về `LIKELY_FALSE_POSITIVE` —
 tức là rơi đúng cái bẫy trung tâm mà case study dựng lên.
 
 Ba biện pháp, cả ba đều cần:

@@ -358,16 +358,16 @@ Deliverable của lộ trình — *"mở 1 warning → thấy code context + tes
 | 9-11 | Frontend: bề ngang, deep-link khoảng dòng, Evidence Explorer | ✅ Xong |
 
 **Số liệu thật trên vulnshop**: 124 evidence · 103/103 vị trí đối chiếu được · 30 ngữ cảnh mã nguồn
-từ 15 file · **123 liên kết, 0 cảnh báo trơ trọi**.
+từ 15 file · **132 liên kết, 0 cảnh báo trơ trọi**.
 
 | Quan hệ | | Phương pháp | |
 |---|---|---|---|
 | `LOCATED_IN` | 36 | `LINE_EXACT` | 67 |
-| `COVERS` | 36 | `METHOD_AGGREGATE` | 40 |
-| `SUPPORTS` | 8 | `NAMING_CONVENTION` | 10 |
-| `CONTRADICTS` | 43 | `RANGE_OVERLAP` · `STACK_FRAME` · `LINE_NEAREST_EXECUTABLE` | 4 · 1 · 1 |
+| `COVERS` | 36 | `METHOD_AGGREGATE` | 46 |
+| `SUPPORTS` | 8 | `NAMING_CONVENTION` | 13 |
+| `CONTRADICTS` | 52 | `RANGE_OVERLAP` · `STACK_FRAME` · `LINE_NEAREST_EXECUTABLE` | 4 · 1 · 1 |
 
-Tỉ lệ liên kết chỉ dựa vào quy ước tên: **10/123 ≈ 8%** — con số tuần 15 phải báo cáo, nay đọc thẳng
+Tỉ lệ liên kết chỉ dựa vào quy ước tên: **13/132 ≈ 10%** — con số tuần 15 phải báo cáo, nay đọc thẳng
 từ `analysis_run.link_counts_by_method` thay vì tính lại bằng SQL ad-hoc.
 
 384 test backend · 109 test frontend (14 file).
@@ -378,8 +378,8 @@ từ `analysis_run.link_counts_by_method` thay vì tính lại bằng SQL ad-hoc
    không có frame production", ngụ ý 2/5 còn lại dùng được. Thực tế cả hai frame đó trỏ vào
    `CartService:25` và `UserService:30` — **không analyzer nào cảnh báo trên hai file đó**. Có frame
    production mới là điều kiện *cần*; frame còn phải rơi vào một dòng đã có cảnh báo.
-2. **Tầng 2 mới là tầng gánh chính**, không phải phương án lùi: 50/123 liên kết đến từ nó.
-3. **`CONTRADICTS` nhiều gấp hơn 5 lần `SUPPORTS`.** Xem mục rủi ro dưới đây.
+2. **Tầng 2 mới là tầng gánh chính**, không phải phương án lùi: 59/132 liên kết đến từ nó.
+3. **`CONTRADICTS` nhiều gấp hơn 6 lần `SUPPORTS`.** Xem mục rủi ro dưới đây.
 4. **Semgrep không khai tên lớp** nên tầng 2 phải lấy từ `symbol` của CODE_CONTEXT bao quanh.
 5. **Quy ước tên phải sinh DANH SÁCH ứng viên.** `UserRepositoryIntegrationTest` bỏ hậu tố ra
    `UserRepositoryIntegration` — lớp không tồn tại — nên bằng chứng kiểm thử của `findByUsername`,
@@ -421,8 +421,8 @@ thư mục đó bị `trap cleanup EXIT` xoá) — nay có cờ `--emit-samples`
 
 #### Rủi ro cần theo dõi ở tuần 12-13
 
-`CONTRADICTS` (43) nhiều gấp hơn 5 lần `SUPPORTS` (8), vì mỗi test xanh trong lớp test khớp đều sinh
-một liên kết. Về dữ liệu là đúng — mỗi test là một bằng chứng riêng — nhưng một LLM đọc 43 dòng
+`CONTRADICTS` (52) nhiều gấp hơn 6 lần `SUPPORTS` (8), vì mỗi test xanh trong lớp test khớp đều sinh
+một liên kết. Về dữ liệu là đúng — mỗi test là một bằng chứng riêng — nhưng một LLM đọc 52 dòng
 *"test xanh phủ dòng này"* rất dễ nghiêng về `LIKELY_FALSE_POSITIVE`, **đúng cái bẫy vulnshop cố ý
 gài** (`findByUsername` có SQL injection thật mà test vẫn xanh).
 
@@ -484,7 +484,7 @@ kiến trúc.
 
 #### Rủi ro của tuần 10-11 đã xử lý thế nào
 
-§I gắn cờ: `CONTRADICTS` (43) nhiều gấp hơn 5 lần `SUPPORTS` (8), và một LLM đọc 43 dòng *"test
+§I gắn cờ: `CONTRADICTS` (52) nhiều gấp hơn 6 lần `SUPPORTS` (8), và một LLM đọc 52 dòng *"test
 xanh phủ dòng này"* rất dễ rơi vào cái bẫy `findByUsername`. Ba lớp chống, cả ba đều nằm trong dữ
 liệu hoặc prompt chứ không trong code suy luận:
 
@@ -497,7 +497,34 @@ liệu hoặc prompt chứ không trong code suy luận:
 
 #### Số liệu
 
-433 test backend · 49 test agent-service · 122 test frontend (16 file).
+435 test backend · 50 test agent-service · 122 test frontend (16 file).
+
+#### Nghiệm thu bằng cách CHẠY THẬT, và bốn lỗi nó lôi ra
+
+Dựng cả stack (Postgres + MinIO + core-backend + agent-service với `LLM_PROVIDER=scripted`), nạp
+vulnshop, rồi đi hết luồng bằng `curl`. Toàn bộ 435+50+122 test đều xanh trước khi làm việc này —
+bốn lỗi dưới đây **không lỗi nào bị test bắt**, vì cả bốn nằm ở ranh giới giữa hai tiến trình
+hoặc ở hành vi của thư viện:
+
+1. **JDK HttpClient thử nâng cấp `h2c` và làm MẤT thân request.** FastAPI trả 422 "Field required"
+   cho một `POST` mà phía Java tin là đã gửi đủ. Chỉ tìm ra bằng cách dựng một server nghe thử rồi
+   in nguyên văn thứ đi qua dây. Chữa bằng cách ghim HTTP/1.1.
+2. **`LLM_PROVIDER=scripted` — đường mà chính tài liệu bảo dùng để nghiệm thu — chết ở lượt thứ
+   hai.** Một lượt hỏi đáp gọi model ít nhất hai lần, mà kịch bản mặc định chỉ có một phản hồi.
+3. **`search_evidence` lọc `types` SAU khi đã cắt `limit`**, nên hỏi 3 cảnh báo tĩnh trả về rỗng dù
+   run có hàng chục — và truy vấn không có `ORDER BY` nên kết quả đổi giữa các lần chạy. Với LLM,
+   "không tìm thấy" là một câu trả lời sai mà nó tin ngay.
+4. **Thông báo lỗi `"agent-service tra ve 422"` không nói được gì.** Kèm thân response vào là biết
+   ngay nguyên nhân.
+
+Lỗi số 3 còn suýt lừa được chính việc nghiệm thu: lần chạy đầu tôi tưởng đã kiểm chứng bản vá,
+nhưng backend đang chạy là JVM **cũ** (`TaskStop` giết wrapper Maven chứ không giết JVM đã fork,
+nên lần khởi động sau thất bại vì cổng bị giữ trong khi `/actuator/health` vẫn trả `UP`) — thứ tôi
+thấy chỉ là tính bất định của chính lỗi đó.
+
+Ba nhánh hậu kiểm được xác nhận trên stack thật: trích dẫn đúng giữ nguyên verdict; ID bịa thành
+`UNKNOWN_ID` và nhận định bị hạ cấp mà **không** bị xoá, không tạo liên kết tới ID không tồn tại;
+nhận định không dẫn nguồn cũng bị hạ cấp. Verdict tổng thể vẫn trụ nhờ nhận định thứ nhất.
 
 Bốn bất biến của một lượt trả lời được ép ở **tầng DB** chứ không chỉ trong Java: lượt của agent
 luôn có verdict, hạ cấp chỉ đi một chiều (xuống `INSUFFICIENT_EVIDENCE`), claim không mồ côi,
