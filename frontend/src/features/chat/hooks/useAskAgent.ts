@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { type ChatMessage, askAgent } from '@/features/chat/api/chatApi';
@@ -25,6 +25,12 @@ export function useAskAgent(conversationId: string) {
   const [isStreaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const nextId = useRef(0);
+  const inFlight = useRef<AbortController | null>(null);
+
+  // Huỷ lượt đang bay khi người dùng rời trang. Không huỷ thì `fetch` vẫn đọc stream trên một
+  // component đã unmount, và mọi `setState` sau đó là rò rỉ; tệ hơn là câu trả lời được ghi vào
+  // cache của một hội thoại người dùng đã bỏ đi.
+  useEffect(() => () => inFlight.current?.abort(), []);
 
   const addStep = useCallback((label: string, detail: string | null, failed = false) => {
     setSteps((current) => [...current, { id: nextId.current++, label, detail, failed }]);
@@ -42,6 +48,11 @@ export function useAskAgent(conversationId: string) {
 
   const ask = useCallback(
     async (question: string): Promise<void> => {
+      // Một lượt mới huỷ lượt cũ: hai stream cùng ghi vào một cache sẽ trộn hai câu trả lời.
+      inFlight.current?.abort();
+      const controller = new AbortController();
+      inFlight.current = controller;
+
       setSteps([]);
       setError(null);
       setStreaming(true);
@@ -60,26 +71,38 @@ export function useAskAgent(conversationId: string) {
       });
 
       try {
-        await askAgent(conversationId, question, {
-          onStatus: (message) => addStep(message, null),
-          onToolCall: (call) =>
-            addStep(`Truy xuất ${call.name}`, describeArguments(call.arguments)),
-          onToolResult: (result) =>
-            addStep(
-              `Xong ${result.name}`,
-              result.error ?? describeResult(result.itemCount, result.durationMs),
-              result.error !== null,
-            ),
-          onAnswer: (message) => {
-            appendMessage(message);
-            setSteps([]);
+        await askAgent(
+          conversationId,
+          question,
+          {
+            onStatus: (message) => addStep(message, null),
+            onToolCall: (call) =>
+              addStep(`Truy xuất ${call.name}`, describeArguments(call.arguments)),
+            onToolResult: (result) =>
+              addStep(
+                `Xong ${result.name}`,
+                result.error ?? describeResult(result.itemCount, result.durationMs),
+                result.error !== null,
+              ),
+            onAnswer: (message) => {
+              appendMessage(message);
+              setSteps([]);
+            },
+            onError: (message) => setError(message),
           },
-          onError: (message) => setError(message),
-        });
+          controller.signal,
+        );
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Không gọi được Agent');
+        // Huỷ có chủ đích không phải lỗi: đừng hiện thông báo đỏ cho một thao tác người dùng
+        // vừa tự làm (hỏi câu mới, hoặc rời trang).
+        if (!controller.signal.aborted) {
+          setError(cause instanceof Error ? cause.message : 'Không gọi được Agent');
+        }
       } finally {
-        setStreaming(false);
+        if (inFlight.current === controller) {
+          inFlight.current = null;
+          setStreaming(false);
+        }
         // Đồng bộ lại với máy chủ: lượt hỏi tạm ở trên chưa có id thật, và một lượt hỏng có thể
         // đã ghi câu hỏi mà chưa ghi câu trả lời.
         void queryClient.invalidateQueries({ queryKey: chatKeys.messages(conversationId) });

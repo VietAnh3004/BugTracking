@@ -113,9 +113,17 @@ services:
       dockerfile: Dockerfile
     environment:
       CORE_API_URL: http://core-backend:8080
+      # BẮT BUỘC và phải TRÙNG với SERVICE_TOKEN của core-backend: agent-service gọi
+      # /api/v1/tools/** bằng header X-Service-Token, không bằng JWT (ADR 0005 điểm 2). Thiếu
+      # biến này thì container chết ngay lúc khởi động — pydantic-settings fail-fast, đúng ý đồ,
+      # nhưng nó chết vì file compose chứ không phải vì người vận hành quên điền gì.
+      SERVICE_TOKEN: ${SERVICE_TOKEN}
       LLM_PROVIDER: ${LLM_PROVIDER}
       LLM_API_KEY: ${LLM_API_KEY}
       LLM_MODEL: ${LLM_MODEL}
+      # Đi thẳng vào llm_trace.prompt_version. Đổi prompt mà quên tăng số này thì kết quả của
+      # hai phiên bản prompt nằm lẫn vào nhau và không tách lại được (kế hoạch §6).
+      PROMPT_VERSION: ${PROMPT_VERSION:-v1}
     ports:
       - "${AGENT_SERVICE_PORT:-8000}:8000"
     healthcheck:

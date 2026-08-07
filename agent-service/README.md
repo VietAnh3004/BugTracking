@@ -37,7 +37,7 @@ system + câu hỏi
    → [lượt cuối]  ép nộp AnalysisResponse qua tool submit_analysis
 ```
 
-Bốn điều dễ làm sai:
+Năm điều dễ làm sai:
 
 - **Ép định dạng và cho phép gọi tool loại trừ nhau.** Ép nộp nghĩa là buộc model gọi đúng một
   tool, nên bật từ vòng đầu thì nó không bao giờ truy xuất được bằng chứng nào. Vì vậy bước nộp
@@ -48,6 +48,10 @@ Bốn điều dễ làm sai:
   hỏi. Ngược lại, tên tool sai là bug của chính ta và phải nổ.
 - **Hết ngân sách vòng lặp thì nói thẳng với model**, không im lặng cắt ngang — nó cần biết để
   nộp thứ đang có kèm phần còn thiếu.
+- **Ngân sách bằng chứng (`EVIDENCE_CONTEXT_BUDGET`) cũng vậy.** Trên vulnshop một cảnh báo có
+  tới 52 liên kết `CONTRADICTS`; nhồi hết vào ngữ cảnh vừa tốn tiền vừa làm loãng đúng những bằng
+  chứng mạnh cần đọc kỹ. Cắt **im lặng** còn tệ hơn không cắt: model tưởng đã xem hết và kết luận
+  chắc nịch trên một nửa dữ liệu.
 
 `ScriptedProvider` trả kịch bản định sẵn. Mọi test chạy trên nó (quy ước repo: **không gọi LLM
 thật trong test**), và đặt `LLM_PROVIDER=scripted` thì nghiệm thu được toàn bộ đường đi

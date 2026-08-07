@@ -37,6 +37,11 @@ _BUDGET_EXHAUSTED = (
     "và nói rõ trong `suggested_next_checks` những gì còn chưa kiểm được."
 )
 
+_CONTEXT_EXHAUSTED = (
+    "\n\n[Đã cắt: ngân sách bằng chứng của phiên này đã hết, phần còn lại không được đưa vào. "
+    "Hãy kết luận dựa trên phần đã có, và ghi phần chưa xem được vào `suggested_next_checks`.]"
+)
+
 
 class AgentLoop:
     """Chạy một lượt hỏi đáp, phát sự kiện tiến trình rồi phát câu trả lời."""
@@ -48,6 +53,7 @@ class AgentLoop:
         self._tools = tool_client
         self._max_iterations = settings.max_tool_iterations
         self._prompt_version = settings.prompt_version
+        self._context_budget = settings.evidence_context_budget
 
     async def run(
         self,
@@ -82,6 +88,7 @@ class AgentLoop:
         self, messages: list[Message], traces: list[LlmTraceEntry], analysis_run_id: str
     ) -> AsyncIterator[AgentEvent]:
         """Vòng lặp tool-call, dừng khi model thôi gọi tool hoặc hết ngân sách vòng lặp."""
+        spent = 0
         for iteration in range(self._max_iterations):
             yield StatusEvent(iteration=iteration, message="Đang suy luận")
 
@@ -105,10 +112,11 @@ class AgentLoop:
                 yield ToolCallEvent(iteration=iteration, name=call.name, arguments=call.arguments)
                 outcome = await self._tools.call(call.name, call.arguments, analysis_run_id)
                 trace.tool_calls.append(outcome.as_trace_entry())
+                text, spent = self._fit_budget(outcome.as_tool_result_text(), spent)
                 messages.append(
                     Message(
                         role="tool",
-                        content=outcome.as_tool_result_text(),
+                        content=text,
                         tool_call_id=call.id,
                         name=call.name,
                     )
@@ -125,6 +133,24 @@ class AgentLoop:
         # cho model biết để nó nộp thứ nó đang có, kèm phần còn thiếu.
         logger.warning("agent dung o gioi han %s vong truy xuat", self._max_iterations)
         messages.append(Message(role="user", content=_BUDGET_EXHAUSTED))
+
+    def _fit_budget(self, text: str, spent: int) -> tuple[str, int]:
+        """Cắt kết quả tool cho vừa ngân sách bằng chứng của cả phiên.
+
+        Ngân sách này là thật chứ không phải phòng xa. Trên vulnshop một cảnh báo có tới 52 liên
+        kết ``CONTRADICTS``; nhồi hết vào ngữ cảnh vừa tốn tiền vừa làm loãng đúng những bằng
+        chứng mạnh mà mô hình cần đọc kỹ — mà đó lại chính là cái bẫy trung tâm của case study.
+
+        Cắt thì **nói ra**. Cắt im lặng khiến mô hình tưởng nó đã xem hết bằng chứng và kết luận
+        chắc nịch trên một nửa dữ liệu — tệ hơn hẳn so với việc nó biết mình còn thiếu và ghi vào
+        ``suggested_next_checks``.
+        """
+        remaining = self._context_budget - spent
+        if remaining <= 0:
+            return _CONTEXT_EXHAUSTED.strip(), spent
+        if len(text) <= remaining:
+            return text, spent + len(text)
+        return text[:remaining] + _CONTEXT_EXHAUSTED, self._context_budget
 
     async def _submit(self, messages: list[Message], traces: list[LlmTraceEntry]) -> AgentEvent:
         """Một lượt gọi cuối, ép model nộp đúng cấu trúc :class:`AnalysisResponse`.

@@ -61,6 +61,8 @@ GET_RELATED_TESTS: Final[dict[str, Any]] = {
     "description": (
         "Lấy các test liên quan tới một bằng chứng, kèm quan hệ (SUPPORTS = có bằng chứng ủng "
         "hộ cảnh báo, CONTRADICTS = có test xanh đi qua dòng đó) và độ tin cậy của liên kết. "
+        "Gọi khi cần biết cảnh báo này đã được kiểm thử tới đâu, hoặc khi người dùng hỏi về "
+        "test. Trả về mảng rỗng nghĩa là đã tra và không có test nào liên kết được. "
         "CẢNH BÁO: CONTRADICTS KHÔNG chứng minh cảnh báo sai — một test đường-đi-bình-thường "
         "vẫn xanh trên mã có lỗ hổng. Đọc cả `method` và `weight` trước khi kết luận."
     ),

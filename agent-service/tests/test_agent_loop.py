@@ -285,3 +285,54 @@ async def test_provider_scripted_chay_that_khong_het_kich_ban(settings: Settings
     assert isinstance(events[-1], AnswerEvent)
     assert events[-1].answer.verdict == "INSUFFICIENT_EVIDENCE"
     assert len(provider.calls) == 2
+
+
+@respx.mock
+async def test_ngan_sach_bang_chung_cat_bot_va_noi_ra(settings: Settings) -> None:
+    """Kết quả tool vượt ngân sách bị cắt, và việc cắt phải NÓI RA cho model.
+
+    Ngân sách này là thật: trên vulnshop một cảnh báo có tới 52 liên kết CONTRADICTS, nhồi hết
+    vào ngữ cảnh vừa tốn tiền vừa làm loãng đúng những bằng chứng mạnh cần đọc kỹ.
+
+    Cắt IM LẶNG là hỏng nặng hơn không cắt: model tưởng đã xem hết bằng chứng và kết luận chắc
+    nịch trên một nửa dữ liệu, trong khi lẽ ra nó phải ghi phần thiếu vào suggested_next_checks.
+    """
+    hep = settings.model_copy(update={"evidence_context_budget": 300})
+    respx.post(f"{BASE}/get_related_tests").mock(
+        return_value=httpx.Response(200, json=items_result(50))
+    )
+    provider = ScriptedProvider(
+        [
+            _wants_tool("get_related_tests", evidence_id="EV-001A"),
+            LlmResponse(content="ok"),
+            _submit(),
+        ]
+    )
+    loop = AgentLoop(provider, EvidenceToolClient(hep), hep)
+
+    [event async for event in loop.run(RUN_ID, "hoi")]
+
+    ket_qua_tool = next(m for m in provider.calls[-1]["messages"] if m["role"] == "tool")
+    assert len(ket_qua_tool["content"]) < 500
+    assert "Đã cắt" in ket_qua_tool["content"]
+    assert "suggested_next_checks" in ket_qua_tool["content"]
+
+
+@respx.mock
+async def test_ngan_sach_rong_rai_thi_khong_cat_gi(settings: Settings) -> None:
+    respx.post(f"{BASE}/get_related_tests").mock(
+        return_value=httpx.Response(200, json=items_result(2))
+    )
+    loop, provider = _build(
+        settings,
+        [
+            _wants_tool("get_related_tests", evidence_id="EV-001A"),
+            LlmResponse(content="ok"),
+            _submit(),
+        ],
+    )
+
+    [event async for event in loop.run(RUN_ID, "hoi")]
+
+    ket_qua_tool = next(m for m in provider.calls[-1]["messages"] if m["role"] == "tool")
+    assert "Đã cắt" not in ket_qua_tool["content"]

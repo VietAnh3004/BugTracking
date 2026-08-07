@@ -497,7 +497,7 @@ liệu hoặc prompt chứ không trong code suy luận:
 
 #### Số liệu
 
-435 test backend · 50 test agent-service · 122 test frontend (16 file).
+444 test backend · 61 test agent-service · 122 test frontend (16 file).
 
 #### Nghiệm thu bằng cách CHẠY THẬT, và bốn lỗi nó lôi ra
 
@@ -531,13 +531,34 @@ luôn có verdict, hạ cấp chỉ đi một chiều (xuống `INSUFFICIENT_EVI
 `ordinal` không trùng. Cả bốn đều canh cùng một loại hỏng — một lượt ghi xuống trông bình thường
 trong khi số liệu tuần 15 đọc từ nó đã sai.
 
+#### Rà soát cuối tuần 12-13 — năm việc phải làm nốt
+
+Rà bằng cách đối chiếu kế hoạch với mã nguồn, không dựa vào trí nhớ. Cả năm đều là **lời hứa
+không được kiểm**, không phải lỗi chức năng:
+
+| Phát hiện | Xử lý |
+|---|---|
+| `docker-compose.yml` **không truyền `SERVICE_TOKEN`** cho agent-service, mà biến đó nay bắt buộc — nên `docker compose up` làm container chết ngay lúc khởi động. Đúng thứ §10 "Đóng gói" đòi | Thêm vào compose và `.env.example`, kèm ghi chú phải trùng với core-backend |
+| `evidence_context_budget` khai trong `Settings` và `.env.example` nhưng **không dùng ở đâu** | Nối vào agent loop: cắt kết quả tool theo ngân sách, và **nói ra** khi cắt |
+| `AbortSignal` có trong chữ ký `askAgent` nhưng hook **không bao giờ truyền** — tham số chết, và §J đã nói quá lời | Nối `AbortController` thật: hỏi câu mới hoặc rời trang thì huỷ lượt cũ |
+| **Không test nào canh prompt.** Xoá mục cảnh báo `CONTRADICTS` đi thì mô hình vẫn chạy, vẫn đúng lược đồ, chỉ là kết luận sai đúng theo cách case study dựng lên để bắt | `test_prompts.py` (9 ca) canh từng luận điểm |
+| `ConversationController` **không có test HTTP** trong khi 9 controller khác đều có | `ConversationControllerTest` (9 ca): 401, 404-thay-vì-403, 400, 409, và service token không dùng được cho đường người dùng |
+
+Việc viết `test_prompts.py` lôi ra thêm một thiếu sót: mô tả tool `get_related_tests` **không nói
+khi nào nên gọi**, trong khi bốn tool kia đều có. Mô tả tool là thứ mô hình đọc để quyết định gọi
+hay không, nên thiếu vế đó là để nó tự đoán.
+
+Cắt ngữ cảnh mà **im lặng** còn tệ hơn không cắt: mô hình tưởng đã xem hết bằng chứng và kết luận
+chắc nịch trên một nửa dữ liệu. Nay phần bị cắt kèm một câu nói rõ, và bảo nó ghi phần chưa xem
+được vào `suggested_next_checks`.
+
 #### Món còn nợ có chủ đích
 
 | Món | Vì sao hoãn |
 |---|---|
 | Chưa sinh vector embedding | Vẫn hoãn. Có agent loop rồi nhưng chưa đo được retrieval hiện tại (ILIKE) yếu ở đâu; chốt mô hình trước khi có số đo là chọn bừa |
 | `OpenAIProvider` / `OllamaProvider` | Interface và factory đã sẵn; chỉ cần khi tuần 15 chạy thực nghiệm nhiều provider |
-| Chưa huỷ được một lượt hỏi đang chạy | `AbortSignal` đã xuyên suốt tới `fetch`; còn thiếu nút bấm và việc dọn phía server |
+| Chưa có nút huỷ một lượt hỏi đang chạy | `AbortSignal` đã nối xuyên suốt (hỏi câu mới hoặc rời trang là huỷ lượt cũ), nhưng chưa có nút bấm và phía server vẫn chạy nốt lượt đã bắt đầu |
 
 ---
 
