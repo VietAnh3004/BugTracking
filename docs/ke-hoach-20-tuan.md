@@ -28,6 +28,7 @@
 | **Tuần 5-7** — core backend CRUD + JWT auth + frontend routing | ✅ Xong (xem §G) |
 | **Tuần 8-9** — parser analyzer → Evidence Store + Docker sandbox | ✅ Xong: A, B, C, D (xem §H) |
 | **Tuần 10-11** — EvidenceLinker 3 tầng, CODE_CONTEXT, pgvector, Evidence Explorer | ✅ Xong (xem §I) |
+| **Tuần 12-13** — agent loop, 5 tool, CitationValidator, chat + SSE | ✅ Xong (xem §J) |
 
 ### §G — Tuần 5-7: tiến độ chi tiết (đã xong)
 
@@ -436,6 +437,80 @@ cắt theo weight ở tầng prompt builder.
 | Chưa sinh vector embedding | Số chiều do mô hình quyết định, mà mô hình chỉ chốt ở tuần 12-13 khi có agent loop để đo retrieval có tốt hơn thật không. Schema và test tích hợp đã sẵn |
 | Chưa có nút "chạy lại liên kết" trên UI | Endpoint đã xong; nút chỉ có nghĩa khi đã có người sửa heuristic, tức là từ tuần 12-13 |
 | Chưa tô màu cú pháp trong khối mã | Prop `render` của `CodeLine` vẫn để trống: "vùng bằng chứng" là nhiều DÒNG, mà mô hình dữ liệu không có `start_col`/`end_col`. Dùng `render` bây giờ là bịa ranh giới cột |
+
+---
+
+### §J — Tuần 12-13: tiến độ chi tiết (đã xong)
+
+Deliverable của lộ trình — *"hỏi 'test nào liên quan?' → trả lời có citation click được"* — đã đạt.
+Quyết định kiến trúc ở [ADR 0010](adr/0010-vong-lap-agent-va-hau-kiem-trich-dan.md).
+
+| # | Hạng mục | Trạng thái |
+|---|---|---|
+| 1 | V8: `conversation`, `message`, `llm_trace`, trả nợ FK `claim.message_id` | ✅ Xong |
+| 2 | `CitationValidator` ở core-backend, độc lập với LLM | ✅ Xong |
+| 3 | agent-service: 5 evidence tool gọi ngược core-backend | ✅ Xong |
+| 4 | `AnthropicProvider` + `ScriptedProvider` (chạy end-to-end không cần khoá API) | ✅ Xong |
+| 5 | Agent loop tool-call + prompt Jinja2 version hoá + structured output | ✅ Xong |
+| 6 | `POST /analyze` stream tiến trình qua SSE | ✅ Xong |
+| 7 | core-backend: hội thoại, gọi agent, hậu kiểm, ghi `claim`/`claim_citation`/`llm_trace` | ✅ Xong |
+| 8 | SSE proxy ra trình duyệt | ✅ Xong |
+| 9 | Frontend: trang hỏi đáp + trích dẫn bấm được sang Evidence Explorer | ✅ Xong |
+
+**Luồng một câu trả lời**, và chỗ nào của nó là ràng buộc chứ không phải quy ước:
+
+```
+trình duyệt ──SSE──> core-backend ──SSE──> agent-service ──5 tool──> Evidence Store
+                          │                     │
+                    CitationValidator      không có kết nối DB
+```
+
+agent-service **không thể** tự tuyên bố một trích dẫn là hợp lệ — nó không có đường tới Evidence
+Store. Đó là thứ biến "hậu kiểm độc lập với LLM" từ một câu trong đề cương thành một ràng buộc
+kiến trúc.
+
+#### Ba chỗ dữ liệu và API thật buộc đi khác dự tính
+
+1. **`LLM_TEMPERATURE=0.0` trong `.env.example` sẽ làm MỌI request 400.** Đặt từ tuần 1 với lý do
+   "để kết quả thực nghiệm bớt dao động", nhưng các model từ Claude Opus 4.7 trở đi — gồm cả
+   `claude-sonnet-5` đang khai — từ chối tham số này. Tức là ngay khi bật provider thật, không
+   request nào chạy. Đã đổi mặc định thành "không gửi" và cho `AnthropicProvider` nổ lúc khởi
+   động nếu thấy biến này. Độ ổn định vẫn báo cáo được bằng cách chạy lặp rồi đo phương sai (§6).
+2. **Ép định dạng đầu ra và cho phép gọi tool loại trừ nhau.** Ép nộp nghĩa là buộc model gọi
+   đúng một tool, nên bật từ vòng đầu thì nó không bao giờ truy xuất được bằng chứng nào. Bước
+   nộp phải là một lượt gọi RIÊNG sau vòng lặp.
+3. **Trình duyệt không dùng được `EventSource`** — nó không gửi được header tuỳ ý nên không gắn
+   được `Authorization: Bearer`, và chỉ làm được `GET`. Phải tự đọc `ReadableStream` bằng `fetch`.
+
+#### Rủi ro của tuần 10-11 đã xử lý thế nào
+
+§I gắn cờ: `CONTRADICTS` (43) nhiều gấp hơn 5 lần `SUPPORTS` (8), và một LLM đọc 43 dòng *"test
+xanh phủ dòng này"* rất dễ rơi vào cái bẫy `findByUsername`. Ba lớp chống, cả ba đều nằm trong dữ
+liệu hoặc prompt chứ không trong code suy luận:
+
+- Mô tả tool `get_related_tests` viết thẳng: `CONTRADICTS` **không** chứng minh cảnh báo sai.
+- System prompt dành hẳn một mục: số lượng liên kết không có ý nghĩa; muốn kết luận
+  `LIKELY_FALSE_POSITIVE` thì cần một lý do **trong mã** và phải đọc mã rồi nêu ra.
+- `rationale` mang sẵn câu cảnh báo từ tuần 10-11.
+
+Đo thật ở tuần 15 mới biết đủ hay chưa. Nếu chưa, cần gom nhóm hoặc cắt theo weight ở prompt builder.
+
+#### Số liệu
+
+433 test backend · 49 test agent-service · 122 test frontend (16 file).
+
+Bốn bất biến của một lượt trả lời được ép ở **tầng DB** chứ không chỉ trong Java: lượt của agent
+luôn có verdict, hạ cấp chỉ đi một chiều (xuống `INSUFFICIENT_EVIDENCE`), claim không mồ côi,
+`ordinal` không trùng. Cả bốn đều canh cùng một loại hỏng — một lượt ghi xuống trông bình thường
+trong khi số liệu tuần 15 đọc từ nó đã sai.
+
+#### Món còn nợ có chủ đích
+
+| Món | Vì sao hoãn |
+|---|---|
+| Chưa sinh vector embedding | Vẫn hoãn. Có agent loop rồi nhưng chưa đo được retrieval hiện tại (ILIKE) yếu ở đâu; chốt mô hình trước khi có số đo là chọn bừa |
+| `OpenAIProvider` / `OllamaProvider` | Interface và factory đã sẵn; chỉ cần khi tuần 15 chạy thực nghiệm nhiều provider |
+| Chưa huỷ được một lượt hỏi đang chạy | `AbortSignal` đã xuyên suốt tới `fetch`; còn thiếu nút bấm và việc dọn phía server |
 
 ---
 

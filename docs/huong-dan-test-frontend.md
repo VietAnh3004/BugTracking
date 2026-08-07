@@ -250,7 +250,7 @@ curl -X POST "http://localhost:8080/api/v1/snapshots/$SNAPSHOT_ID/analysis-runs"
 
 ---
 
-## 5. Chín điều cần nhìn tận mắt
+## 5. Mười ba điều cần nhìn tận mắt
 
 Quay lại trình duyệt, mở lại trang snapshot. Giờ góc trên phải có link **"Cảnh báo (34)"**.
 
@@ -342,6 +342,66 @@ bằng chứng này", chữ mực thường. Nếu không có liên kết nào c
 **Hỏng thì trông thế nào**: nhóm rỗng biến mất im lặng, hoặc hiện chữ xám nhạt đọc như "không có gì
 đáng chú ý". Sự vắng mặt của bằng chứng chính là cơ sở của một trong ba verdict của hệ thống — giấu
 nó đi là giấu đúng thứ quan trọng nhất mà màn hình này nói được.
+
+---
+
+## 5bis. Bốn điều cần nhìn tận mắt ở màn hình hỏi đáp
+
+Cần agent-service chạy. **Không cần khoá API thật**: đặt `LLM_PROVIDER=scripted` thì toàn bộ đường
+đi frontend → core-backend → agent-service chạy thật, chỉ riêng model là giả (nó luôn trả
+`INSUFFICIENT_EVIDENCE`, đủ để nghiệm thu đường đi nhưng không đủ để đánh giá chất lượng suy luận).
+
+```bash
+cd agent-service
+cp .env.example .env        # SERVICE_TOKEN phải TRÙNG với biến cùng tên của core-backend
+# LLM_PROVIDER=scripted   (hoặc anthropic + LLM_API_KEY thật)
+./.venv/Scripts/python.exe -m uvicorn agent_service.main:app --port 8000
+```
+
+`AGENT_SERVICE_URL=http://localhost:8000` trong `.env` của core-backend.
+
+### ✅ 10. Tiến trình truy xuất hiện ra TRONG LÚC chờ
+
+Mở một cảnh báo bất kỳ → bấm **"💬 Hỏi Agent về EV-xxxx"** → bấm **"Phiên mới về EV-xxxx"** → hỏi
+*"Có test nào liên quan tới cảnh báo này không?"*.
+
+Trong lúc chờ phải thấy các dòng tiến trình xuất hiện **dần**: "Đang suy luận", "Truy xuất
+get_related_tests", "Xong get_related_tests · 4 mục · 120 ms". Với provider thật, một lượt mất
+hàng chục giây — đây là thứ duy nhất cho người dùng biết hệ thống đang làm gì.
+
+**Hỏng thì trông thế nào**: màn hình đứng im rồi mọi thứ hiện ra một lúc ở cuối. Nghĩa là SSE bị
+gom lại ở đâu đó — kiểm header `X-Accel-Buffering: no` và `proxy_buffering off` nếu chạy qua Nginx.
+Đây là ca **chỉ lộ ra khi chạy qua reverse proxy thật**, gọi thẳng `:8080` sẽ không thấy.
+
+Tab Network phải cho thấy đúng **một** request `messages` kiểu `eventsource`/`fetch` đang mở, và
+**không có** request nào đi thẳng tới cổng 8000 — trình duyệt không bao giờ gọi agent-service.
+
+### ✅ 11. Bấm một Evidence ID trong câu trả lời thì mở đúng bằng chứng
+
+Đây là deliverable của tuần 12-13. Mỗi nhận định phải có ít nhất một chip `EV-xxxx` màu xanh; bấm
+vào mở thẳng Evidence Explorer của đúng bằng chứng đó.
+
+**Hỏng thì trông thế nào**: chip là chữ thường không bấm được, hoặc bấm ra trang 404 — nghĩa là
+`shortId` không được điền, hoặc điền cả cho những trích dẫn chưa tra được.
+
+### ✅ 12. Trích dẫn hỏng vẫn hiện ra, và nhìn là biết hỏng
+
+Với provider giả thì khó dựng ca này; cách chắc chắn là gọi thẳng API và xem lại lịch sử — hoặc
+với provider thật, hỏi một câu mơ hồ đủ để model bịa. Chip hỏng có **màu hổ phách**, không bấm
+được, và ghi rõ lý do: *"không tồn tại"* (bịa), *"sai lần phân tích"* (nhớ nhầm ngữ cảnh), hay
+*"không phải ID"*.
+
+**Hỏng thì trông thế nào**: trích dẫn hỏng biến mất khỏi giao diện. Chúng là **mẫu số** của
+Evidence Citation Accuracy — giấu đi thì màn hình sạch sẽ trong khi chỉ số của báo cáo mất căn cứ.
+
+### ✅ 13. Verdict bị hạ cấp nói rõ nó đã bị hạ
+
+Khi không nhận định nào có trích dẫn tra được, thẻ verdict phải hiện *"Chưa đủ bằng chứng"* **kèm**
+dòng *"đã hạ cấp từ …"*, và nhận định vô căn cứ vẫn còn nguyên trong danh sách với viền hổ phách.
+
+**Hỏng thì trông thế nào**: chỉ thấy "Chưa đủ bằng chứng" trơ trọi. Khi đó người dùng không phân
+biệt được **Agent thận trọng** với **Agent bịa trích dẫn rồi bị hệ thống bắt** — hai chuyện hoàn
+toàn khác nhau, và chuyện thứ hai mới là thứ đồ án này chứng minh mình chặn được.
 
 ---
 

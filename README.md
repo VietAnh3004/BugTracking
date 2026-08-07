@@ -51,16 +51,25 @@ Hai quyết định kiến trúc đáng chú ý:
 **Trên giao diện web**: đăng nhập → tạo dự án → tải mã nguồn (`.zip`) lên → duyệt cây file và xem
 mã theo dòng → xem danh sách cảnh báo đã chuẩn hoá → **mở một cảnh báo và thấy chuỗi bằng chứng của
 nó**: ngữ cảnh mã nguồn bao quanh, test liên quan (ủng hộ hay phản bác), và độ phủ — mỗi liên kết
-kèm mức tin cậy và lý do, bấm được để nhảy tới đúng khoảng dòng.
+kèm mức tin cậy và lý do, bấm được để nhảy tới đúng khoảng dòng → **hỏi Agent về cảnh báo đó**, và
+nhận câu trả lời trong đó mỗi nhận định kèm Evidence ID bấm được.
+
+Trong lúc chờ, giao diện hiện **tiến trình truy xuất bằng chứng** (Agent đang gọi tool nào, lấy về
+bao nhiêu mục) chứ không stream từng token: đầu ra bị ép theo cấu trúc, và một JSON dở dang sẽ phơi
+ra những Evidence ID chưa qua hậu kiểm. Trích dẫn nào Agent bịa ra vẫn hiện lên — được đánh dấu rõ,
+không bấm được — vì chúng là mẫu số của chỉ số Evidence Citation Accuracy trong báo cáo.
 
 **Chỉ gọi được bằng API, chưa có nút bấm**: nạp artifact analyzer
 (`POST /api/v1/snapshots/{id}/analysis-runs`) và chạy analyzer trong Docker sandbox
 (`.../analysis-runs/sandbox`). Cả hai đã chạy thật; phần còn thiếu là nút trên UI. Các bước nghiệm
 thu bằng `curl`: [docs/huong-dan-test-frontend.md](docs/huong-dan-test-frontend.md).
 
-**Chưa có**: sinh vector embedding (schema đã sẵn, mô hình chốt ở tuần 12-13), agent loop và giao
-diện hội thoại — `agent-service` mới có khung cấu hình, `LlmProvider` trừu tượng và lược đồ phản
-hồi.
+**Chưa có**: sinh vector embedding (schema đã sẵn; hoãn tiếp vì chưa đo được retrieval hiện tại
+yếu ở đâu), Human Review, dashboard và export báo cáo. `agent-service` hiện chỉ có
+`AnthropicProvider`; `OpenAIProvider`/`OllamaProvider` chờ tới lúc chạy thực nghiệm nhiều provider.
+
+Chạy được **không cần khoá API**: đặt `LLM_PROVIDER=scripted` thì toàn bộ đường đi hoạt động thật,
+chỉ riêng model là giả.
 
 Trạng thái chi tiết theo từng tuần và từng hạng mục: [docs/ke-hoach-20-tuan.md](docs/ke-hoach-20-tuan.md).
 Đó là **nguồn sự thật duy nhất về tiến độ**; mục này chỉ mô tả định tính để khỏi lệch số.

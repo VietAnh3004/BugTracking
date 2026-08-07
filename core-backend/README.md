@@ -128,6 +128,49 @@ Ranh giới: nó tính lại **cách khớp**, không tính lại **kết quả 
 hay chuẩn hoá đường dẫn thì phải phân tích lại từ đầu, vì chúng sinh ra `evidence_record` mà
 `short_id` là thứ LLM đã trích dẫn.
 
+## Hỏi đáp với Agent, và hậu kiểm trích dẫn
+
+Service này là **người gọi duy nhất** của agent-service, và cũng là chỗ câu trả lời được kiểm
+trước khi tới người dùng. Quyết định đầy đủ ở [ADR 0010](../docs/adr/0010-vong-lap-agent-va-hau-kiem-trich-dan.md).
+
+```
+trình duyệt ──SSE──> core-backend ──SSE──> agent-service ──5 tool──> Evidence Store
+                          │                     │
+                    CitationValidator      không có kết nối DB
+```
+
+Trình duyệt **không** gọi thẳng agent-service. Ba lý do, nặng nhất trước: câu trả lời phải qua hậu
+kiểm trước khi người dùng đọc được (nếu không, bước hậu kiểm chỉ còn là một dòng trong báo cáo);
+agent-service không có xác thực người dùng; và `toolChain` tắt hẳn CORS nên trình duyệt bị chặn ở
+preflight với thông điệp đánh lạc hướng.
+
+`service/citation/CitationValidator` đối chiếu từng Evidence ID với Evidence Store, cho ra **bốn**
+kết cục — mỗi cái nói về một lỗi khác của mô hình, nên không được gộp:
+
+| Kết cục | Nghĩa là gì |
+|---|---|
+| `RESOLVED` | Có thật, trong đúng run đang xét |
+| `WRONG_RUN` | Có thật nhưng thuộc run khác — lỗi **ngữ cảnh**, không phải bịa |
+| `UNKNOWN_ID` | Đúng khuôn dạng nhưng không tồn tại ở đâu — **bịa** |
+| `MALFORMED` | Không phải Evidence ID |
+
+Bốn điều dễ làm sai:
+
+- **Hạ cấp, không xoá.** Nhận định vô căn cứ vẫn được ghi — chúng là mẫu số của Unsupported Claim
+  Rate. Xoá đi thì chỉ số này luôn đẹp và luôn vô nghĩa.
+- **Chuẩn hoá đúng hai thứ**: khoảng trắng và chữ hoa. Gỡ thêm ngoặc hay dấu chấm câu sẽ biến
+  Evidence Citation Accuracy thành phép đo lòng khoan dung của `ShortIdFormat`.
+- **Không ghi "đã hạ cấp" khi mô hình vốn đã kết luận `INSUFFICIENT_EVIDENCE`** — làm vậy sẽ thổi
+  phồng số lần hạ cấp bằng những lần chẳng có gì xảy ra.
+- **`ConversationService.ask` KHÔNG mang `@Transactional`**: nó chờ một lời gọi mạng hàng chục
+  giây, giữ kết nối DB suốt thời gian đó sẽ vét cạn pool. Mọi thao tác ghi qua
+  `ConversationPersistenceService` (cùng khuôn `AnalysisRunPersistenceService`).
+
+SSE stream **tiến trình truy xuất bằng chứng**, không stream token của câu trả lời: đầu ra bị ép
+theo cấu trúc nên JSON dở dang vừa không đọc được vừa phơi ra Evidence ID chưa qua hậu kiểm. Sự
+kiện `answer` của agent-service **không bao giờ** đi tiếp — cái ra tới trình duyệt là bản đã kiểm
+và đã ghi DB.
+
 ## Chạy analyzer trong Docker sandbox
 
 `POST /api/v1/snapshots/{id}/analysis-runs/sandbox` dựng cây mã nguồn thành tar, chạy hai image

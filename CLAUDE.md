@@ -18,7 +18,7 @@ Bảo vệ dự kiến giữa tháng 12/2026.
 | File | Nội dung |
 |---|---|
 | [docs/ke-hoach-20-tuan.md](docs/ke-hoach-20-tuan.md) | **Lộ trình đầy đủ 20 tuần** + chuẩn code + thiết kế. Đọc trước tiên |
-| [docs/adr/](docs/adr/) | Bốn quyết định kiến trúc lớn và lý do |
+| [docs/adr/](docs/adr/) | Mười quyết định kiến trúc lớn và lý do |
 | [docs/evidence-model.md](docs/evidence-model.md) | Schema Unified Evidence Model — bảng provenance cho **cả 7 bảng bằng chứng** (V2 + 5 bảng thô của V5), mỗi cột trỏ về đúng chỗ trong artifact thật. Sửa schema thì phải sửa cả tài liệu: `docs/check-evidence-model.py` đối chiếu HAI CHIỀU và CI đỏ nếu lệch. Đọc trước khi đụng vào parser trong `service/analysis/` |
 | [docs/spike-tuan-1.md](docs/spike-tuan-1.md) | Xác thực rủi ro: 3 nguồn bằng chứng khớp `file:line` |
 | [docs/huong-dan-test-frontend.md](docs/huong-dan-test-frontend.md) | Giải thích snapshot/cảnh báo/severity/sandbox + các bước nghiệm thu bằng trình duyệt thật |
@@ -370,6 +370,41 @@ toàn cục, cấu hình bị lớp khác đổi là hỏng ngầm.
 kiểu là lỗi **runtime**, không phải lỗi biên dịch. Ngoài ra `vector` **không khai số chiều** thì
 KHÔNG tạo được index HNSW/IVFFlat (`ERROR: column does not have dimensions`) — đã đo trên chính
 Postgres của dự án, xem ADR 0009.
+
+**`temperature` LÀM HỎNG MỌI REQUEST tới Claude từ Opus 4.7 trở đi — kể cả `temperature=0`.** Các
+model đời mới (gồm `claude-sonnet-5` mà dự án đang khai) **từ chối** `temperature`/`top_p`/`top_k`
+bằng lỗi **400**, không phải bỏ qua. Gặp thật: `.env.example` của agent-service đặt
+`LLM_TEMPERATURE=0.0` từ tuần 1 với lý do rất hợp lý ("để thực nghiệm bớt dao động"), và nó sẽ làm
+**không request nào chạy** ngay khi bật provider thật — một cấu hình sai nằm im 12 tuần vì chưa ai
+gọi LLM. Nay mặc định là "không gửi", và `AnthropicProvider` **nổ lúc khởi động** nếu thấy biến
+này. Muốn kết quả ổn định giữa các lần chạy thì chạy lặp rồi đo phương sai, đừng tìm một tham số
+để ép — API không còn nhận nữa. Trước khi viết mã gọi LLM, **nạp skill `claude-api`**.
+
+**Ép structured output và cho phép gọi tool LOẠI TRỪ NHAU.** Ép model nộp đúng lược đồ nghĩa là
+buộc nó gọi đúng một tool (`tool_choice: {type: "tool", name: ...}`). Bật từ vòng đầu của agent
+loop thì nó **không bao giờ truy xuất được bằng chứng nào** — mà vẫn trả về một câu trả lời đúng
+khuôn dạng, nên nhìn không ra. Bước nộp phải là một lượt gọi RIÊNG sau khi vòng lặp tool kết thúc.
+
+**Mọi `tool_result` của cùng một lượt phải nằm trong MỘT message người dùng.** Tách ra nhiều
+message khiến model dần thôi gọi tool song song — hỏng âm thầm, chỉ lộ ra ở số vòng lặp tăng dần
+và chi phí tăng theo, không có thông báo lỗi nào. Xem `_split_system` trong
+`agent-service/src/agent_service/providers/anthropic_provider.py` và test canh nó.
+
+**Khung SSE CUỐI thường không có dòng trống theo sau — và khung cuối chính là câu trả lời.** Cả ba
+tầng trong repo này (agent-service phát, `AgentClient` đọc, `sseClient.ts` đọc) đều phải xử lý ca
+đó. Đánh rơi nó không có lỗi nào: người dùng thấy tiến trình chạy xong rồi im lặng. Mỗi tầng có
+một test riêng cho đúng ca này.
+
+**Trình duyệt KHÔNG dùng được `EventSource` cho SSE có xác thực.** Nó không gửi được header tuỳ ý
+(không gắn được `Authorization: Bearer`) và chỉ làm được `GET`. Nhét token vào query string thì
+token nằm trong log của mọi reverse proxy trên đường đi. Cách dùng được: `fetch` + tự đọc
+`ReadableStream`, và **bắt buộc** `TextDecoder.decode(value, { stream: true })` — thiếu cờ đó thì
+một ký tự tiếng Việt bị cắt giữa hai chunk sẽ thành U+FFFD ngay giữa câu trả lời.
+
+**Lombok `@RequiredArgsConstructor` KHÔNG chép `@Qualifier` sang tham số constructor.** Có hai bean
+cùng kiểu (`agentExecutor` và `sandboxExecutor`) thì việc tiêm rơi vào trùng-tên-trường — một ràng
+buộc ngầm mà đổi tên biến là hỏng, và hỏng lúc khởi động chứ không lúc biên dịch. Viết constructor
+tay khi cần `@Qualifier`; xem `AnalysisRunService` và `ConversationService`.
 
 **Suy tên lớp production từ tên lớp test: trả DANH SÁCH ứng viên, đừng đoán một giá trị.** Gặp thật:
 `UserRepositoryIntegrationTest` bỏ hậu tố `Test` ra `UserRepositoryIntegration` — một lớp không tồn

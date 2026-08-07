@@ -1,8 +1,8 @@
 # frontend
 
 SPA tĩnh: đăng nhập, quản lý dự án, tải mã nguồn lên, duyệt cây file và xem mã nguồn theo dòng,
-xem danh sách cảnh báo đã chuẩn hoá, và **Evidence Explorer** — mở một cảnh báo để thấy chuỗi bằng
-chứng của nó. Chat với AI Agent sẽ thêm ở tuần 12-13.
+xem danh sách cảnh báo đã chuẩn hoá, **Evidence Explorer** — mở một cảnh báo để thấy chuỗi bằng
+chứng của nó — và **hỏi đáp với AI Agent**, trong đó mọi nhận định đều kèm Evidence ID bấm được.
 
 ## Deploy độc lập
 
@@ -23,10 +23,11 @@ src/
 │   ├── snapshots/  { api/ components/ hooks/ layouts/ lib/ pages/ }
 │   ├── warnings/   { api/ components/ hooks/ pages/ }
 │   ├── evidence/   { api/ components/ hooks/ lib/ pages/ }
+│   ├── chat/       { api/ components/ hooks/ pages/ }
 │   └── system/     { components/ hooks/ }
 ├── shared/
 │   ├── ui/         Thuần trình bày — không gọi API, không biết nghiệp vụ
-│   ├── lib/        apiClient, uploadClient, tokenStorage, queryClient, kiểu sinh từ OpenAPI
+│   ├── lib/        apiClient, uploadClient, sseClient, tokenStorage, queryClient, kiểu OpenAPI
 │   └── config/     Đọc cấu hình runtime
 └── test/           Setup và helper dùng chung cho test
 ```
@@ -34,9 +35,9 @@ src/
 Quy ước:
 
 - Logic lấy dữ liệu nằm trong custom hook, không nằm trong JSX.
-- Không component nào gọi `fetch` trực tiếp — dùng `apiClient`. Ngoại lệ **duy nhất** là
-  `uploadClient` (dùng `XMLHttpRequest` vì `fetch` không có sự kiện tiến trình upload), và nó phải
-  dùng lại helper export từ `apiClient` thay vì chép logic.
+- Không component nào gọi `fetch` trực tiếp — dùng `apiClient`. Hai ngoại lệ, cả hai đều phải
+  dùng lại helper export từ `apiClient` thay vì chép logic: `uploadClient` (cần `XMLHttpRequest`
+  vì `fetch` không có sự kiện tiến trình upload) và `sseClient` (cần đọc `ReadableStream`).
 - Mọi trạng thái bất đồng bộ phải render đủ loading / error / empty.
 - Component vượt ~150 dòng là tín hiệu cần tách.
 - **Không `dangerouslySetInnerHTML` cho dữ liệu bắt nguồn từ file upload** — source viewer render
@@ -55,8 +56,30 @@ test định tuyến. Ràng buộc trên `RootLayout` chỉ còn là trần chun
 
 Deep-link tới mã nguồn dùng `#L42` hoặc `#L40-L48`, dựng và đọc **chỉ qua** `toLineHash` /
 `parseLineHash` trong `features/snapshots/lib/filePathUrl.ts`. Bốn chỗ cùng dựng hash (bảng cảnh
-báo, thẻ ngữ cảnh mã, frame stack trace, và citation của chatbot ở tuần 12-13), nên ghép chuỗi tay
-ở từng chỗ là mỗi chỗ sai một kiểu.
+báo, thẻ ngữ cảnh mã, frame stack trace, và citation của Agent), nên ghép chuỗi tay ở từng chỗ là
+mỗi chỗ sai một kiểu.
+
+## Hỏi đáp với Agent
+
+`/snapshots/:snapshotId/runs/:runId/chat` — phiên nằm trên query string (`?conversation=`) nên chia
+sẻ được đường dẫn tới đúng cuộc trao đổi, và `?focus=EV-001A` là lối vào từ Evidence Explorer.
+
+Giao diện **không stream từng token** của câu trả lời. Đầu ra bị ép theo cấu trúc nên JSON dở dang
+vừa không đọc được, vừa phơi ra những Evidence ID **chưa qua hậu kiểm** — đúng thứ mà cả cơ chế
+trích dẫn sinh ra để chặn. Cái được stream là tiến trình truy xuất: Agent đang gọi tool nào, mất
+bao lâu, lấy về bao nhiêu mục. Nó cũng làm luận điểm "5 tool là ranh giới kiến trúc thật" nhìn
+thấy được bằng mắt lúc demo.
+
+Ba thứ **cố ý không giấu đi**, vì cả ba là số liệu của báo cáo:
+
+- Trích dẫn hỏng vẫn hiện ra, phân biệt bốn kết cục (`RESOLVED` / `WRONG_RUN` / `UNKNOWN_ID` /
+  `MALFORMED`) — chúng là mẫu số của Evidence Citation Accuracy.
+- Nhận định không có căn cứ vẫn hiện ra, được đánh dấu — mẫu số của Unsupported Claim Rate.
+- Verdict bị hạ cấp hiện kèm verdict gốc: giấu đi thì người dùng không phân biệt được "Agent thận
+  trọng" với "Agent bịa trích dẫn".
+
+`INSUFFICIENT_EVIDENCE` dùng màu trung tính chứ không phải màu lỗi: nó là một câu trả lời **hợp lệ**,
+không phải sự cố.
 
 Access token giữ trong bộ nhớ, refresh token trong `localStorage` (`shared/lib/tokenStorage.ts` là
 nơi duy nhất chạm `localStorage`). `apiClient` tự làm mới token khi gặp 401, gom mọi lời gọi refresh
