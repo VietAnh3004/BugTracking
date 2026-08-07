@@ -22,6 +22,7 @@ import vn.hust.datn.evidence.domain.EvidenceLinkRelation;
 import vn.hust.datn.evidence.domain.EvidenceSource;
 import vn.hust.datn.evidence.domain.EvidenceStatus;
 import vn.hust.datn.evidence.domain.EvidenceType;
+import vn.hust.datn.evidence.domain.MessageRole;
 import vn.hust.datn.evidence.domain.RefreshTokenRevokedReason;
 import vn.hust.datn.evidence.domain.SnapshotEntryType;
 import vn.hust.datn.evidence.domain.SnapshotSourceType;
@@ -101,6 +102,21 @@ class EnumCheckConstraintTest extends AbstractIntegrationTest {
     @Test
     void claimCitationResolution() {
         assertCheckMatchesEnum("claim_citation", "resolution", ClaimCitationResolution.values());
+    }
+
+    @Test
+    void messageRole() {
+        assertCheckMatchesEnum("message", "role", MessageRole.values());
+    }
+
+    @Test
+    void messageVerdict() {
+        assertCheckMatchesEnum("message", "verdict", ClaimVerdict.values());
+    }
+
+    @Test
+    void messageDowngradedFromVerdict() {
+        assertCheckMatchesEnum("message", "downgraded_from_verdict", ClaimVerdict.values());
     }
 
     @Test

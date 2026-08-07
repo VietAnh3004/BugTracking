@@ -20,9 +20,9 @@ public interface EvidenceRecordRepository extends JpaRepository<EvidenceRecord, 
     Optional<EvidenceRecord> findByAnalysisRunIdAndShortId(UUID analysisRunId, String shortId);
 
     // Dùng để phân biệt UNKNOWN_ID (short_id không tồn tại ở đâu cả) với WRONG_RUN (tồn tại
-    // nhưng ở run khác) — không có index riêng trên short_id (unique index là composite,
-    // không phục vụ lookup thiếu cột đầu). Dữ liệu tuần 4 còn nhỏ nên seq scan chấp nhận được;
-    // TODO(V3): thêm index riêng nếu volume tăng.
+    // nhưng ở run khác). Khớp idx_evidence_record_short_id, thêm ở V8 vì từ tuần 12-13
+    // CitationValidator chạy truy vấn này một lần cho MỖI trích dẫn không khớp — mà trích dẫn
+    // không khớp là thứ ta mong đợi nhiều khi LLM bịa ID.
     boolean existsByShortId(String shortId);
 
     // Khớp idx_evidence_record_run_type (analysis_run_id, type).
