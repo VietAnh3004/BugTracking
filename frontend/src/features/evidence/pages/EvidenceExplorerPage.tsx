@@ -45,7 +45,7 @@ export function EvidenceExplorerPage() {
 
       {data === undefined ? null : (
         <>
-          <EvidenceHeader evidence={data} />
+          <EvidenceHeader evidence={data} runId={runId} />
 
           {data.relatedTotal === 0 ? (
             <EmptyEvidenceNotice locationResolved={data.filePath !== undefined} />

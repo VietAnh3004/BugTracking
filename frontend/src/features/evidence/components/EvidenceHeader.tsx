@@ -10,7 +10,7 @@ import type { EvidenceDetail } from '@/features/evidence/api/evidenceApi';
 import { SeverityBadge } from '@/features/warnings/components/SeverityBadge';
 import { toFilePathUrl, toLineHash } from '@/features/snapshots/lib/filePathUrl';
 
-export function EvidenceHeader({ evidence }: { evidence: EvidenceDetail }) {
+export function EvidenceHeader({ evidence, runId }: { evidence: EvidenceDetail; runId: string }) {
   const warning = evidence.warning;
 
   return (
@@ -34,6 +34,15 @@ export function EvidenceHeader({ evidence }: { evidence: EvidenceDetail }) {
       </div>
 
       <h2 className="text-ink mt-0 mb-2 text-lg font-semibold">{evidence.summary}</h2>
+
+      {/* Lối vào hội thoại, mang sẵn `focus` để phiên mới neo đúng vào bằng chứng đang xem —
+          người dùng không phải chép Evidence ID sang màn hình khác. */}
+      <Link
+        to={`/snapshots/${evidence.snapshotId}/runs/${runId}/chat?focus=${evidence.shortId}`}
+        className="text-brand mb-2 inline-block text-xs"
+      >
+        💬 Hỏi Agent về {evidence.shortId}
+      </Link>
 
       {evidence.symbol === undefined ? null : (
         <p className="text-ink-muted mt-0 mb-1 font-mono text-xs break-all">{evidence.symbol}</p>

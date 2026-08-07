@@ -102,6 +102,18 @@ export const routes: RouteObject[] = [
                 errorElement: <RouteErrorBoundary />,
               },
               {
+                // Phiên hỏi đáp nằm trên query string (`?conversation=`), không phải trên path:
+                // nó là một BỘ LỌC của cùng một màn hình, không phải một tài nguyên khác. Nhờ vậy
+                // `?focus=EV-001A` — lối vào từ Evidence Explorer — ghép được vào cùng URL mà
+                // không sinh thêm một nhánh route nào.
+                path: 'snapshots/:snapshotId/runs/:runId/chat',
+                lazy: async () => {
+                  const { ChatPage } = await import('@/features/chat/pages/ChatPage');
+                  return { Component: ChatPage };
+                },
+                errorElement: <RouteErrorBoundary />,
+              },
+              {
                 // `lazy` theo route: phần duyệt mã nguồn là mảng nặng nhất của ứng dụng (cây file +
                 // source viewer) nhưng người dùng chỉ mở nó sau khi đã đăng nhập và chọn snapshot —
                 // không nên nằm trong bundle đầu tiên của màn hình đăng nhập.

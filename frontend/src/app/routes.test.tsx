@@ -77,6 +77,18 @@ describe('định tuyến', () => {
     ).toBeInTheDocument();
   });
 
+  /**
+   * Lối vào hội thoại là một deep link mang sẵn `?focus=` từ Evidence Explorer. Test canh việc
+   * route khớp và trang dựng được — chứ không kiểm nội dung hội thoại, việc đó thuộc test của
+   * chính các component.
+   */
+  it('mở được trang hỏi Agent kèm cảnh báo đang xét trên query string', async () => {
+    renderRoute('/snapshots/snap-1/runs/run-1/chat?focus=EV-001A');
+
+    expect(await screen.findByRole('heading', { name: 'Hỏi Agent' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Phiên mới về EV-001A/ })).toBeInTheDocument();
+  });
+
   it('hiển thị tên người dùng và nút đăng xuất khi đã đăng nhập', async () => {
     renderRoute('/projects');
 
