@@ -24,6 +24,7 @@
     <minio.version>8.5.17</minio.version>
     <commons-compress.version>1.27.1</commons-compress.version>
     <commons-io.version>2.18.0</commons-io.version>
+    <commons-csv.version>1.12.0</commons-csv.version>
     <!-- CHỈ javaparser-core, KHÔNG lấy javaparser-symbol-solver-core: symbol solver đòi classpath
          đầy đủ của dự án người dùng (jar phụ thuộc) mà snapshot không giữ lại, và nó hỏng theo
          kiểu "resolve được một nửa" — đúng loại hỏng im lặng dự án này chống. Ta chỉ cần
@@ -128,6 +129,20 @@
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>${commons-io.version}</version>
+    </dependency>
+
+    <!--
+        Ghi va doc CSV cho export bao cao.
+
+        KHONG tu noi chuoi bang dau phay: cot `note` la ghi chu tieng Viet do nguoi dung go, hoan
+        toan co the chua dau phay, nhay kep va xuong dong. Mot bo ghi tu viet se sinh ra file ma
+        Excel doc lech cot, va lech mot cach IM LANG — nguoi cham chi thay du lieu sai chu khong
+        thay loi. Test doc lai bang chinh thu vien nay de chung minh vong ghi-doc khep kin.
+    -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-csv</artifactId>
+      <version>${commons-csv.version}</version>
     </dependency>
 
     <!--

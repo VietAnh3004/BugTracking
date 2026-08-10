@@ -1,10 +1,13 @@
 package vn.hust.datn.evidence.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +21,7 @@ import vn.hust.datn.evidence.dto.ReviewResponse;
 import vn.hust.datn.evidence.dto.RunMetricsResponse;
 import vn.hust.datn.evidence.dto.SubmitReviewRequest;
 import vn.hust.datn.evidence.service.review.HumanReviewService;
+import vn.hust.datn.evidence.service.review.RunExportService;
 import vn.hust.datn.evidence.service.review.RunMetricsService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,6 +42,7 @@ public class ReviewController {
 
     private final HumanReviewService humanReviewService;
     private final RunMetricsService runMetricsService;
+    private final RunExportService runExportService;
 
     /**
      * Ghi hoặc cập nhật quyết định về một cảnh báo.
@@ -85,5 +90,34 @@ public class ReviewController {
     @Operation(summary = "Chỉ số tổng hợp của một lần phân tích")
     public RunMetricsResponse metrics(@PathVariable UUID runId, @AuthenticationPrincipal CurrentUser currentUser) {
         return runMetricsService.compute(runId, currentUser.id());
+    }
+
+    /**
+     * Một dòng một cảnh báo, cho phân tích thống kê ở tuần 17-18.
+     *
+     * <p>Trả về {@code byte[]} chứ không {@code String}: BOM UTF-8 phải đi nguyên vẹn ra dây, và
+     * để Spring tự mã hoá một {@code String} là mở cửa cho một converter nào đó đổi bảng mã.
+     */
+    @GetMapping(value = "/analysis-runs/{runId}/export.csv", produces = "text/csv; charset=UTF-8")
+    @Operation(summary = "Xuất kết quả ra CSV")
+    public ResponseEntity<byte[]> exportCsv(
+            @PathVariable UUID runId, @AuthenticationPrincipal CurrentUser currentUser) {
+        byte[] body = runExportService.csvBytes(runId, currentUser.id());
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + runExportService.fileName(runId, "csv") + "\"")
+                .body(body);
+    }
+
+    @GetMapping("/analysis-runs/{runId}/export.json")
+    @Operation(summary = "Xuất kết quả đầy đủ ra JSON")
+    public ResponseEntity<Map<String, Object>> exportJson(
+            @PathVariable UUID runId, @AuthenticationPrincipal CurrentUser currentUser) {
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + runExportService.fileName(runId, "json") + "\"")
+                .body(runExportService.toJson(runId, currentUser.id()));
     }
 }

@@ -433,6 +433,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis-runs/{runId}/export.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Xuất kết quả đầy đủ ra JSON */
+        get: operations["exportJson"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis-runs/{runId}/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Xuất kết quả ra CSV */
+        get: operations["exportCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/analysis-runs/{runId}/evidence/{shortId}": {
         parameters: {
             query?: never;
@@ -1871,6 +1905,53 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["RunMetricsResponse"];
+                };
+            };
+        };
+    };
+    exportJson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    exportCsv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv;charset=UTF-8": string;
+                    "text/csv; charset=UTF-8": string;
                 };
             };
         };
