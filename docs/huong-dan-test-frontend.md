@@ -316,8 +316,9 @@ qua đúng dòng 66** thì thành một lập luận.
 **Cảnh báo cần mở**: `NP_NULL_ON_SOME_PATH` ở `UserService.java:66` (TP-16 trong `SEEDED.md`) — ca
 **duy nhất** của vulnshop có đủ cả ba loại bằng chứng.
 
-**Cách tìm nó** (đừng dò mắt qua 34 dòng): ở ô **"Đường dẫn file"** trên thanh lọc, gõ
-`UserService` → còn đúng **3 dòng**. Dòng cần mở là dòng có luật `NP_NULL_ON_SOME_PATH`, vị trí
+**Cách tìm nó** (đừng dò mắt qua 34 dòng): ở ô **"Một phần đường dẫn file"** trên thanh lọc, gõ
+`UserService` → còn đúng **3 dòng**. Ô này khớp theo **chuỗi con**, không phân biệt hoa thường —
+`userservice`, `vulnshop/user` hay `.java` đều dùng được. Dòng cần mở là dòng có luật `NP_NULL_ON_SOME_PATH`, vị trí
 `UserService.java:66`. Bấm vào mã `EV-xxxx` màu xanh ở cột **Luật** (không phải cột Vị trí — cột đó
 mở source viewer).
 

@@ -366,6 +366,23 @@ sẽ parse hỏng `record` / `sealed` / pattern matching trong `switch`, và h�
 vẫn báo thành công. Dùng `new JavaParser(config)` chứ đừng dùng `StaticJavaParser`: nó là singleton
 toàn cục, cấu hình bị lớp khác đổi là hỏng ngầm.
 
+**Bộ lọc text tự do mà truy vấn so khớp BẰNG CHÍNH XÁC là hỏng im lặng — và một test dùng giá trị
+"hoàn hảo" sẽ xanh trong khi tính năng hỏng.** Gặp thật ở màn hình cảnh báo: ô "Đường dẫn file"
+(textbox, placeholder `src/main/java/…`) nối vào `where e.filePath = :filePath`. Đường dẫn Java
+thật dài 60+ ký tự nên không ai gõ đủ, gõ thiếu một ký tự là bảng rỗng — **trông y hệt "file này
+không có cảnh báo nào"**, không có lỗi nào để lần theo. Vì sao lọt: đã CÓ một test controller gọi
+bộ lọc đó, nhưng chỉ với **một đường dẫn đầy đủ** — đúng giá trị duy nhất mà so khớp bằng chính xác
+vẫn chạy. Bài học: **một tham số lọc cần test cho HÌNH DẠNG đầu vào** (một phần, chữ thường, thư
+mục ở giữa, rỗng), không chỉ cho "có truyền hay không". Xem `WarningFilterTest`.
+
+**Tham số `null` trong `like`/`lower` của JPQL phải `cast(... as string)`, nếu không Postgres đổ
+`function lower(bytea) does not exist`.** Hibernate không suy được kiểu của một tham số `null` nên
+bind dạng `bytea`. Hậu quả: **không lọc gì cả cũng ra HTTP 500**. Bẫy phụ khiến nó rất khó tin cậy
+khi debug: lỗi **phụ thuộc thứ tự chạy** — nếu một lời gọi có giá trị thật đi trước thì prepared
+statement đã mang kiểu text và các lời gọi `null` sau đó ăn theo, nên cùng một bộ test có thể xanh
+hay đỏ tuỳ thứ tự method. Gặp thật: `WarningFilterTest` xanh 10/10 trong khi
+`AnalysisRunQueryControllerTest` đỏ với đúng câu truy vấn đó.
+
 **`OffsetDateTime.now()` ghi xuống Postgres rồi đọc lại KHÔNG cho lại chuỗi cũ — lệch vì HAI lý
 do độc lập.** Gặp thật ở tuần 14 khi chạy stack thật: `PUT .../review` lần đầu (INSERT, giá trị
 lấy từ object trong bộ nhớ) trả `2026-08-10T16:39:40.3879908+07:00`, lần sau (đã đọc lại từ DB)

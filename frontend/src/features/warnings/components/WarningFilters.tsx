@@ -63,12 +63,18 @@ export function WarningFilters({ value, onChange }: WarningFiltersProps) {
         </select>
       </label>
 
+      {/*
+       * Nhãn nói rõ "một phần": backend khớp theo chuỗi con, không phân biệt hoa thường. Bản đầu
+       * ghi mỗi "Đường dẫn file" với placeholder `src/main/java/…` nên người dùng tưởng phải gõ
+       * đủ đường dẫn — mà backend lúc đó CŨNG so khớp bằng chính xác, nên gõ thiếu một ký tự là
+       * bảng rỗng và không có gì cho biết vì sao.
+       */}
       <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
-        <span className="text-ink-muted">Đường dẫn file</span>
+        <span className="text-ink-muted">Một phần đường dẫn file</span>
         <input
           type="text"
           className="border-border rounded border bg-white px-2 py-1"
-          placeholder="src/main/java/…"
+          placeholder="UserService  ·  vulnshop/user  ·  .java"
           value={value.filePath ?? ''}
           onChange={(event) => {
             const next = event.target.value;

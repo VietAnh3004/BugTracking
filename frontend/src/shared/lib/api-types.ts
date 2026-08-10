@@ -1843,6 +1843,7 @@ export interface operations {
             query: {
                 tool?: "spotbugs" | "semgrep";
                 severity?: "HIGH" | "MEDIUM" | "LOW" | "INFO";
+                /** @description Khớp theo MỘT PHẦN đường dẫn, không phân biệt hoa thường */
                 filePath?: string;
                 pageable: components["schemas"]["Pageable"];
             };

@@ -963,6 +963,7 @@
         }, {
           "name" : "filePath",
           "in" : "query",
+          "description" : "Khớp theo MỘT PHẦN đường dẫn, không phân biệt hoa thường",
           "required" : false,
           "schema" : {
             "type" : "string"

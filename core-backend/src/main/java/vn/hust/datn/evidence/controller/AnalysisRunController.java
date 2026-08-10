@@ -32,6 +32,7 @@ import vn.hust.datn.evidence.service.analysis.InvalidArtifactException;
 import vn.hust.datn.evidence.service.analysis.NamedArtifact;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
@@ -81,7 +82,9 @@ public class AnalysisRunController {
             @PathVariable UUID runId,
             @RequestParam(required = false) WarningTool tool,
             @RequestParam(required = false) WarningSeverity severity,
-            @RequestParam(required = false) String filePath,
+            @Parameter(description = "Khớp theo MỘT PHẦN đường dẫn, không phân biệt hoa thường")
+                    @RequestParam(required = false)
+                    String filePath,
             Pageable pageable,
             @AuthenticationPrincipal CurrentUser currentUser) {
         return PageResponse.from(
