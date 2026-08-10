@@ -24,10 +24,11 @@ src/
 │   ├── warnings/   { api/ components/ hooks/ pages/ }
 │   ├── evidence/   { api/ components/ hooks/ lib/ pages/ }
 │   ├── chat/       { api/ components/ hooks/ pages/ }
+│   ├── review/     { api/ components/ hooks/ lib/ pages/ }
 │   └── system/     { components/ hooks/ }
 ├── shared/
 │   ├── ui/         Thuần trình bày — không gọi API, không biết nghiệp vụ
-│   ├── lib/        apiClient, uploadClient, sseClient, tokenStorage, queryClient, kiểu OpenAPI
+│   ├── lib/        apiClient, uploadClient, sseClient, downloadClient, tokenStorage, queryClient, kiểu OpenAPI
 │   └── config/     Đọc cấu hình runtime
 └── test/           Setup và helper dùng chung cho test
 ```
@@ -35,9 +36,13 @@ src/
 Quy ước:
 
 - Logic lấy dữ liệu nằm trong custom hook, không nằm trong JSX.
-- Không component nào gọi `fetch` trực tiếp — dùng `apiClient`. Hai ngoại lệ, cả hai đều phải
-  dùng lại helper export từ `apiClient` thay vì chép logic: `uploadClient` (cần `XMLHttpRequest`
-  vì `fetch` không có sự kiện tiến trình upload) và `sseClient` (cần đọc `ReadableStream`).
+- Không component nào gọi `fetch` trực tiếp — dùng `apiClient`. **Ba** ngoại lệ, cả ba đều phải
+  dùng lại helper export từ `apiClient` (`resolveUrl`, `authorizationHeader`, `refreshAccessToken`,
+  `parseProblem`) thay vì chép logic: `uploadClient` (cần `XMLHttpRequest` vì `fetch` không có sự
+  kiện tiến trình upload), `sseClient` (cần đọc `ReadableStream`) và `downloadClient` (thân
+  response là file, không phải JSON). Riêng `downloadClient` còn một lý do thứ hai: thẻ
+  `<a download>` trỏ thẳng vào URL sẽ gửi request **không kèm `Authorization`**, nên backend trả
+  401 và người dùng nhận một file HTML lỗi mang đuôi `.csv`.
 - Mọi trạng thái bất đồng bộ phải render đủ loading / error / empty.
 - Component vượt ~150 dòng là tín hiệu cần tách.
 - **Không `dangerouslySetInnerHTML` cho dữ liệu bắt nguồn từ file upload** — source viewer render

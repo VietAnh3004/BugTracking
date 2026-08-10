@@ -51,6 +51,16 @@ export function WarningsPage() {
             ← Về cây mã nguồn
           </Link>
           <h1 className="mt-1 mb-0 text-xl font-semibold">Cảnh báo phân tích tĩnh</h1>
+          {/*
+           * Lối vào dashboard đặt ngay đây vì đó là chỗ người dùng đang đứng khi muốn biết "mình
+           * đã review được bao nhiêu rồi" — không ai đi tìm một mục menu riêng cho việc đó.
+           */}
+          <Link
+            to={`/snapshots/${snapshotId}/runs/${runId}/dashboard`}
+            className="text-brand mt-1 inline-block text-sm"
+          >
+            Xem chỉ số &amp; tải báo cáo →
+          </Link>
         </div>
         <RunSummary
           findingCount={run.data.findingCount}

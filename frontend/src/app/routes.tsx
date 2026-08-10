@@ -70,9 +70,9 @@ export const routes: RouteObject[] = [
             ],
           },
           {
-            // Ba màn hình dưới đây cố ý dùng toàn bộ bề ngang: bảng cảnh báo có 5 cột và
-            // `min-w-[64rem]`, Evidence Explorer có hai cột kèm khối mã, còn khung duyệt mã nguồn
-            // có cây file bên trái. Cả ba đều chật trong 880px.
+            // Các màn hình dưới đây cố ý dùng toàn bộ bề ngang: bảng cảnh báo có 6 cột và
+            // `min-w-[64rem]`, Evidence Explorer có hai cột kèm khối mã, dashboard xếp thẻ chỉ số
+            // hai cột, còn khung duyệt mã nguồn có cây file bên trái. Tất cả đều chật trong 880px.
             element: <WideContent />,
             children: [
               {
@@ -98,6 +98,17 @@ export const routes: RouteObject[] = [
                   const { EvidenceExplorerPage } =
                     await import('@/features/evidence/pages/EvidenceExplorerPage');
                   return { Component: EvidenceExplorerPage };
+                },
+                errorElement: <RouteErrorBoundary />,
+              },
+              {
+                // Dashboard đứng cạnh `warnings` chứ không lồng trong nó: nó nói về CẢ lần phân
+                // tích (chỉ số trích dẫn, chi phí Agent, tiến độ review), không phải về danh sách
+                // cảnh báo. Lồng vào sẽ buộc mọi liên kết tới nó phải đi qua bộ lọc của bảng.
+                path: 'snapshots/:snapshotId/runs/:runId/dashboard',
+                lazy: async () => {
+                  const { DashboardPage } = await import('@/features/review/pages/DashboardPage');
+                  return { Component: DashboardPage };
                 },
                 errorElement: <RouteErrorBoundary />,
               },
