@@ -1,14 +1,14 @@
 # Hướng dẫn kiểm thử frontend bằng trình duyệt thật
 
-Dành cho việc nghiệm thu tuần 8-9. Đọc mục 1 trước nếu chưa rõ bốn khái niệm; muốn bắt tay ngay
-thì nhảy tới mục 2.
+Dành cho việc nghiệm thu từ tuần 8-9 tới nay (mục 5 = bằng chứng, 5bis = hỏi đáp, 5ter = review
+và dashboard). Đọc mục 1 trước nếu chưa rõ bốn khái niệm; muốn bắt tay ngay thì nhảy tới mục 2.
 
 > **Shell**: máy này mặc định mở **PowerShell**, còn `CLAUDE.md` và phần lớn script trong repo viết
 > cho **Git Bash**. Hai shell không dùng chung cú pháp — PowerShell 5.1 **không hiểu `&&`**, không
 > có `zip`, và `curl` ở đó là alias của `Invoke-WebRequest`. Mọi lệnh dưới đây có bản cho **cả
 > hai**; chọn đúng tab của shell bạn đang dùng.
 
-**Vì sao phải kiểm bằng tay khi đã có 88 test tự động**: test dùng `happy-dom` (không có bố cục
+**Vì sao phải kiểm bằng tay khi đã có 148 test tự động**: test dùng `happy-dom` (không có bố cục
 và cuộn thật), `MemoryRouter` (không có History API thật), mock `fetch` (không có CORS thật) và
 tắt CSS (`css: false`). Bốn thứ đó về mặt cấu trúc không kiểm được bằng test — phần còn lại thì
 kiểm tay chỉ là phí thời gian.
@@ -402,6 +402,68 @@ dòng *"đã hạ cấp từ …"*, và nhận định vô căn cứ vẫn còn 
 **Hỏng thì trông thế nào**: chỉ thấy "Chưa đủ bằng chứng" trơ trọi. Khi đó người dùng không phân
 biệt được **Agent thận trọng** với **Agent bịa trích dẫn rồi bị hệ thống bắt** — hai chuyện hoàn
 toàn khác nhau, và chuyện thứ hai mới là thứ đồ án này chứng minh mình chặn được.
+
+---
+
+## 5ter. Năm điều cần nhìn tận mắt ở review và dashboard
+
+Bốn bước đầu **không cần agent-service**; bước 2 cần (để có một câu trả lời mà gắn `messageId` vào).
+
+### ✅ 14. Quyết định còn nguyên sau khi tải lại trang
+
+Mở một cảnh báo bất kỳ → panel **"Đánh giá của bạn"** ngay dưới phần đầu → bấm **"Báo nhầm"**,
+gõ một câu lý do → **F5**.
+
+Phải thấy: nút "Báo nhầm" vẫn được tô, ghi chú vẫn còn, và dòng *"Đã ghi lúc …"* hiện mốc thời
+gian. Quay về danh sách cảnh báo thì cột **Đánh giá** của đúng dòng đó hiện nhãn "Báo nhầm".
+
+**Hỏng thì trông thế nào**: panel trở về "Chưa đánh giá". Người dùng sẽ review lại lần hai và
+tưởng lần đầu không ăn — đúng thứ mà `UNIQUE (evidence_record_id, reviewer_id)` chống ở tầng DB.
+
+### ✅ 15. Review SAU KHI hỏi Agent thì vào nhóm "có dùng Agent"
+
+Mở một cảnh báo **khác** → **"💬 Hỏi Agent"** → hỏi một câu, chờ trả lời xong → quay lại Evidence
+Explorer của chính cảnh báo đó → bấm một quyết định.
+
+Vào dashboard (link **"Xem chỉ số & tải báo cáo →"** ở đầu màn hình cảnh báo): ô **"Có dùng
+Agent"** phải tăng thêm 1.
+
+### ✅ 16. Review mà KHÔNG mở chat thì vào nhóm đối chứng
+
+Cảnh báo thứ ba, quyết định luôn, không mở màn hình hỏi đáp. Dashboard: ô **"Nhóm đối chứng"** tăng
+thêm 1, ô "Có dùng Agent" **không đổi**.
+
+**Vì sao đây là bước quan trọng nhất trong năm bước**: hai ô này là **biến độc lập của user study**
+(kế hoạch §6). Lẫn nhau một lần là hỏng một điểm dữ liệu của tuần 16, và hỏng theo kiểu không phát
+hiện được về sau — không có thông báo lỗi nào, chỉ có một con số sai trong báo cáo.
+
+### ✅ 17. Chưa có dữ liệu thì hiện dấu gạch, KHÔNG phải `0%`
+
+Cách nhìn thấy chắc chắn nhất: mở dashboard của một run **chưa ai review và chưa hỏi Agent lần
+nào**. Mọi tỉ lệ — Unsupported Claim Rate, Evidence Citation Accuracy, Human acceptance rate, hai
+ô ground truth, độ trễ trung bình, số vòng lặp — phải hiện **`—`** với chữ mờ.
+
+Số **đếm** thì ngược lại: `0 / 34` và các ô "Đã review", "Token vào" vẫn hiện số 0. Đó là phép đo
+thật, không phải ẩn số.
+
+**Hỏng thì trông thế nào**: thấy `0.0%`. Người chấm đọc thành *"Agent trích dẫn sai 100%"* trong
+khi sự thật là chưa có gì để tính. Đây là lỗi đã suýt xảy ra thật — chi tiết ở
+[ADR 0011](adr/0011-human-review-gan-vao-canh-bao.md) mục 5.
+
+### ✅ 18. CSV mở bằng Excel trên Windows hiện đúng tiếng Việt
+
+Bấm **"Tải CSV"** trên dashboard → mở file bằng **Excel** (không phải Notepad, không phải VS Code
+— chúng đoán mã hoá khác).
+
+Cột `note` phải hiện đúng câu tiếng Việt bạn đã gõ ở bước 14. Thử lại với một ghi chú chứa **dấu
+phẩy, dấu nháy kép và xuống dòng** — vẫn phải nằm gọn trong một ô.
+
+**Hỏng thì trông thế nào**: `BÃ¡o nháº§m`. Nguyên nhân là thiếu BOM UTF-8, và lỗi này **chỉ lộ ra
+trên Windows với Excel** — mở bằng bất cứ thứ gì khác đều đúng, nên rất dễ bỏ sót cho tới lúc
+người chấm mở file.
+
+Bấm **"Tải JSON"** kiểm luôn: file phải có cả `metrics` (đúng số đang hiện trên màn hình) lẫn
+danh sách cảnh báo kèm claim/citation.
 
 ---
 

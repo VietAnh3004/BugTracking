@@ -17,7 +17,7 @@
 
 ## Trạng thái tiến độ
 
-*Cập nhật: 06/08/2026*
+*Cập nhật: 10/08/2026*
 
 | Giai đoạn | Trạng thái |
 |---|---|
@@ -29,6 +29,7 @@
 | **Tuần 8-9** — parser analyzer → Evidence Store + Docker sandbox | ✅ Xong: A, B, C, D (xem §H) |
 | **Tuần 10-11** — EvidenceLinker 3 tầng, CODE_CONTEXT, pgvector, Evidence Explorer | ✅ Xong (xem §I) |
 | **Tuần 12-13** — agent loop, 5 tool, CitationValidator, chat + SSE | ✅ Xong (xem §J) |
+| **Tuần 14** — Human Review, dashboard chỉ số, export CSV/JSON, chuẩn bị user study | ✅ Xong (xem §K) |
 
 ### §G — Tuần 5-7: tiến độ chi tiết (đã xong)
 
@@ -559,6 +560,94 @@ chắc nịch trên một nửa dữ liệu. Nay phần bị cắt kèm một c�
 | Chưa sinh vector embedding | Vẫn hoãn. Có agent loop rồi nhưng chưa đo được retrieval hiện tại (ILIKE) yếu ở đâu; chốt mô hình trước khi có số đo là chọn bừa |
 | `OpenAIProvider` / `OllamaProvider` | Interface và factory đã sẵn; chỉ cần khi tuần 15 chạy thực nghiệm nhiều provider |
 | Chưa có nút huỷ một lượt hỏi đang chạy | `AbortSignal` đã nối xuyên suốt (hỏi câu mới hoặc rời trang là huỷ lượt cũ), nhưng chưa có nút bấm và phía server vẫn chạy nốt lượt đã bắt đầu |
+
+### §K — Tuần 14: tiến độ chi tiết (đã xong)
+
+Deliverable của lộ trình: *"Luồng end-to-end hoàn chỉnh, demo được"*. Tuần 12-13 khép vòng lặp
+**máy** (cảnh báo → bằng chứng → Agent trả lời → hậu kiểm trích dẫn); tuần 14 nối mắt xích cuối —
+**người dùng nghĩ gì** — và biến toàn bộ thành số đo tải về được.
+
+| Hạng mục | Trạng thái |
+|---|---|
+| V9: `human_review` + `ground_truth_label` | ✅ Xong |
+| `HumanReviewService` — upsert, kiểm `message_id` ba điều kiện | ✅ Xong |
+| `RunMetricsService` — bốn nhóm chỉ số bằng SQL, tỉ lệ mẫu số 0 trả `null` | ✅ Xong |
+| `RunExportService` — CSV (BOM UTF-8) + JSON, gọi lại `RunMetricsService` | ✅ Xong |
+| `ReviewController` — 5 endpoint | ✅ Xong |
+| Frontend: `ReviewPanel` ở hai lối vào + cột Đánh giá trên bảng cảnh báo | ✅ Xong |
+| Frontend: dashboard 4 nhóm chỉ số + tải CSV/JSON | ✅ Xong |
+| [ADR 0011](adr/0011-human-review-gan-vao-canh-bao.md) | ✅ Xong |
+| [`docs/user-study/`](user-study/) — phiếu đồng ý, kịch bản, bộ 8 cảnh báo, phiếu Likert | ✅ Xong |
+
+492 test backend · 61 test agent-service · 148 test frontend (20 file).
+
+#### Quyết định định hình cả tuần: review neo vào CẢNH BÁO, không neo vào câu trả lời
+
+Cách hiển nhiên hơn là neo `human_review` vào `message` — người dùng đọc một câu trả lời rồi nói
+đồng ý hay không. Nó hỏng ở đúng chỗ đồ án cần đo: **nhóm đối chứng của user study không sinh ra
+`message` nào**, nên một nửa dữ liệu thực nghiệm sẽ không có chỗ ghi. Thêm nữa, một cảnh báo hỏi
+ba lần sẽ thành ba hàng review, và ground truth của tuần 15 gán cho *cảnh báo* chứ không cho câu
+trả lời.
+
+Neo vào cảnh báo, mang thêm `message_id` **nullable**, thì một bảng phục vụ được cả hai việc. Lý
+do đầy đủ và bảy quyết định còn lại ở [ADR 0011](adr/0011-human-review-gan-vao-canh-bao.md).
+
+Hệ quả: `message_id` không phải metadata trang trí mà là **biến độc lập của user study**, nên
+backend kiểm ba điều kiện (message tồn tại · thuộc hội thoại của chính người review · hội thoại đó
+thuộc đúng run) và trả 400 thay vì lặng lẽ ghi NULL. Frontend là thứ người tham gia chạy trên máy
+họ; một id chép nhầm từ tab khác sẽ đi thẳng vào cột quyết định nhóm.
+
+#### Một cạm bẫy thật: `null` của backend gặp `undefined` của OpenAPI
+
+Backend cố ý trả `null` (không phải `0`) cho mọi tỉ lệ có mẫu số 0 — "chưa ai review" khác hẳn
+"review hết mà 0% khớp", cùng triết lý với "rỗng là một kết luận" của tuần 10-11.
+
+`openapi-typescript` sinh kiểu `unsupportedClaimRate?: number`, tức `number | undefined` —
+**không có `null`**. Viết `value === undefined ? '—' : ...` thì TypeScript xanh, mà `null * 100`
+trong JavaScript bằng `0`, nên dashboard hiện **`0.0%`**. Toàn bộ công sức trả `null` ở backend đổ
+sông, và người chấm đọc "0% khớp với Agent" trong khi sự thật là chưa ai review.
+
+Chữa ở `formatMetric.ts` (kiểm `== null`, bắt cả hai) kèm bộ test canh riêng ca `null`. Bài học
+chung: **kiểu sinh từ OpenAPI mô tả hợp đồng, không mô tả dữ liệu** — chỗ nào backend gửi `null`
+mà spec khai "tuỳ chọn" thì runtime và trình biên dịch không nói cùng một chuyện.
+
+#### Ba quyết định về định nghĩa chỉ số, ghi thẳng vào mã
+
+Không suy ra được từ SQL, nên chúng nằm trong comment của `RunMetricsService`:
+
+1. **Nhận định không có căn cứ = không có trích dẫn `RESOLVED` nào** — phải khớp *chính xác* định
+   nghĩa của CitationValidator. Lệch một chút là hai con số cùng tên trong báo cáo nói hai chuyện.
+2. **`UNCERTAIN` luôn tính là không khớp nhưng Ở LẠI trong mẫu số.** Loại nó ra làm chỉ số đẹp lên
+   đúng theo mức độ khó của bộ dữ liệu — một phép đo tự khen.
+3. **Nhãn `BLIND_SECOND_RATER` không tính vào độ chính xác.** Nó tồn tại để đo mức đồng thuận giữa
+   hai người gán nhãn (Cohen's kappa); dùng làm chuẩn nữa là đếm hai lần cùng một ý kiến.
+
+#### User study: thiết kế trong-đối-tượng, không chia người thành hai nhóm
+
+Kế hoạch §6 nói *"một nửa dùng chatbot, một nửa đọc output công cụ thô"*. Hiện thực hoá thành
+**mỗi người làm cả 8 cảnh báo**, 4 có Agent và 4 đối chứng, thứ tự cân bằng giữa các người tham
+gia — chứ không chia 6 người thành hai nhóm 3.
+
+Với cỡ mẫu này, chia người nghĩa là chênh lệch trình độ giữa ba người bất kỳ lớn hơn hiệu ứng đang
+đo, và kết quả sẽ nói về *người tham gia* chứ không nói về *công cụ*. Chính thiết kế "review neo
+vào cảnh báo" ở trên là thứ làm cho cách này khả thi: cùng một người, cùng một bảng, hai điều kiện
+phân biệt bằng `message_id`.
+
+Hai điều đã khai báo sẵn để khỏi phải giải thích lúc bảo vệ:
+
+- **Đối chứng là "bằng chứng có cấu trúc, không AI"**, không phải "đọc XML thô" — tức là một đối
+  chứng *mạnh*, nên chênh lệch đo được sẽ nhỏ hơn và vì thế đáng tin hơn.
+- **"Time to understand" bấm giờ thủ công**, không lấy từ `human_review.seconds_spent`. Cột đó do
+  trình duyệt tự đo (đổi tab, đọc lại, dừng để hỏi) nên chỉ dùng đối chiếu.
+
+#### Món còn nợ có chủ đích
+
+| Món | Vì sao hoãn |
+|---|---|
+| `ground_truth_label` dựng ở V9 nhưng **trống** | Tuần 15 mới gán nhãn. Dashboard hiện rõ "chưa có dữ liệu" thay vì `0%` — một bảng chết trông y hệt một bảng đang dùng |
+| Chưa có màn hình gán nhãn ground truth | Tuần 15 gán bằng SQL/script là đủ cho 34 cảnh báo; dựng UI cho việc làm một lần là phí |
+| Dashboard chưa có biểu đồ | Số dạng bảng đủ để demo và để nghiệm thu; biểu đồ thuộc phần phân tích số liệu tuần 17-18 |
+| Chưa gộp nhiều người review trên cùng một run ở dashboard | `GET /reviews` trả review của **chính người gọi**. Số tổng hợp có trong `/metrics` và export; màn hình so từng người chỉ cần khi phân tích tuần 17-18 |
 
 ---
 

@@ -171,6 +171,48 @@ theo cấu trúc nên JSON dở dang vừa không đọc được vừa phơi ra
 kiện `answer` của agent-service **không bao giờ** đi tiếp — cái ra tới trình duyệt là bản đã kiểm
 và đã ghi DB.
 
+## Quyết định của người review, và chỉ số của một lần phân tích
+
+`human_review` neo vào **cảnh báo** (`evidence_record`), không neo vào câu trả lời của Agent — lý
+do đầy đủ ở [ADR 0011](../docs/adr/0011-human-review-gan-vao-canh-bao.md). `UNIQUE (evidence_record_id,
+reviewer_id)` ép "một người, một cảnh báo, một quyết định"; đổi ý là UPDATE.
+
+`message_id` (nullable) ghi câu trả lời người dùng đã đọc trước khi quyết. `NULL` = không dùng
+Agent, tức **nhóm đối chứng của user study**. Nó là biến thực nghiệm chứ không phải metadata, nên
+`HumanReviewService` kiểm **ba** điều và trả 400 nếu sai một, thay vì lặng lẽ ghi NULL:
+
+1. message tồn tại;
+2. thuộc một hội thoại của **chính người đang review**;
+3. hội thoại đó thuộc **đúng run** đang xét.
+
+Bốn lựa chọn: `ACCEPT` / `REJECT` / `UNCERTAIN` / `INSUFFICIENT_EVIDENCE`. Hai cái cuối cố ý
+KHÔNG gộp — `UNCERTAIN` nói về độ khó của cảnh báo, `INSUFFICIENT_EVIDENCE` nói về thiếu sót của
+pipeline bằng chứng.
+
+`RunMetricsService` là **nguồn tính toán duy nhất**; `RunExportService.toJson` gọi lại nó chứ
+không tự tính. Hai chỗ cùng tính một chỉ số sớm muộn cũng lệch, và lúc đó không ai biết con số nào
+trong báo cáo là đúng.
+
+Ba điều dễ làm sai, đều ghi trong comment của `RunMetricsService` vì không suy ra được từ SQL:
+
+- **Tỉ lệ có mẫu số 0 trả `null`, không trả `0`** — nên `RunMetricsResponse` dùng `Double` bọc và
+  có đúng một hàm chia. "Chưa ai review" khác hẳn "review hết mà 0% khớp".
+- **`UNCERTAIN` luôn tính là không khớp nhưng ở lại trong mẫu số.** Loại nó ra làm chỉ số đẹp lên
+  đúng theo mức độ khó của bộ dữ liệu.
+- **Nhãn `BLIND_SECOND_RATER` không tính vào độ chính xác** — nó để đo mức đồng thuận giữa hai
+  người gán nhãn (Cohen's kappa), dùng làm chuẩn nữa là đếm hai lần cùng một ý kiến.
+
+Export có hai định dạng không thay thế nhau: **CSV** một dòng một cảnh báo (nạp thẳng vào công cụ
+thống kê) và **JSON** đủ claim/citation/trace để truy ngược một con số về bằng chứng sinh ra nó.
+CSV **phải có BOM UTF-8** — `note` là tiếng Việt do người dùng gõ, thiếu BOM thì Excel trên Windows
+mở ra là chữ rác. CSV cũng ghi qua `commons-csv` chứ không ghép chuỗi tay (`note` chứa được dấu
+phẩy, nháy kép và xuống dòng).
+
+`ground_truth_label` dựng sẵn ở V9 nhưng **trống tới tuần 15**. Khoá chính là
+`(evidence_record_id, source)` vì cần hai người gán nhãn độc lập; `rationale NOT NULL` chặn bẫy
+circularity mà kế hoạch §5 cảnh báo — bắt viết lý do khiến việc gán nhãn theo output của Agent lộ
+ra ngay lúc gán.
+
 ## Chạy analyzer trong Docker sandbox
 
 `POST /api/v1/snapshots/{id}/analysis-runs/sandbox` dựng cây mã nguồn thành tar, chạy hai image

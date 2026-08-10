@@ -143,6 +143,8 @@ container), không phải lúc build — nên một image dùng được cho m�
   Maven plugin, tiền đề của Docker sandbox
 - [docs/huong-dan-test-frontend.md](docs/huong-dan-test-frontend.md) — nghiệm thu bằng trình duyệt
   thật (kèm bản lệnh cho cả Git Bash lẫn PowerShell)
+- [docs/user-study/](docs/user-study/) — phiếu đồng ý, kịch bản buổi thử, bộ 8 cảnh báo và phiếu
+  Likert cho user study tuần 15-16 (chuẩn bị sẵn từ tuần 14 theo yêu cầu của kế hoạch §6)
 - [docs/related-work.md](docs/related-work.md) — khung khảo sát tài liệu cho chương 2
 - [case-study/vulnshop/SEEDED.md](case-study/vulnshop/SEEDED.md) — danh mục lỗi gieo có chủ đích
 - [docs/samples/](docs/samples/) — artifact thật của analyzer
