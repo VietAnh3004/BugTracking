@@ -22,8 +22,11 @@ import vn.hust.datn.evidence.domain.EvidenceLinkRelation;
 import vn.hust.datn.evidence.domain.EvidenceSource;
 import vn.hust.datn.evidence.domain.EvidenceStatus;
 import vn.hust.datn.evidence.domain.EvidenceType;
+import vn.hust.datn.evidence.domain.GroundTruthSource;
+import vn.hust.datn.evidence.domain.GroundTruthVerdict;
 import vn.hust.datn.evidence.domain.MessageRole;
 import vn.hust.datn.evidence.domain.RefreshTokenRevokedReason;
+import vn.hust.datn.evidence.domain.ReviewDecision;
 import vn.hust.datn.evidence.domain.SnapshotEntryType;
 import vn.hust.datn.evidence.domain.SnapshotSourceType;
 import vn.hust.datn.evidence.domain.SnapshotStatus;
@@ -167,6 +170,21 @@ class EnumCheckConstraintTest extends AbstractIntegrationTest {
     @Test
     void coverageLineStatus() {
         assertCheckMatchesEnum("coverage_line", "status", CoverageStatus.values());
+    }
+
+    @Test
+    void humanReviewDecision() {
+        assertCheckMatchesEnum("human_review", "decision", ReviewDecision.values());
+    }
+
+    @Test
+    void groundTruthLabelValue() {
+        assertCheckMatchesEnum("ground_truth_label", "label", GroundTruthVerdict.values());
+    }
+
+    @Test
+    void groundTruthLabelSource() {
+        assertCheckMatchesEnum("ground_truth_label", "source", GroundTruthSource.values());
     }
 
     @Test
