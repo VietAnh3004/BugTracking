@@ -416,6 +416,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis-runs/{runId}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chỉ số tổng hợp của một lần phân tích */
+        get: operations["metrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/analysis-runs/{runId}/evidence/{shortId}": {
         parameters: {
             query?: never;
@@ -885,6 +902,111 @@ export interface components {
             severityNormalized: "HIGH" | "MEDIUM" | "LOW" | "INFO";
             /** @description false khi tool không tự đánh dấu vị trí chính và parser phải tự chọn */
             hasPrimaryLocation: boolean;
+        };
+        /** @description Chi phí gọi model */
+        AgentCost: {
+            /** Format: int64 */
+            modelCallCount: number;
+            /** Format: int64 */
+            inputTokens: number;
+            /** Format: int64 */
+            outputTokens: number;
+            /** Format: int64 */
+            toolCallCount: number;
+            /**
+             * Format: double
+             * @description null khi chưa gọi model lần nào
+             */
+            averageLatencyMs?: number;
+            /**
+             * Format: double
+             * @description Số vòng lặp trung bình mỗi lượt hỏi; null khi chưa có lượt nào
+             */
+            averageIterationsPerAnswer?: number;
+            /**
+             * Format: int64
+             * @description Số lượt hỏi hỏng — llm_trace có message_id NULL
+             */
+            failedTurnCount: number;
+        };
+        /** @description Chất lượng trích dẫn của Agent */
+        CitationQuality: {
+            /** Format: int64 */
+            answerCount: number;
+            /** Format: int64 */
+            claimCount: number;
+            /** Format: int64 */
+            unsupportedClaimCount: number;
+            /**
+             * Format: double
+             * @description null khi chưa có nhận định nào
+             */
+            unsupportedClaimRate?: number;
+            /** Format: int64 */
+            citationCount: number;
+            /** @description Số lượt trích dẫn theo từng kết cục: RESOLVED/WRONG_RUN/UNKNOWN_ID/MALFORMED */
+            citationsByResolution: {
+                [key: string]: number;
+            };
+            /**
+             * Format: double
+             * @description null khi chưa có trích dẫn nào
+             */
+            citationAccuracy?: number;
+            /**
+             * Format: int64
+             * @description Số lượt trả lời bị CitationValidator hạ cấp
+             */
+            downgradedAnswerCount: number;
+        };
+        /** @description So sánh với nhãn chuẩn; rỗng cho tới khi gán nhãn ở tuần 15 */
+        GroundTruthComparison: {
+            /** Format: int64 */
+            labelledCount: number;
+            /**
+             * Format: double
+             * @description Tỉ lệ verdict Agent khớp nhãn chuẩn; null khi chưa gán nhãn
+             */
+            agentAccuracy?: number;
+            /**
+             * Format: double
+             * @description Tỉ lệ quyết định của người khớp nhãn chuẩn; null khi chưa gán nhãn
+             */
+            humanAccuracy?: number;
+        };
+        /** @description Tiến độ review và mức khớp với Agent */
+        ReviewProgress: {
+            /** Format: int64 */
+            warningCount: number;
+            /** Format: int64 */
+            reviewedCount: number;
+            decisionCounts: {
+                [key: string]: number;
+            };
+            /**
+             * Format: int64
+             * @description Số review có đọc Agent trước khi quyết
+             */
+            withAgentCount: number;
+            /**
+             * Format: int64
+             * @description Nhóm đối chứng: quyết định mà không dùng Agent
+             */
+            withoutAgentCount: number;
+            /**
+             * Format: double
+             * @description Tỉ lệ quyết định của người khớp verdict Agent; null khi chưa có review nào có Agent
+             */
+            agreementWithAgent?: number;
+        };
+        /** @description Chỉ số của một lần phân tích. Tỉ lệ null nghĩa là chưa đủ dữ liệu để tính */
+        RunMetricsResponse: {
+            /** Format: uuid */
+            analysisRunId: string;
+            citationQuality: components["schemas"]["CitationQuality"];
+            reviewProgress: components["schemas"]["ReviewProgress"];
+            groundTruth: components["schemas"]["GroundTruthComparison"];
+            agentCost: components["schemas"]["AgentCost"];
         };
         EvidenceDetailResponse: {
             /** Format: uuid */
@@ -1727,6 +1849,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReviewResponse"][];
+                };
+            };
+        };
+    };
+    metrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RunMetricsResponse"];
                 };
             };
         };

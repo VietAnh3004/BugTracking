@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import vn.hust.datn.evidence.config.security.CurrentUser;
 import vn.hust.datn.evidence.dto.ReviewResponse;
+import vn.hust.datn.evidence.dto.RunMetricsResponse;
 import vn.hust.datn.evidence.dto.SubmitReviewRequest;
 import vn.hust.datn.evidence.service.review.HumanReviewService;
+import vn.hust.datn.evidence.service.review.RunMetricsService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +37,7 @@ import lombok.RequiredArgsConstructor;
 public class ReviewController {
 
     private final HumanReviewService humanReviewService;
+    private final RunMetricsService runMetricsService;
 
     /**
      * Ghi hoặc cập nhật quyết định về một cảnh báo.
@@ -67,5 +70,20 @@ public class ReviewController {
     public List<ReviewResponse> listMine(
             @PathVariable UUID runId, @AuthenticationPrincipal CurrentUser currentUser) {
         return humanReviewService.listMine(runId, currentUser.id());
+    }
+
+    /**
+     * Chỉ số tổng hợp của một lần phân tích — nguồn dữ liệu của dashboard.
+     *
+     * <p>Tính trên TOÀN BỘ review của run, không chỉ của người gọi: chủ run là người chạy thực
+     * nghiệm, và ở tuần 16 nhiều người cùng xét một tập cảnh báo.
+     *
+     * <p>Mọi tỉ lệ có thể là {@code null} — nghĩa là mẫu số bằng 0, tức "chưa đủ dữ liệu để
+     * tính". Giao diện phải hiện "—", không phải {@code 0%}.
+     */
+    @GetMapping("/analysis-runs/{runId}/metrics")
+    @Operation(summary = "Chỉ số tổng hợp của một lần phân tích")
+    public RunMetricsResponse metrics(@PathVariable UUID runId, @AuthenticationPrincipal CurrentUser currentUser) {
+        return runMetricsService.compute(runId, currentUser.id());
     }
 }
