@@ -13,6 +13,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 import { WarningTable } from '@/features/warnings/components/WarningTable';
 
+import type { ReviewDecision } from '@/features/review/api/reviewApi';
 import type { Warning } from '@/features/warnings/api/warningApi';
 
 function warning(overrides: Partial<Warning> = {}): Warning {
@@ -32,10 +33,15 @@ function warning(overrides: Partial<Warning> = {}): Warning {
   };
 }
 
-function renderTable(warnings: Warning[]) {
+function renderTable(warnings: Warning[], reviewByShortId?: Map<string, ReviewDecision>) {
   return render(
     <MemoryRouter>
-      <WarningTable warnings={warnings} snapshotId="snap-1" runId="run-1" />
+      <WarningTable
+        warnings={warnings}
+        snapshotId="snap-1"
+        runId="run-1"
+        reviewByShortId={reviewByShortId}
+      />
     </MemoryRouter>,
   );
 }
@@ -115,6 +121,38 @@ describe('WarningTable', () => {
       'href',
       '/snapshots/snap-1/files/src/main/java/vn/hust/App.java',
     );
+  });
+
+  /**
+   * Cột Đánh giá phải phân biệt được "chưa ai xét" với các quyết định — đó là tiến độ review, và
+   * nó là mẫu số của Human acceptance rate. Một ô trống thì người dùng không biết mình còn nợ bao
+   * nhiêu cảnh báo.
+   */
+  it('cột Đánh giá hiện quyết định đã có và dấu gạch cho cảnh báo chưa xét', () => {
+    renderTable(
+      [warning(), warning({ evidenceId: 'x', shortId: 'EV-003C' })],
+      new Map([['EV-001A', 'REJECT']]),
+    );
+
+    expect(screen.getByText('Báo nhầm')).toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  /**
+   * `UNCERTAIN` và `INSUFFICIENT_EVIDENCE` cùng là "chưa quyết" nhưng nói hai chuyện khác nhau:
+   * cái đầu về người, cái sau về hệ thống. Gộp nhãn là gộp hai tín hiệu cải tiến khác nhau.
+   */
+  it('phân biệt "chưa quyết được" với "thiếu bằng chứng"', () => {
+    renderTable(
+      [warning(), warning({ evidenceId: 'x', shortId: 'EV-003C' })],
+      new Map<string, ReviewDecision>([
+        ['EV-001A', 'UNCERTAIN'],
+        ['EV-003C', 'INSUFFICIENT_EVIDENCE'],
+      ]),
+    );
+
+    expect(screen.getByText('Chưa quyết')).toBeInTheDocument();
+    expect(screen.getByText('Thiếu bằng chứng')).toBeInTheDocument();
   });
 
   it('hiện nhãn mức nghiêm trọng của từng hàng', () => {

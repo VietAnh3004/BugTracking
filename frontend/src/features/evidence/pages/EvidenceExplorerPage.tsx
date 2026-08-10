@@ -18,6 +18,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import { EmptyEvidenceNotice } from '@/features/evidence/components/EmptyEvidenceNotice';
 import { EvidenceHeader } from '@/features/evidence/components/EvidenceHeader';
+import { ReviewPanel } from '@/features/review/components/ReviewPanel';
 import { RelatedEvidenceGroup } from '@/features/evidence/components/RelatedEvidenceGroup';
 import { useEvidenceDetail } from '@/features/evidence/hooks/useEvidenceDetail';
 import { ApiError } from '@/shared/lib/apiClient';
@@ -46,6 +47,12 @@ export function EvidenceExplorerPage() {
       {data === undefined ? null : (
         <>
           <EvidenceHeader evidence={data} runId={runId} />
+
+          {/* Panel đánh giá ngay dưới phần đầu: người dùng đọc bằng chứng xong là quyết được
+              luôn, không phải quay lại bảng cảnh báo. */}
+          <div className="mb-6">
+            <ReviewPanel runId={runId} shortId={shortId} />
+          </div>
 
           {data.relatedTotal === 0 ? (
             <EmptyEvidenceNotice locationResolved={data.filePath !== undefined} />

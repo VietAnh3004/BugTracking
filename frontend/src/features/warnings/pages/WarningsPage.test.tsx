@@ -22,6 +22,17 @@ vi.mock('@/features/warnings/api/warningApi', () => ({
   listAnalysisRuns: vi.fn(),
 }));
 
+/**
+ * Trang này gọi thêm `listReviews` để tô cột Đánh giá. Không mock thì `fetch` thật bay ra ngoài
+ * (`ENOTFOUND api.test.local`) mà test vẫn xanh — cột chỉ hiện toàn dấu gạch. Đúng loại rò rỉ mà
+ * bộ test phải chặn thay vì bỏ qua.
+ */
+vi.mock('@/features/review/api/reviewApi', () => ({
+  listReviews: () => Promise.resolve([]),
+  submitReview: () => Promise.reject(new Error('không dùng trong test này')),
+  getRunMetrics: () => Promise.reject(new Error('không dùng trong test này')),
+}));
+
 function run(overrides: Record<string, unknown> = {}) {
   return {
     id: 'run-1',

@@ -11,6 +11,8 @@
 
 import { Link } from 'react-router-dom';
 
+import type { ReviewDecision } from '@/features/review/api/reviewApi';
+import { DecisionBadge } from '@/features/review/components/DecisionBadge';
 import { toFilePathUrl, toLineHash } from '@/features/snapshots/lib/filePathUrl';
 import { SeverityBadge } from '@/features/warnings/components/SeverityBadge';
 
@@ -21,9 +23,16 @@ interface WarningTableProps {
   snapshotId: string;
   /** Cần để dựng link sang Evidence Explorer; `WarningsPage` đã có sẵn từ tham số route. */
   runId: string;
+  /**
+   * Quyết định của người dùng, tra theo `shortId`.
+   *
+   * Truyền vào chứ không tự gọi API: component này thuần trình bày, và giữ nguyên tính chất đó
+   * là điều kiện để test nó không cần dựng cả tầng mạng.
+   */
+  reviewByShortId?: Map<string, ReviewDecision>;
 }
 
-export function WarningTable({ warnings, snapshotId, runId }: WarningTableProps) {
+export function WarningTable({ warnings, snapshotId, runId, reviewByShortId }: WarningTableProps) {
   return (
     // `overflow-x-auto` + `min-w`: dưới ngưỡng đó thì bảng tự cuộn ngang, KHÔNG bóp cột cho vừa.
     <div className="overflow-x-auto">
@@ -41,6 +50,7 @@ export function WarningTable({ warnings, snapshotId, runId }: WarningTableProps)
           <col className="w-64" />
           <col className="w-72" />
           <col />
+          <col className="w-32" />
         </colgroup>
         <thead>
           <tr className="border-border text-ink-muted border-b text-left">
@@ -48,7 +58,8 @@ export function WarningTable({ warnings, snapshotId, runId }: WarningTableProps)
             <th className="py-2 pr-3 font-medium">Công cụ</th>
             <th className="py-2 pr-3 font-medium">Luật</th>
             <th className="py-2 pr-3 font-medium">Vị trí</th>
-            <th className="py-2 font-medium">Tóm tắt</th>
+            <th className="py-2 pr-3 font-medium">Tóm tắt</th>
+            <th className="py-2 font-medium">Đánh giá</th>
           </tr>
         </thead>
         <tbody>
@@ -80,7 +91,10 @@ export function WarningTable({ warnings, snapshotId, runId }: WarningTableProps)
               <td className="py-2 pr-3">
                 <WarningLocation warning={warning} snapshotId={snapshotId} />
               </td>
-              <td className="py-2">{warning.summary}</td>
+              <td className="py-2 pr-3">{warning.summary}</td>
+              <td className="py-2">
+                <DecisionBadge decision={reviewByShortId?.get(warning.shortId)} />
+              </td>
             </tr>
           ))}
         </tbody>

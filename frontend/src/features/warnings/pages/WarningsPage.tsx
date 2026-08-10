@@ -13,6 +13,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import { useReviews } from '@/features/review/hooks/useReview';
 import { WarningFilters } from '@/features/warnings/components/WarningFilters';
 import { WarningTable } from '@/features/warnings/components/WarningTable';
 import { useAnalysisRun, useWarnings } from '@/features/warnings/hooks/useWarnings';
@@ -30,6 +31,10 @@ export function WarningsPage() {
   const [filters, setFilters] = useState<Filters>({});
   const run = useAnalysisRun(runId);
   const warnings = useWarnings(runId, filters);
+  // Một request cho cả bảng thay vì hỏi từng dòng: bảng có tới 34 dòng, và 34 request chỉ để tô
+  // trạng thái là cách chắc chắn làm màn hình giật.
+  const reviews = useReviews(runId);
+  const reviewByShortId = new Map((reviews.data ?? []).map((r) => [r.shortId, r.decision]));
 
   if (run.isPending) {
     return <FullPageSpinner label="Đang tải kết quả phân tích…" />;
@@ -75,7 +80,12 @@ export function WarningsPage() {
       ) : null}
       {warnings.isSuccess && warnings.data.items.length > 0 ? (
         <>
-          <WarningTable warnings={warnings.data.items} snapshotId={snapshotId} runId={runId} />
+          <WarningTable
+            warnings={warnings.data.items}
+            snapshotId={snapshotId}
+            runId={runId}
+            reviewByShortId={reviewByShortId}
+          />
           <p className="text-ink-muted m-0 text-sm">
             Hiển thị {warnings.data.items.length}/{warnings.data.total} cảnh báo.
           </p>

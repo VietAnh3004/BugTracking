@@ -24,6 +24,18 @@ vi.mock('@/features/evidence/api/evidenceApi', () => ({
   getEvidenceDetail: getEvidenceDetailMock,
 }));
 
+/**
+ * `ReviewPanel` nằm ngay dưới phần đầu trang nên nó cũng gọi API khi trang render. Không mock thì
+ * `fetch` thật bay ra ngoài (`ENOTFOUND api.test.local`) — test vẫn xanh vì panel chỉ hiện "chưa
+ * đánh giá", nhưng đó đúng là loại rò rỉ mà bộ test này phải chặn. Hành vi của panel có bộ test
+ * riêng ở `features/review`.
+ */
+vi.mock('@/features/review/api/reviewApi', () => ({
+  listReviews: () => Promise.resolve([]),
+  submitReview: () => Promise.reject(new Error('không dùng trong test này')),
+  getRunMetrics: () => Promise.reject(new Error('không dùng trong test này')),
+}));
+
 function baseDetail(overrides: Partial<EvidenceDetail> = {}): EvidenceDetail {
   return {
     evidenceId: 'uuid-1',
