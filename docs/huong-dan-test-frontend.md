@@ -155,6 +155,14 @@ cd case-study/vulnshop && zip -r /tmp/vulnshop.zip . -x 'target/*' && cd -
 
 </details>
 
+**Luôn nén lại, đừng dùng zip cũ.** `case-study/vulnshop` có thay đổi theo tuần (TP-16 được gieo
+thêm ở tuần 8-9), và một zip cũ hơn artifact trong `docs/samples/` sẽ làm mục 7 sai **mà không báo
+lỗi gì** — lý do đầy đủ ở ngay mục đó. Kiểm nhanh sau khi nén:
+
+```bash
+unzip -p /tmp/vulnshop.zip src/main/java/vn/hust/datn/casestudy/vulnshop/user/UserService.java   | grep -c displayNameOf      # phải > 0; ra 0 nghĩa là zip cũ
+```
+
 ---
 
 ## 3. Đi qua giao diện
@@ -294,27 +302,70 @@ Phải thấy **đúng một** request `/auth/refresh`. Nhiều hơn nghĩa là 
 
 ### ✅ 6. Bộ lọc hoạt động
 
-Trên màn hình cảnh báo, chọn **Công cụ = semgrep** → còn **5** dòng. Chọn **Mức = HIGH** → chỉ còn
-dòng đỏ. Xoá lọc → về 33.
+Trên màn hình cảnh báo, chọn **Công cụ = semgrep** → còn **5** dòng. Chọn **Mức = HIGH** → còn **6**
+dòng đỏ. Xoá lọc → về **34** (29 spotbugs + 5 semgrep).
 
 ---
 
 ### ✅ 7. Mở một cảnh báo thì thấy đủ chuỗi bằng chứng
 
-Đây là **deliverable của tuần 10-11**. Trên bảng cảnh báo, cột "Luật" giờ có mã `EV-xxxx` màu xanh
-bên cạnh tên luật — bấm vào đó.
+Đây là **deliverable của tuần 10-11**, và là mục đáng xem nhất của cả màn hình: một cảnh báo tĩnh
+đứng một mình chỉ nói "dòng 66 có thể NPE"; cùng cảnh báo đó kèm **một test hỏng mà stack trace đi
+qua đúng dòng 66** thì thành một lập luận.
 
-Tìm cảnh báo `NP_NULL_ON_SOME_PATH` (TP-16, ở `UserService.java:66`) vì nó là ca **duy nhất** của
-vulnshop có đủ cả ba loại bằng chứng. Phải thấy:
+**Cảnh báo cần mở**: `NP_NULL_ON_SOME_PATH` ở `UserService.java:66` (TP-16 trong `SEEDED.md`) — ca
+**duy nhất** của vulnshop có đủ cả ba loại bằng chứng.
 
-- **Ngữ cảnh mã nguồn** — một thẻ `CODE_CONTEXT` trỏ tới `UserService#displayNameOf`
-- **Test liên quan** — thẻ test hỏng `UserServiceTest#displayNameOf_khongTonTai`, nhãn
-  **`STACK_FRAME`** với ba chấm đặc `●●●` và weight `1.00`
-- **Độ phủ** — thẻ `COVERAGE_INFORMATION` với `rationale` nói rõ dòng 66 `COVERED`/`PARTIAL` kèm
-  bốn bộ đếm
+**Cách tìm nó** (đừng dò mắt qua 34 dòng): ở ô **"Đường dẫn file"** trên thanh lọc, gõ
+`UserService` → còn đúng **3 dòng**. Dòng cần mở là dòng có luật `NP_NULL_ON_SOME_PATH`, vị trí
+`UserService.java:66`. Bấm vào mã `EV-xxxx` màu xanh ở cột **Luật** (không phải cột Vị trí — cột đó
+mở source viewer).
 
-**Hỏng thì trông thế nào**: cả ba nhóm cùng rỗng trong khi cảnh báo có vị trí bấm được. Nghĩa là
-linker không chạy — kiểm `linkCount` trong `GET /api/v1/analysis-runs/{id}`.
+> **Mã `EV-xxxx` KHÔNG cố định giữa các lần phân tích.** Nó được cấp theo thứ tự nạp, nên cùng một
+> cảnh báo có thể là `EV-017E` ở lần chạy này và `EV-0177` ở lần sau. Luôn tìm theo **luật + vị
+> trí**, đừng chép lại mã từ tài liệu.
+
+Trên màn hình bằng chứng phải thấy **4 thẻ**, chia ba nhóm:
+
+| Nhóm | Số thẻ | Nội dung phải thấy |
+|---|---|---|
+| Ngữ cảnh mã nguồn | 1 | `UserService#displayNameOf (METHOD)`, lý do: *"Dòng 66 của cảnh báo nằm trong … (dòng 63-67)"* |
+| Test liên quan | 2 | `UserServiceTest.displayNameOf_khongTonTai_khongDuocNemNPE` nhãn **`STACK_FRAME`**, ba chấm đặc `●●●`, weight `1.00`, lý do trích nguyên văn dòng stack trace đi qua dòng 66 — **và** một thẻ yếu hơn `emailDomainOf_…` nhãn `METHOD_AGGREGATE`, weight `0.60` |
+| Độ phủ | 1 | `rationale` nói rõ *"Dòng 66: COVERED (ci=5 mi=0 mb=0 cb=0)"* |
+
+Hai thẻ trong nhóm "Test liên quan" là thứ đáng nhìn kỹ nhất: cùng là `SUPPORTS`, cùng trỏ về một
+lớp test, nhưng một cái có **bằng chứng thực thi** (stack trace đi qua đúng dòng) còn cái kia chỉ
+là **suy luận theo method**. Chúng phải trông khác nhau trên màn hình — xem tiếp mục 8.
+
+<br>
+
+> ### ⚠️ Bẫy làm mục này KHÔNG BAO GIỜ pass, mà không báo lỗi gì
+>
+> Nếu nhóm **"Ngữ cảnh mã nguồn"** rỗng (hoặc trỏ tới một khoảng dòng vô nghĩa như `51-53`) trong
+> khi hai nhóm kia vẫn có thẻ, thì gần như chắc chắn **zip bạn upload cũ hơn artifact trong
+> `docs/samples/`**.
+>
+> Đã gặp thật: một `vulnshop.zip` nén từ trước khi gieo TP-16 có `UserService.java` chỉ **53 dòng**
+> và **không có** method `displayNameOf`. Artifact thì mới, nên nó báo cảnh báo ở **dòng 66** — một
+> dòng không tồn tại trong snapshot. `CodeContextExtractor` không tìm được khai báo nào bao quanh
+> dòng đó nên rơi về nhánh `WINDOW`, cho ra một ô cửa sổ ở cuối file.
+>
+> **Không có gì báo động**: `unresolvedLocationCount` vẫn bằng `0`, run vẫn `SUCCEEDED`, vẫn đủ
+> 34 cảnh báo và 132 liên kết. Đối chiếu đường dẫn chỉ kiểm **file có tồn tại**, không kiểm **nội
+> dung có khớp** — nên "đúng file, sai phiên bản" đi lọt hoàn toàn.
+>
+> Cách kiểm trong 5 giây, trước khi upload:
+>
+> ```bash
+> unzip -p /tmp/vulnshop.zip src/main/java/vn/hust/datn/casestudy/vulnshop/user/UserService.java >   | grep -c displayNameOf      # phải > 0
+> ```
+>
+> Ra `0` thì nén lại theo mục 2.3 rồi upload snapshot mới. **Đừng sửa lại số liệu kỳ vọng** — con
+> số không sai, cái sai là dữ liệu đầu vào.
+
+**Hỏng thì trông thế nào (lỗi thật, không phải bẫy trên)**: cả **ba** nhóm cùng rỗng trong khi cảnh
+báo có vị trí bấm được. Nghĩa là linker không chạy — kiểm `linkCount` trong
+`GET /api/v1/analysis-runs/{id}`, phải là **132**.
 
 ### ✅ 8. Bằng chứng yếu phải nhìn là biết yếu
 
