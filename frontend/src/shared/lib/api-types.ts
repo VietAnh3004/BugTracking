@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v1/analysis-runs/{runId}/evidence/{shortId}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Ghi quyết định của người dùng về một cảnh báo */
+        put: operations["submit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tools/search_evidence": {
         parameters: {
             query?: never;
@@ -382,6 +399,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis-runs/{runId}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Các quyết định của chính người gọi trong một lần phân tích */
+        get: operations["listMine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/analysis-runs/{runId}/evidence/{shortId}": {
         parameters: {
             query?: never;
@@ -403,6 +437,43 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Quyết định của người dùng về một cảnh báo */
+        SubmitReviewRequest: {
+            /** @enum {string} */
+            decision: "ACCEPT" | "REJECT" | "UNCERTAIN" | "INSUFFICIENT_EVIDENCE";
+            /**
+             * Format: uuid
+             * @description Câu trả lời Agent đã đọc trước khi quyết; bỏ trống = không dùng Agent
+             */
+            messageId?: string;
+            /** @description Ghi chú của người xét */
+            note?: string;
+            /**
+             * Format: int32
+             * @description Thời gian xét, giây. Client tự đo nên chỉ tham khảo
+             */
+            secondsSpent?: number;
+        };
+        /** @description Quyết định của người dùng về một cảnh báo */
+        ReviewResponse: {
+            /** Format: uuid */
+            id: string;
+            shortId: string;
+            /** @enum {string} */
+            decision: "ACCEPT" | "REJECT" | "UNCERTAIN" | "INSUFFICIENT_EVIDENCE";
+            /**
+             * Format: uuid
+             * @description Khác null nghĩa là người này đã đọc Agent trước khi quyết
+             */
+            messageId?: string;
+            note?: string;
+            /** Format: int32 */
+            secondsSpent?: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
         SearchEvidenceRequest: {
             /** Format: uuid */
             analysis_run_id: string;
@@ -939,6 +1010,33 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+                shortId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewResponse"];
+                };
+            };
+        };
+    };
     searchEvidence: {
         parameters: {
             query?: never;
@@ -1607,6 +1705,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseWarningView"];
+                };
+            };
+        };
+    };
+    listMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewResponse"][];
                 };
             };
         };

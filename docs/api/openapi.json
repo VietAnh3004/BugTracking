@@ -22,6 +22,51 @@
     "description" : "5 evidence tool mà Agent Service gọi. RPC theo tên tool, không phải REST resource — xem ADR 0005."
   } ],
   "paths" : {
+    "/api/v1/analysis-runs/{runId}/evidence/{shortId}/review" : {
+      "put" : {
+        "tags" : [ "human-review" ],
+        "summary" : "Ghi quyết định của người dùng về một cảnh báo",
+        "operationId" : "submit",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "shortId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SubmitReviewRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReviewResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tools/search_evidence" : {
       "post" : {
         "tags" : [ "evidence-tools" ],
@@ -944,6 +989,37 @@
         }
       }
     },
+    "/api/v1/analysis-runs/{runId}/reviews" : {
+      "get" : {
+        "tags" : [ "human-review" ],
+        "summary" : "Các quyết định của chính người gọi trong một lần phân tích",
+        "operationId" : "listMine",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ReviewResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/analysis-runs/{runId}/evidence/{shortId}" : {
       "get" : {
         "tags" : [ "evidence" ],
@@ -982,6 +1058,71 @@
   },
   "components" : {
     "schemas" : {
+      "SubmitReviewRequest" : {
+        "type" : "object",
+        "description" : "Quyết định của người dùng về một cảnh báo",
+        "properties" : {
+          "decision" : {
+            "type" : "string",
+            "enum" : [ "ACCEPT", "REJECT", "UNCERTAIN", "INSUFFICIENT_EVIDENCE" ]
+          },
+          "messageId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Câu trả lời Agent đã đọc trước khi quyết; bỏ trống = không dùng Agent"
+          },
+          "note" : {
+            "type" : "string",
+            "description" : "Ghi chú của người xét",
+            "maxLength" : 2000,
+            "minLength" : 0
+          },
+          "secondsSpent" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Thời gian xét, giây. Client tự đo nên chỉ tham khảo"
+          }
+        },
+        "required" : [ "decision" ]
+      },
+      "ReviewResponse" : {
+        "type" : "object",
+        "description" : "Quyết định của người dùng về một cảnh báo",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "shortId" : {
+            "type" : "string"
+          },
+          "decision" : {
+            "type" : "string",
+            "enum" : [ "ACCEPT", "REJECT", "UNCERTAIN", "INSUFFICIENT_EVIDENCE" ]
+          },
+          "messageId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Khác null nghĩa là người này đã đọc Agent trước khi quyết"
+          },
+          "note" : {
+            "type" : "string"
+          },
+          "secondsSpent" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "createdAt", "decision", "id", "shortId", "updatedAt" ]
+      },
       "SearchEvidenceRequest" : {
         "type" : "object",
         "properties" : {

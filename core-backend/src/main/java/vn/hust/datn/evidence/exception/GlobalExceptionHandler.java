@@ -95,6 +95,17 @@ public class GlobalExceptionHandler {
                 HttpStatus.SERVICE_UNAVAILABLE, "agent-unavailable", "Agent không khả dụng", ex.getMessage(), request);
     }
 
+    /**
+     * Quyết định review không hợp lệ về nghiệp vụ — hầu như luôn là {@code messageId} sai.
+     *
+     * <p>400 kèm lý do đọc được chứ không lặng lẽ bỏ qua trường đó: {@code messageId} là biến
+     * thực nghiệm của user study, ghi sai thì bảng so sánh hai nhóm ở tuần 16 sai theo.
+     */
+    @ExceptionHandler(InvalidReviewException.class)
+    public ProblemDetail handleInvalidReview(InvalidReviewException ex, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "invalid-review", "Quyết định không hợp lệ", ex.getMessage(), request);
+    }
+
     @ExceptionHandler(EmailAlreadyUsedException.class)
     public ProblemDetail handleEmailAlreadyUsed(EmailAlreadyUsedException ex, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "email-already-used", "Email đã được đăng ký", ex.getMessage(), request);
