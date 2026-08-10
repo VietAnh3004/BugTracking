@@ -1,6 +1,8 @@
 package vn.hust.datn.evidence.service.review;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -54,7 +56,15 @@ public class HumanReviewService {
         EvidenceRecord evidence = evidenceQueryService.getEvidence(runId, shortId);
 
         UUID messageId = validateMessage(request.messageId(), runId, reviewerId);
-        OffsetDateTime now = OffsetDateTime.now();
+        // UTC + cắt về microsecond, để giá trị TRONG BỘ NHỚ trùng khít TỪNG KÝ TỰ với giá trị đọc
+        // lại từ DB. Hai thứ này lệch nhau vì hai lý do độc lập, và cả hai chỉ lộ ra khi chạy thật:
+        //   1. Postgres `timestamptz` chỉ giữ tới microsecond, `OffsetDateTime.now()` cho tới
+        //      nanosecond — lượt ghi trả `...3879908`, đọc lại thành `...387991`.
+        //   2. JDBC đọc `timestamptz` về luôn ở UTC, còn `now()` mang offset của máy chủ — cùng
+        //      một thời điểm ra `+07:00` ở lượt ghi và `Z` ở lượt đọc.
+        // Hậu quả chung: cùng MỘT hàng trả về hai biểu diễn khác nhau tuỳ theo lời gọi vừa INSERT
+        // hay đã đọc lại. Không có lỗi nào xảy ra, chỉ có một trường đổi giá trị giữa hai lần gọi.
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS);
 
         HumanReview review = humanReviewRepository
                 .findByEvidenceRecordIdAndReviewerId(evidence.getId(), reviewerId)

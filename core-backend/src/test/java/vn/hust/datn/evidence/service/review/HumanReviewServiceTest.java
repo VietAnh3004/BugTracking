@@ -125,6 +125,30 @@ class HumanReviewServiceTest extends AbstractIntegrationTest {
         assertThat(service.listMine(run.getId(), reviewer.getId())).hasSize(1);
     }
 
+    /**
+     * Cùng một hàng phải trả về CÙNG một {@code createdAt}, dù lời gọi vừa INSERT (giá trị đến từ
+     * object trong bộ nhớ) hay đã đọc lại từ DB.
+     *
+     * <p>Bắt được khi chạy thật cả stack, không phải khi chạy test: lần ghi đầu trả
+     * {@code ...3879908+07:00} còn lần sau trả {@code ...387991Z} — cùng một thời điểm nhưng khác
+     * biểu diễn, vì Postgres {@code timestamptz} chỉ giữ tới microsecond. Không có lỗi nào, chỉ có
+     * một trường đổi giá trị giữa hai lần gọi. Bản vá là cắt về microsecond ngay lúc đóng dấu.
+     */
+    @Test
+    void createdAtGiongNhauDuLayTuLuotGHIhayLuotDOC() {
+        ReviewResponse vuaGhi =
+                service.submit(run.getId(), shortId, reviewer.getId(), request(ReviewDecision.ACCEPT, null));
+
+        ReviewResponse docLai =
+                service.submit(run.getId(), shortId, reviewer.getId(), request(ReviewDecision.REJECT, null));
+
+        // So bằng CHUỖI chứ không bằng `isEqualTo`: assertion của AssertJ trên OffsetDateTime so
+        // theo THỜI ĐIỂM, nên `...+07:00` và `...Z` của cùng một mốc vẫn xanh — đúng cái khác biệt
+        // mà test này sinh ra để bắt. Client nhận về chuỗi, không nhận về đối tượng Java.
+        assertThat(vuaGhi.createdAt().toString()).isEqualTo(createdAtInDb(vuaGhi.id()).toString());
+        assertThat(docLai.createdAt().toString()).isEqualTo(vuaGhi.createdAt().toString());
+    }
+
     private OffsetDateTime createdAtInDb(UUID reviewId) {
         return jdbcTemplate.queryForObject(
                 "SELECT created_at FROM human_review WHERE id = ?", OffsetDateTime.class, reviewId);

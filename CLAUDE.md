@@ -366,6 +366,18 @@ sẽ parse hỏng `record` / `sealed` / pattern matching trong `switch`, và h�
 vẫn báo thành công. Dùng `new JavaParser(config)` chứ đừng dùng `StaticJavaParser`: nó là singleton
 toàn cục, cấu hình bị lớp khác đổi là hỏng ngầm.
 
+**`OffsetDateTime.now()` ghi xuống Postgres rồi đọc lại KHÔNG cho lại chuỗi cũ — lệch vì HAI lý
+do độc lập.** Gặp thật ở tuần 14 khi chạy stack thật: `PUT .../review` lần đầu (INSERT, giá trị
+lấy từ object trong bộ nhớ) trả `2026-08-10T16:39:40.3879908+07:00`, lần sau (đã đọc lại từ DB)
+trả `2026-08-10T09:39:40.387991Z`. Cùng một thời điểm, hai biểu diễn: (1) `timestamptz` chỉ giữ
+tới **microsecond** còn `OffsetDateTime.now()` cho tới **nanosecond**; (2) JDBC đọc `timestamptz`
+về luôn ở **UTC** còn `now()` mang offset của máy chủ. Không có lỗi nào xảy ra — chỉ có một trường
+đổi giá trị giữa hai lần gọi, nên mọi phép so khớp theo chuỗi (snapshot test, diff JSON, cache
+phía client) đều sai. Cách chữa: đóng dấu bằng
+`OffsetDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS)`. **Test bằng `assertThat(...)
+.isEqualTo(...)` KHÔNG bắt được**: assertion của AssertJ trên `OffsetDateTime` so theo *thời điểm*,
+nên `+07:00` và `Z` của cùng một mốc vẫn xanh — phải so `toString()`.
+
 **Cột `vector` của pgvector cần ép kiểu `?::vector` trong JdbcTemplate**, y hệt `?::jsonb`. Thiếu ép
 kiểu là lỗi **runtime**, không phải lỗi biên dịch. Ngoài ra `vector` **không khai số chiều** thì
 KHÔNG tạo được index HNSW/IVFFlat (`ERROR: column does not have dimensions`) — đã đo trên chính

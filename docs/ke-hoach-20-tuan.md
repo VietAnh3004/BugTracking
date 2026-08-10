@@ -579,7 +579,7 @@ Deliverable của lộ trình: *"Luồng end-to-end hoàn chỉnh, demo được
 | [ADR 0011](adr/0011-human-review-gan-vao-canh-bao.md) | ✅ Xong |
 | [`docs/user-study/`](user-study/) — phiếu đồng ý, kịch bản, bộ 8 cảnh báo, phiếu Likert | ✅ Xong |
 
-492 test backend · 61 test agent-service · 148 test frontend (20 file).
+493 test backend · 61 test agent-service · 148 test frontend (20 file).
 
 #### Quyết định định hình cả tuần: review neo vào CẢNH BÁO, không neo vào câu trả lời
 
@@ -621,6 +621,32 @@ Không suy ra được từ SQL, nên chúng nằm trong comment của `RunMetri
    đúng theo mức độ khó của bộ dữ liệu — một phép đo tự khen.
 3. **Nhãn `BLIND_SECOND_RATER` không tính vào độ chính xác.** Nó tồn tại để đo mức đồng thuận giữa
    hai người gán nhãn (Cohen's kappa); dùng làm chuẩn nữa là đếm hai lần cùng một ý kiến.
+
+#### Nghiệm thu bằng cách CHẠY THẬT, và thứ nó lôi ra
+
+Dựng cả stack (Postgres + MinIO + core-backend + agent-service với `LLM_PROVIDER=scripted`), nạp
+vulnshop, rồi đi hết luồng bằng `curl`: 20 bước từ đăng ký tới export, cộng một bước gieo thẳng
+nhận định + trích dẫn vào DB để đối chiếu chỉ số trích dẫn với con số **tính tay**.
+
+Xanh hết, trừ **một chỗ mà 492 test không bắt được**: cùng một hàng `human_review` trả về hai
+`createdAt` khác nhau tuỳ theo lời gọi vừa INSERT hay đã đọc lại từ DB — `...3879908+07:00` so với
+`...387991Z`. Cùng một thời điểm, hai biểu diễn, vì hai lý do độc lập: `timestamptz` chỉ giữ tới
+microsecond, và JDBC đọc nó về luôn ở UTC. Không có lỗi nào xảy ra, chỉ có một trường đổi giá trị
+giữa hai lần gọi.
+
+Test cũ không bắt được vì nó *né* đúng chỗ này: nó đọc `created_at` thẳng từ DB ở cả hai lần đo,
+với lý do "so object trong bộ nhớ với DB sẽ đỏ vì hạ tầng chứ không vì logic". Lý do đó đúng về
+hiện tượng nhưng sai về kết luận — thứ nên sửa là việc đóng dấu, không phải phép so. Nay đóng dấu
+bằng `OffsetDateTime.now(ZoneOffset.UTC).truncatedTo(MICROS)` để giá trị trong bộ nhớ trùng khít
+từng ký tự với giá trị trong DB.
+
+Cạm bẫy phụ đáng ghi: `assertThat(offsetDateTime).isEqualTo(...)` của AssertJ so theo **thời
+điểm**, nên `+07:00` và `Z` của cùng một mốc vẫn xanh. Test canh nó phải so `toString()`.
+
+Đối chiếu chỉ số trích dẫn (gieo 3 nhận định + 4 trích dẫn, mỗi kết cục một cái) khớp đúng con số
+tính tay: `unsupportedClaimRate = 2/3`, `citationAccuracy = 1/4`, phân bố 1/1/1/1. Ca đáng giá
+nhất trong đó là nhận định có **ba** trích dẫn mà không cái nào `RESOLVED` — nó vẫn phải đếm là
+"không có căn cứ", đúng định nghĩa của CitationValidator chứ không phải "có trích dẫn là xong".
 
 #### User study: thiết kế trong-đối-tượng, không chia người thành hai nhóm
 
