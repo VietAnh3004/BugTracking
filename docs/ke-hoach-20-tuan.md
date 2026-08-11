@@ -679,11 +679,30 @@ Hai điều đã khai báo sẵn để khỏi phải giải thích lúc bảo v�
 - **"Time to understand" bấm giờ thủ công**, không lấy từ `human_review.seconds_spent`. Cột đó do
   trình duyệt tự đo (đổi tab, đọc lại, dừng để hỏi) nên chỉ dùng đối chiếu.
 
+#### Hai điều chỉnh sau khi nhìn màn hình thật
+
+Nghiệm thu mục 7 bằng trình duyệt lôi ra hai thứ không lỗi nhưng sai chỗ:
+
+**1. `summary` và `rationale` viết tiếng Việt KHÔNG DẤU, đứng cạnh nhãn có dấu.** Trên màn hình
+thành ra tiêu đề `NGỮ CẢNH MÃ NGUỒN` — nội dung `Ngu canh ma nguon`, trong cùng một khối. Nay đổi
+sang có dấu ở cả 6 chuỗi sinh ra (`CodeContextExtractor`, `JacocoCoverageCollector`,
+`SurefireResultCollector`, `EvidenceLinker`). Đánh đổi: hai cột này cũng đi vào prompt của Agent và
+dấu tiếng Việt tốn token hơn — chấp nhận vì `evidence_context_budget` đã có trần chi phí, còn một
+màn hình chắp vá lúc bảo vệ thì không. Ghi ở `docs/evidence-model.md` mục 2. **Không** đụng tới
+message của analyzer (là bằng chứng, sửa là làm sai dữ liệu), log, và exception cho người vận hành.
+
+**2. Panel đánh giá chuyển xuống CUỐI trang, dưới phần bằng chứng.** Đây là quyết định về giao
+thức user study chứ không phải bố cục: bốn nút quyết định nằm ngay dưới phần đầu là lời mời bấm
+trước khi cuộn xuống đọc — mà "người dùng quyết định SAU KHI xem bằng chứng" chính là thứ tuần
+15-16 đo. Ghim bằng test so sánh thứ tự DOM (`compareDocumentPosition`), vì một lần "dọn lại bố
+cục cho gọn" là đủ để đảo nó về mà không ai nhận ra.
+
 #### Món còn nợ có chủ đích
 
 | Món | Vì sao hoãn |
 |---|---|
 | `ground_truth_label` dựng ở V9 nhưng **trống** | Tuần 15 mới gán nhãn. Dashboard hiện rõ "chưa có dữ liệu" thay vì `0%` — một bảng chết trông y hệt một bảng đang dùng |
+| Thẻ test chưa hiện `failureKind` (ERROR/FAILURE) và chưa link tới `stackTraceShortId` | Backend đã trả về cả hai; giao diện bỏ. `failureKind` là thứ phân biệt "ngoại lệ từ mã production" với "assertion từ lớp test" — xem `TestFailureKind` |
 | Chưa có màn hình gán nhãn ground truth | Tuần 15 gán bằng SQL/script là đủ cho 34 cảnh báo; dựng UI cho việc làm một lần là phí |
 | Dashboard chưa có biểu đồ | Số dạng bảng đủ để demo và để nghiệm thu; biểu đồ thuộc phần phân tích số liệu tuần 17-18 |
 | Chưa gộp nhiều người review trên cùng một run ở dashboard | `GET /reviews` trả review của **chính người gọi**. Số tổng hợp có trong `/metrics` và export; màn hình so từng người chỉ cần khi phân tích tuần 17-18 |

@@ -169,7 +169,7 @@ class EvidenceLinkerVulnshopTest extends AbstractIntegrationTest {
         assertThat(contradicts).isNotEmpty();
         assertThat(contradicts).allSatisfy(link -> {
             assertThat(link.get("from_type")).isEqualTo("TEST_RESULT");
-            assertThat((String) link.get("rationale")).contains("KHONG chung minh canh bao sai");
+            assertThat((String) link.get("rationale")).contains("KHÔNG chứng minh cảnh báo sai");
         });
 
         // Cảnh báo SQL injection vẫn còn nguyên trong Evidence Store, không bị hạ hay xoá.

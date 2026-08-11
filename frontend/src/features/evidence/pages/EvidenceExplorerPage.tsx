@@ -48,12 +48,6 @@ export function EvidenceExplorerPage() {
         <>
           <EvidenceHeader evidence={data} runId={runId} />
 
-          {/* Panel đánh giá ngay dưới phần đầu: người dùng đọc bằng chứng xong là quyết được
-              luôn, không phải quay lại bảng cảnh báo. */}
-          <div className="mb-6">
-            <ReviewPanel runId={runId} shortId={shortId} />
-          </div>
-
           {data.relatedTotal === 0 ? (
             <EmptyEvidenceNotice locationResolved={data.filePath != null} />
           ) : (
@@ -94,6 +88,21 @@ export function EvidenceExplorerPage() {
               </div>
             </div>
           )}
+
+          {/*
+           * Panel đánh giá đặt SAU bằng chứng, không phải trên đầu.
+           *
+           * Đây là quyết định về GIAO THỨC user study chứ không phải về bố cục: bốn nút quyết định
+           * nằm ngay dưới phần đầu là lời mời bấm trước khi cuộn xuống đọc — mà "người dùng quyết
+           * định SAU KHI xem bằng chứng" chính là thứ tuần 15-16 đo. Đặt ở cuối thì thứ tự thao
+           * tác trên màn hình trùng với thứ tự trong kịch bản buổi thử.
+           *
+           * Đánh đổi đã chấp nhận: người muốn đổi ý phải cuộn xuống cuối. Chấp nhận được vì đổi ý
+           * là thao tác hiếm, còn đọc-rồi-quyết là thao tác chính.
+           */}
+          <div className="mt-8">
+            <ReviewPanel runId={runId} shortId={shortId} />
+          </div>
         </>
       )}
     </article>

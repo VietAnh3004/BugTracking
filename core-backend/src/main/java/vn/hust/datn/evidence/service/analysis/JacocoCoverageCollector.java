@@ -148,7 +148,7 @@ public class JacocoCoverageCollector implements TestEvidenceCollector {
         long missed = lines.size() - executed;
 
         String rawFilePath = packageName == null ? sourceFileName : packageName + "/" + sourceFileName;
-        String summary = "Do phu %s: %d/%d dong duoc phu (%d dong phu mot phan), %d dong khong phu"
+        String summary = "Độ phủ %s: %d/%d dòng được phủ (%d dòng phủ một phần), %d dòng không phủ"
                 .formatted(sourceFileName, executed, lines.size(), partial, missed);
 
         Map<String, Object> content = new LinkedHashMap<>();

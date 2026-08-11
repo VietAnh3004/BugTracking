@@ -291,7 +291,7 @@ public class EvidenceLinker {
                     EvidenceLinkRelation.LOCATED_IN,
                     method,
                     exact ? 1.0 : 0.8,
-                    "Dong %d cua canh bao nam trong %s (dong %d-%d)"
+                    "Dòng %d của cảnh báo nằm trong %s (dòng %d-%d)"
                             .formatted(
                                     line,
                                     context.getSymbol() != null ? context.getSymbol() : context.getFilePath(),
@@ -360,7 +360,7 @@ public class EvidenceLinker {
                         EvidenceLinkRelation.SUPPORTS,
                         exact ? EvidenceLinkMethod.STACK_FRAME : EvidenceLinkMethod.RANGE_OVERLAP,
                         exact ? 1.0 : 0.7,
-                        "Stack trace cua test hong di qua dong %d: %s".formatted(frameLine, frame.rawLine())));
+                        "Stack trace của test hỏng đi qua dòng %d: %s".formatted(frameLine, frame.rawLine())));
             }
         }
         return candidates;
@@ -404,7 +404,7 @@ public class EvidenceLinker {
                         EvidenceLinkRelation.COVERS,
                         EvidenceLinkMethod.LINE_EXACT,
                         1.0,
-                        "Dong %d: %s (ci=%d mi=%d mb=%d cb=%d)"
+                        "Dòng %d: %s (ci=%d mi=%d mb=%d cb=%d)"
                                 .formatted(line, row.statusLabel(), row.ci(), row.mi(), row.mb(), row.cb())));
                 continue;
             }
@@ -421,7 +421,7 @@ public class EvidenceLinker {
                     EvidenceLinkRelation.COVERS,
                     EvidenceLinkMethod.LINE_NEAREST_EXECUTABLE,
                     0.6,
-                    "Dong %d khong thuc thi duoc; dong gan nhat co do phu la %d: %s"
+                    "Dòng %d không thực thi được; dòng gần nhất có độ phủ là %d: %s"
                             .formatted(line, row.lineNumber(), row.statusLabel()))));
         }
         return candidates;
@@ -536,15 +536,17 @@ public class EvidenceLinker {
                         ? (methodExecuted ? 0.6 : 0.3)
                         : (methodExecuted ? 0.5 : 0.25);
                 String rationale = failed
-                        ? "Test hong %s#%s thuoc lop test cua %s%s"
+                        ? "Test hỏng %s#%s thuộc lớp test của %s%s"
                                 .formatted(
                                         testCase.className(),
                                         testCase.methodName(),
                                         productionClass,
-                                        methodExecuted ? " va da chay qua method bi canh bao" : " (chi khop theo ten lop)")
-                        : "Test xanh %s#%s phu dong nay. KHONG chung minh canh bao sai — vulnshop co test "
+                                        methodExecuted
+                                                ? " và đã chạy qua method bị cảnh báo"
+                                                : " (chỉ khớp theo tên lớp)")
+                        : "Test xanh %s#%s phủ dòng này. KHÔNG chứng minh cảnh báo sai — vulnshop có test "
                                         .formatted(testCase.className(), testCase.methodName())
-                                + "xanh CHUNG MINH lo hong co that.";
+                                + "xanh CHỨNG MINH lỗ hổng có thật.";
 
                 candidates.add(new LinkCandidate(
                         testCase.evidenceRecordId(),

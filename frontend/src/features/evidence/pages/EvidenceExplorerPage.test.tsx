@@ -25,7 +25,7 @@ vi.mock('@/features/evidence/api/evidenceApi', () => ({
 }));
 
 /**
- * `ReviewPanel` nằm ngay dưới phần đầu trang nên nó cũng gọi API khi trang render. Không mock thì
+ * `ReviewPanel` nằm ở cuối trang nhưng vẫn render cùng lượt nên nó cũng gọi API. Không mock thì
  * `fetch` thật bay ra ngoài (`ENOTFOUND api.test.local`) — test vẫn xanh vì panel chỉ hiện "chưa
  * đánh giá", nhưng đó đúng là loại rò rỉ mà bộ test này phải chặn. Hành vi của panel có bộ test
  * riêng ở `features/review`.
@@ -136,6 +136,46 @@ describe('EvidenceExplorerPage', () => {
     expect(screen.getByText('Test hong PasswordHasherTest')).toBeInTheDocument();
     expect(screen.getByText('Do phu PasswordHasher.java')).toBeInTheDocument();
     expect(screen.getByText(/expected: <true> but was: <false>/)).toBeInTheDocument();
+  });
+
+  /**
+   * Panel đánh giá phải nằm SAU phần bằng chứng trong DOM.
+   *
+   * Đây là quyết định về **giao thức user study**, không phải sở thích bố cục: bốn nút quyết định
+   * đặt trên đầu là lời mời bấm trước khi cuộn xuống đọc, mà "người dùng quyết định SAU KHI xem
+   * bằng chứng" chính là thứ tuần 15-16 đo. Một lần "dọn lại bố cục cho gọn" là đủ để đảo nó về
+   * mà không ai nhận ra, nên ghim bằng test.
+   */
+  it('panel danh gia nam SAU phan bang chung', async () => {
+    getEvidenceDetailMock.mockResolvedValue(
+      baseDetail({
+        relatedTotal: 1,
+        tests: [
+          {
+            evidenceId: 't1',
+            shortId: 'EV-0103',
+            type: 'FAILED_TEST',
+            source: 'surefire',
+            summary: 'Test hong PasswordHasherTest',
+            relation: 'SUPPORTS',
+            method: 'STACK_FRAME',
+            weight: 1,
+            outgoing: false,
+          },
+        ],
+      }),
+    );
+
+    renderExplorer();
+
+    // Tiêu đề nhóm mang sẵn bộ đếm ("Test liên quan (1)") nên khớp bằng regex.
+    const bangChung = await screen.findByRole('heading', { name: /Test liên quan/ });
+    const panel = screen.getByRole('heading', { name: 'Đánh giá của bạn' });
+
+    // DOCUMENT_POSITION_FOLLOWING: `panel` đứng SAU `bangChung` trong thứ tự tài liệu.
+    expect(
+      bangChung.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   /**

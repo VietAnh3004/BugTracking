@@ -238,7 +238,7 @@ public class SemgrepSarifAdapter implements StaticAnalysisAdapter {
 
     private String firstSentence(String message) {
         if (message == null || message.isBlank()) {
-            return "(khong co thong diep)";
+            return "(không có thông điệp)";
         }
         String oneLine = message.replaceAll("\\s+", " ").trim();
         int dot = oneLine.indexOf(". ");

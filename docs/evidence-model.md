@@ -65,6 +65,21 @@ gốc repo đã upload), còn cột "Ví dụ" ở trên là giá trị **nguyê
 `src/main/java/vn/hust/.../PasswordHasher.java`. Giá trị nguyên văn vẫn được giữ lại trong
 `content.path_raw` để reparse được khi heuristic chuẩn hoá sai.
 
+### Ngôn ngữ của `summary` và `evidence_link.rationale`
+
+**Tiếng Việt CÓ DẤU.** Hai cột này là thứ hiển thị thẳng lên Evidence Explorer, cạnh nhãn giao
+diện vốn có dấu — viết không dấu thì màn hình thành ra `NGỮ CẢNH MÃ NGUỒN` / `Ngu canh ma nguon`
+ngay trong một khối, và đó là màn hình người chấm nhìn đầu tiên.
+
+Đánh đổi đã cân nhắc và chấp nhận: hai cột này **cũng đi vào prompt của Agent** (`search_evidence`,
+`get_related_tests`… trả về `summary`, và `rationale` nằm trong kết quả liên kết), mà dấu tiếng
+Việt tốn nhiều token hơn hẳn chữ không dấu. Chấp nhận vì (1) `evidence_context_budget` đã cắt ngữ
+cảnh theo ngân sách nên chi phí có trần, và (2) một màn hình chắp vá khi bảo vệ tốn hơn nhiều so
+với ít token.
+
+Không áp cho: **message của analyzer** (giữ nguyên văn tiếng Anh — nó là bằng chứng, sửa là làm
+sai dữ liệu), **log của máy chủ**, và **thông điệp exception dành cho người vận hành**.
+
 Ví dụ đối chứng thêm cho `file_path` từ hai nguồn còn lại (không map trực tiếp vào một cột riêng,
 nhưng xác nhận công thức chuẩn hoá path đúng — xem mục 5):
 

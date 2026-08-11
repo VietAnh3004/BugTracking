@@ -498,7 +498,7 @@ class EvidenceLinkerTest extends AbstractIntegrationTest {
                 .orElseThrow();
         assertThat(contradicts.get("from_type")).isEqualTo(EvidenceType.TEST_RESULT.name());
         // Cạm bẫy trung tâm của vulnshop phải nói thẳng ra cho LLM đọc, không để nó tự suy.
-        assertThat((String) contradicts.get("rationale")).contains("KHONG chung minh canh bao sai");
+        assertThat((String) contradicts.get("rationale")).contains("KHÔNG chứng minh cảnh báo sai");
     }
 
     /**

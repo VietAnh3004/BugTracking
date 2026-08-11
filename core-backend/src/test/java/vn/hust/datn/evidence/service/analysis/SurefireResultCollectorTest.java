@@ -118,7 +118,7 @@ class SurefireResultCollectorTest {
                         .map(StackTraceDraft::summary))
                 .hasSize(3)
                 // Ba trace kieu assertion: PaginationHelperTest, ProductTest, OrderStatusCheckerTest.
-                .allSatisfy(summary -> assertThat(summary).contains("KHONG co frame nao tro ve ma production"));
+                .allSatisfy(summary -> assertThat(summary).contains("KHÔNG có frame nào trỏ về mã production"));
     }
 
     /**

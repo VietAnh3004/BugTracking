@@ -207,7 +207,7 @@ public class CodeContextExtractor {
                 fromLine,
                 toLine,
                 symbol,
-                "Ngu canh ma nguon %s (%s), dong %d-%d".formatted(label, kind, fromLine, toLine),
+                "Ngữ cảnh mã nguồn %s (%s), dòng %d-%d".formatted(label, kind, fromLine, toLine),
                 Map.copyOf(content),
                 kind,
                 jacocoMethodName);

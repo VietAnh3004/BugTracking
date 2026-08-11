@@ -463,8 +463,9 @@ Bốn bước đầu **không cần agent-service**; bước 2 cần (để có 
 
 ### ✅ 14. Quyết định còn nguyên sau khi tải lại trang
 
-Mở một cảnh báo bất kỳ → panel **"Đánh giá của bạn"** ngay dưới phần đầu → bấm **"Báo nhầm"**,
-gõ một câu lý do → **F5**.
+Mở một cảnh báo bất kỳ → cuộn xuống **cuối trang** (panel **"Đánh giá của bạn"** nằm DƯỚI phần
+bằng chứng, có chủ đích — xem ghi chú trong `EvidenceExplorerPage`) → bấm **"Báo nhầm"**, gõ một
+câu lý do → **F5**.
 
 Phải thấy: nút "Báo nhầm" vẫn được tô, ghi chú vẫn còn, và dòng *"Đã ghi lúc …"* hiện mốc thời
 gian. Quay về danh sách cảnh báo thì cột **Đánh giá** của đúng dòng đó hiện nhãn "Báo nhầm".

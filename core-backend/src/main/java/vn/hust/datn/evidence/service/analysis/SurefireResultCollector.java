@@ -169,7 +169,7 @@ public class SurefireResultCollector implements TestEvidenceCollector {
 
         String summary;
         if (firstProduction != null) {
-            summary = "Stack trace cua %s.%s — frame production dau tien: %s.%s (%s:%s)"
+            summary = "Stack trace của %s.%s — frame production đầu tiên: %s.%s (%s:%s)"
                     .formatted(
                             simpleName(className),
                             methodName,
@@ -180,7 +180,7 @@ public class SurefireResultCollector implements TestEvidenceCollector {
         } else {
             // 3/5 test hong that roi vao nhanh nay. Noi thang ra trong summary de LLM khong phai
             // suy dien tu su vang mat cua du lieu.
-            summary = "Stack trace cua %s.%s — KHONG co frame nao tro ve ma production (%d frame, toan JUnit/JDK)"
+            summary = "Stack trace của %s.%s — KHÔNG có frame nào trỏ về mã production (%d frame, toàn JUnit/JDK)"
                     .formatted(simpleName(className), methodName, frames.size());
         }
 
@@ -221,14 +221,14 @@ public class SurefireResultCollector implements TestEvidenceCollector {
             Integer durationMs) {
         return switch (status) {
             case PASSED -> "Test xanh: %s.%s (%d ms)".formatted(simpleName(className), methodName, orZero(durationMs));
-            case SKIPPED -> "Test bi bo qua: %s.%s".formatted(simpleName(className), methodName);
-            case FAILED -> "Test hong (%s): %s.%s — %s: %s"
+            case SKIPPED -> "Test bị bỏ qua: %s.%s".formatted(simpleName(className), methodName);
+            case FAILED -> "Test hỏng (%s): %s.%s — %s: %s"
                     .formatted(
                             failureKind,
                             simpleName(className),
                             methodName,
                             failureType,
-                            failureMessage == null ? "(khong co thong diep)" : failureMessage);
+                            failureMessage == null ? "(không có thông điệp)" : failureMessage);
         };
     }
 
