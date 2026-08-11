@@ -52,7 +52,15 @@ export function RelatedEvidenceCard({
         <span className="text-ink-muted font-mono text-[11px]">{item.type}</span>
       </div>
 
-      <p className="text-ink mt-1 mb-2 text-sm">{item.summary}</p>
+      {/*
+        `summary` được viết cho LLM: một câu TỰ CHỨA, đọc được khi đứng một mình giữa prompt, nên
+        nó nhồi cả kiểu hỏng, tên test, lớp ngoại lệ và thông điệp vào một dòng. Khối `dl` dưới đây
+        được viết cho NGƯỜI: trường có nhãn, quét mắt nhanh. Hiện cả hai là nói mọi thứ hai lần và
+        làm thẻ dài gấp đôi mà không thêm thông tin nào.
+        Bằng chứng có `testCase` thì khối có cấu trúc phủ hết nội dung câu tóm tắt, nên bỏ câu đó
+        đi TRÊN MÀN HÌNH. Dữ liệu trong DB không đổi — Agent vẫn đọc `summary` như cũ.
+      */}
+      {item.testCase != null ? null : <p className="text-ink mt-1 mb-2 text-sm">{item.summary}</p>}
 
       {/*
         `== null` chứ không `=== undefined`: xem ghi chú ở `application.yml` của core-backend.
@@ -61,7 +69,7 @@ export function RelatedEvidenceCard({
         phải thiếu mất một dòng.
       */}
       {item.testCase == null ? null : (
-        <dl className="text-ink-muted mb-2 text-xs">
+        <dl className="text-ink-muted mt-1 mb-2 text-xs">
           <div className="flex gap-1">
             <dt className="font-semibold">Test:</dt>
             <dd className="font-mono break-all">
@@ -81,6 +89,16 @@ export function RelatedEvidenceCard({
               )}
             </dd>
           </div>
+          {/*
+            Thời gian chạy CHỈ nằm trong câu tóm tắt của test xanh ("Test xanh: X.y (12 ms)"), nên
+            bỏ câu đó đi mà không đưa nó vào đây là làm mất dữ liệu chứ không phải bớt lặp.
+          */}
+          {item.testCase.durationMs == null ? null : (
+            <div className="flex gap-1">
+              <dt className="font-semibold">Thời gian:</dt>
+              <dd>{item.testCase.durationMs} ms</dd>
+            </div>
+          )}
           {item.testCase.failureType == null ? null : (
             <div className="flex gap-1">
               <dt className="font-semibold">Ngoại lệ:</dt>

@@ -235,6 +235,66 @@ describe('RelatedEvidenceCard', () => {
     );
   });
 
+  /**
+   * `summary` viết cho LLM (một câu tự chứa), khối `dl` viết cho người (trường có nhãn). Với thẻ
+   * có `testCase`, khối có cấu trúc phủ hết nội dung câu tóm tắt — hiện cả hai là nói mọi thứ hai
+   * lần và làm thẻ dài gấp đôi.
+   */
+  it('thẻ có testCase thì KHÔNG lặp lại câu tóm tắt', () => {
+    const tomTat =
+      'Test hỏng (ERROR): UserServiceTest.displayNameOf_khongTonTai — java.lang.NullPointerException: user is null';
+    renderCard(
+      itemVoiNull({
+        summary: tomTat,
+        testCase: {
+          className: 'UserServiceTest',
+          methodName: 'displayNameOf_khongTonTai',
+          status: 'FAILED',
+          failureKind: 'ERROR',
+          failureType: 'java.lang.NullPointerException',
+          failureMessage: 'user is null',
+        },
+      }),
+    );
+
+    expect(screen.queryByText(tomTat)).not.toBeInTheDocument();
+    // Nhưng không được mất thông tin: mọi mảnh của câu đó vẫn phải đọc được ở dạng có cấu trúc.
+    expect(screen.getByText(/UserServiceTest#displayNameOf_khongTonTai/)).toBeInTheDocument();
+    expect(screen.getByText('ERROR')).toBeInTheDocument();
+    expect(screen.getByText('java.lang.NullPointerException')).toBeInTheDocument();
+    expect(screen.getByText('user is null')).toBeInTheDocument();
+  });
+
+  /** Thẻ KHÔNG phải test (ngữ cảnh mã, độ phủ) không có khối có cấu trúc, nên vẫn cần câu tóm tắt. */
+  it('thẻ không có testCase thì vẫn hiện câu tóm tắt', () => {
+    renderCard(itemVoiNull({ summary: 'Độ phủ UserService.java: 13/14 dòng được phủ' }));
+
+    expect(screen.getByText('Độ phủ UserService.java: 13/14 dòng được phủ')).toBeInTheDocument();
+  });
+
+  /**
+   * Thời gian chạy CHỈ nằm trong câu tóm tắt của test xanh. Bỏ câu đó mà không đưa thời gian vào
+   * khối có cấu trúc là làm MẤT dữ liệu, không phải bớt lặp.
+   */
+  it('test xanh vẫn đọc được thời gian chạy sau khi bỏ câu tóm tắt', () => {
+    renderCard(
+      itemVoiNull({
+        summary: 'Test xanh: UserServiceTest.happyPath (12 ms)',
+        testCase: {
+          className: 'UserServiceTest',
+          methodName: 'happyPath',
+          status: 'PASSED',
+          durationMs: 12,
+        },
+      }),
+    );
+
+    expect(
+      screen.queryByText('Test xanh: UserServiceTest.happyPath (12 ms)'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('12 ms')).toBeInTheDocument();
+  });
+
   /** `failureMessage` null trong một `testCase` KHÔNG null — nhánh lồng, dễ sót nhất. */
   it('testCase có mà failureMessage null thì vẫn render phần còn lại', () => {
     renderCard(

@@ -133,8 +133,10 @@ describe('EvidenceExplorerPage', () => {
     renderExplorer();
 
     expect(await screen.findByText('Ngu canh PasswordHasher#hashPassword')).toBeInTheDocument();
-    expect(screen.getByText('Test hong PasswordHasherTest')).toBeInTheDocument();
     expect(screen.getByText('Do phu PasswordHasher.java')).toBeInTheDocument();
+    // Thẻ test KHÔNG hiện câu tóm tắt (nó lặp lại khối có cấu trúc) — xem
+    // `RelatedEvidenceCard.test.tsx`. Nhận nó qua chính trường có cấu trúc đó.
+    expect(screen.getByText(/PasswordHasherTest#md5KhongDuocDungChoMatKhau/)).toBeInTheDocument();
     expect(screen.getByText(/expected: <true> but was: <false>/)).toBeInTheDocument();
   });
 
