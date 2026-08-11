@@ -31,7 +31,13 @@ export function RelatedEvidenceCard({ item, snapshotId, runId }: RelatedEvidence
 
       <p className="text-ink mt-1 mb-2 text-sm">{item.summary}</p>
 
-      {item.testCase === undefined ? null : (
+      {/*
+        `== null` chứ không `=== undefined`: xem ghi chú ở `application.yml` của core-backend.
+        Backend nay bỏ hẳn trường null, nhưng chỗ này DEREFERENCE giá trị nên vẫn kiểm cả hai —
+        một `"testCase": null` lọt qua đây là trắng nguyên trang (`null.className`), chứ không
+        phải thiếu mất một dòng.
+      */}
+      {item.testCase == null ? null : (
         <dl className="text-ink-muted mb-2 text-xs">
           <div className="flex gap-1">
             <dt className="font-semibold">Test:</dt>
@@ -43,7 +49,7 @@ export function RelatedEvidenceCard({ item, snapshotId, runId }: RelatedEvidence
             <dt className="font-semibold">Trạng thái:</dt>
             <dd>{item.testCase.status}</dd>
           </div>
-          {item.testCase.failureMessage === undefined ? null : (
+          {item.testCase.failureMessage == null ? null : (
             <div className="flex gap-1">
               <dt className="font-semibold">Lỗi:</dt>
               {/* Text node: React tự escape. Thông điệp lỗi đến từ mã người dùng (ADR 0006). */}
@@ -60,17 +66,17 @@ export function RelatedEvidenceCard({ item, snapshotId, runId }: RelatedEvidence
         nó còn mang câu cảnh báo "test xanh KHÔNG chứng minh cảnh báo sai" — thứ mà bỏ đi là mời
         người đọc rơi đúng vào cái bẫy vulnshop gài.
       */}
-      {item.rationale === undefined ? null : (
+      {item.rationale == null ? null : (
         <p className="text-ink-muted mt-2 mb-0 text-xs italic">{item.rationale}</p>
       )}
 
-      {item.filePath === undefined ? null : (
+      {item.filePath == null ? null : (
         <Link
           to={`/snapshots/${snapshotId}/files/${toFilePathUrl(item.filePath)}${toLineHash(item.startLine, item.endLine)}`}
           className="text-brand mt-2 inline-block font-mono text-xs"
         >
           ↗ {item.filePath}
-          {item.startLine === undefined ? '' : `:${String(item.startLine)}`}
+          {item.startLine == null ? '' : `:${String(item.startLine)}`}
         </Link>
       )}
     </li>

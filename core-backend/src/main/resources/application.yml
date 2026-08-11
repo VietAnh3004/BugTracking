@@ -8,6 +8,25 @@ spring:
   application:
     name: core-backend
 
+  # ==================== BỎ HẲN TRƯỜNG NULL, KHÔNG GỬI "field": null ====================
+  # Đây là chuyện ĐÚNG SAI về hợp đồng, không phải tối ưu kích thước payload.
+  #
+  # `springdoc` khai mọi trường không `required` là tuỳ chọn, nên `openapi-typescript` sinh ra
+  # `filePath?: string` — tức `string | undefined`, KHÔNG có `null`. Mặc định của Jackson thì
+  # serialize `"filePath": null`. Hai thứ đó lệch nhau, và TypeScript hoàn toàn không thấy: mã
+  # `x === undefined ? ... : dùng(x)` biên dịch sạch rồi nổ lúc chạy.
+  #
+  # Đã gây HAI lỗi thật trong một tuần, cùng một gốc:
+  #   1. Dashboard hiện `0.0%` cho tỉ lệ chưa tính được, vì `null * 100 === 0`.
+  #   2. Evidence Explorer trắng trang: `testCase: null` lọt qua `=== undefined` rồi
+  #      `null.className` — TypeError.
+  #
+  # Vắng mặt là biểu diễn đúng của "không có giá trị" theo đúng thứ spec đã khai. Sửa ở đây thì
+  # kiểu sinh ra từ OpenAPI nói THẬT, thay vì bắt từng component tự nhớ kiểm cả hai.
+  # =====================================================================================
+  jackson:
+    default-property-inclusion: non_null
+
   datasource:
     url: ${DB_URL}
     username: ${DB_USER}

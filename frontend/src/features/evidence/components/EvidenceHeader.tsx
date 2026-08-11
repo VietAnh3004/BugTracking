@@ -18,13 +18,15 @@ export function EvidenceHeader({ evidence, runId }: { evidence: EvidenceDetail; 
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <span className="text-ink font-mono text-sm font-semibold">{evidence.shortId}</span>
         <span className="text-ink-muted font-mono text-xs">{evidence.type}</span>
-        {warning === undefined ? null : <SeverityBadge severity={warning.severityNormalized} />}
-        {warning === undefined ? null : (
+        {/* `== null` ở mọi chỗ dereference — xem ghi chú `jackson.default-property-inclusion`
+            trong `application.yml` của core-backend. */}
+        {warning == null ? null : <SeverityBadge severity={warning.severityNormalized} />}
+        {warning == null ? null : (
           <span className="text-ink-muted text-xs">
             {warning.tool} · <code className="font-mono">{warning.ruleIdNormalized}</code>
           </span>
         )}
-        {warning?.cweIds === undefined
+        {warning?.cweIds == null
           ? null
           : warning.cweIds.map((cwe) => (
               <span key={cwe} className="text-ink-muted font-mono text-xs">
@@ -44,11 +46,11 @@ export function EvidenceHeader({ evidence, runId }: { evidence: EvidenceDetail; 
         💬 Hỏi Agent về {evidence.shortId}
       </Link>
 
-      {evidence.symbol === undefined ? null : (
+      {evidence.symbol == null ? null : (
         <p className="text-ink-muted mt-0 mb-1 font-mono text-xs break-all">{evidence.symbol}</p>
       )}
 
-      {evidence.filePath === undefined ? (
+      {evidence.filePath == null ? (
         // filePath NULL nghĩa là không đối chiếu được với snapshot. Nói thẳng ra chứ không lặng lẽ
         // bỏ dòng này đi — đó là thông tin người dùng cần để chẩn đoán.
         <p className="text-ink m-0 text-xs italic">
@@ -60,12 +62,12 @@ export function EvidenceHeader({ evidence, runId }: { evidence: EvidenceDetail; 
           className="text-brand font-mono text-xs break-all"
         >
           ↗ {evidence.filePath}
-          {evidence.startLine === undefined ? '' : `:${String(evidence.startLine)}`}
+          {evidence.startLine == null ? '' : `:${String(evidence.startLine)}`}
         </Link>
       )}
 
       {/* Nhiều vị trí: 4/29 cảnh báo thật của vulnshop có, một cái trỏ tới ba file khác nhau. */}
-      {warning === undefined || warning.locations.length <= 1 ? null : (
+      {warning == null || warning.locations.length <= 1 ? null : (
         <details className="mt-2">
           <summary className="text-ink-muted cursor-pointer text-xs">
             {warning.locations.length} vị trí
@@ -74,7 +76,7 @@ export function EvidenceHeader({ evidence, runId }: { evidence: EvidenceDetail; 
             {warning.locations.map((location) => (
               <li key={location.ordinal} className="break-all">
                 {location.filePath ?? `${location.pathRaw} (không đối chiếu được)`}
-                {location.startLine === undefined ? '' : `:${String(location.startLine)}`}
+                {location.startLine == null ? '' : `:${String(location.startLine)}`}
               </li>
             ))}
           </ul>

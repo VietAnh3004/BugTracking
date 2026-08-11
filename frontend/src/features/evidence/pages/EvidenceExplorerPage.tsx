@@ -55,7 +55,7 @@ export function EvidenceExplorerPage() {
           </div>
 
           {data.relatedTotal === 0 ? (
-            <EmptyEvidenceNotice locationResolved={data.filePath !== undefined} />
+            <EmptyEvidenceNotice locationResolved={data.filePath != null} />
           ) : (
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
               <div>

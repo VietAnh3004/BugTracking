@@ -24,9 +24,10 @@ vi.mock('@/features/review/api/reviewApi', () => ({
 }));
 
 /**
- * Đúng shape backend gửi khi chưa có gì: các tỉ lệ là `null` THẬT (Jackson của dự án không bật
- * NON_NULL), trong khi kiểu sinh từ OpenAPI khai chúng là `?: number`. Ép kiểu ở đây là cố ý —
- * mục đích của bộ test là chạy trên dữ liệu thật chứ không trên dữ liệu mà trình biên dịch tin.
+ * Các tỉ lệ để `null` TƯỜNG MINH chứ không bỏ khoá. Nay backend đã bỏ hẳn khoá null
+ * (`jackson.default-property-inclusion: non_null`) nên dữ liệu thật là `undefined`, nhưng bộ test
+ * cố ý giữ dạng CŨ: nó là chốt chặn nếu cấu hình đó bị gỡ. Ép kiểu ở đây là chủ ý — mục đích là
+ * chạy trên dữ liệu mà runtime có thể gửi, không phải dữ liệu mà trình biên dịch tin là có thể.
  */
 function emptyMetrics() {
   return {

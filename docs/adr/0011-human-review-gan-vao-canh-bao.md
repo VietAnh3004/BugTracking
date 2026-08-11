@@ -122,12 +122,18 @@ public static Double ratio(long numerator, long denominator) {
 "Chưa ai review" và "review hết mà 0% khớp" là hai chuyện khác hẳn. Cùng một triết lý với "rỗng là
 một kết luận" của tuần 10-11 và với 409-thay-vì-danh-sách-rỗng của màn hình cảnh báo.
 
-Giao diện phải giữ được sự phân biệt đó, và ở đây có **một cạm bẫy thật đã gặp**: backend gửi
-`null` thật (Jackson của dự án không bật `NON_NULL`), nhưng `openapi-typescript` sinh ra kiểu
-`unsupportedClaimRate?: number` — tức `number | undefined`, **không có** `null`. Viết
-`value === undefined ? '—' : ...` thì TypeScript xanh, còn `null * 100` trong JavaScript bằng `0`,
-nên màn hình hiện **`0.0%`**. Người chấm đọc "0% khớp với Agent" trong khi sự thật là "chưa ai
-review". `formatMetric.ts` kiểm `== null` và có bộ test canh riêng ca này.
+Giao diện phải giữ được sự phân biệt đó, và ở đây có **một cạm bẫy thật đã gặp**: backend từng gửi
+`null` thật, nhưng `openapi-typescript` sinh ra kiểu `unsupportedClaimRate?: number` — tức
+`number | undefined`, **không có** `null`. Viết `value === undefined ? '—' : ...` thì TypeScript
+xanh, còn `null * 100` trong JavaScript bằng `0`, nên màn hình hiện **`0.0%`**. Người chấm đọc
+"0% khớp với Agent" trong khi sự thật là "chưa ai review".
+
+Bản vá đầu chỉ chữa triệu chứng (`formatMetric.ts` kiểm `== null`). Cùng cái gốc đó sau đó làm
+**trắng nguyên trang** Evidence Explorer — `testCase: null` lọt qua `=== undefined` rồi
+`null.className`. Nên nay chữa ở gốc: `spring.jackson.default-property-inclusion: non_null`, để
+JSON đi ra **khớp với hợp đồng OpenAPI** thay vì bắt từng component tự nhớ kiểm cả hai dạng. Các
+chỗ **dereference** giá trị vẫn giữ `== null` làm lớp phòng thủ thứ hai, vì hậu quả ở đó là trắng
+trang chứ không phải thiếu một dòng.
 
 ### 6. `RunMetricsService` là nguồn tính toán DUY NHẤT; export gọi lại nó
 

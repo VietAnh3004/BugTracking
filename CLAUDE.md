@@ -375,6 +375,19 @@ bộ lọc đó, nhưng chỉ với **một đường dẫn đầy đủ** — �
 vẫn chạy. Bài học: **một tham số lọc cần test cho HÌNH DẠNG đầu vào** (một phần, chữ thường, thư
 mục ở giữa, rỗng), không chỉ cho "có truyền hay không". Xem `WarningFilterTest`.
 
+**Backend gửi `"field": null` trong khi OpenAPI khai `field?: T` — hai thứ LỆCH NHAU và TypeScript
+không thấy.** `springdoc` khai mọi trường không `required` là tuỳ chọn, nên `openapi-typescript`
+sinh `filePath?: string` = `string | undefined`, **không có `null`**. Jackson mặc định thì vẫn
+serialize `null`. Hậu quả: `x === undefined ? ... : dùng(x)` biên dịch sạch rồi nổ lúc chạy. Đã gây
+**ba** lỗi thật, cùng một gốc: (1) dashboard hiện `0.0%` cho tỉ lệ chưa tính được vì `null * 100`
+bằng `0`; (2) Evidence Explorer **trắng nguyên trang** với `Cannot read properties of null (reading
+'className')` vì `testCase: null` lọt qua `=== undefined`; (3) `toFilePathUrl(null)`. Đã chặn tận
+gốc bằng `spring.jackson.default-property-inclusion: non_null` — vắng mặt mới là biểu diễn đúng của
+"không có giá trị" theo đúng spec. Ở frontend, chỗ nào **dereference** giá trị thì vẫn kiểm
+`== null` (bắt cả hai) chứ đừng `=== undefined`: sai chỗ đó là trắng trang, không phải thiếu một
+dòng. Test canh: `RelatedEvidenceCard.test.tsx` dựng dữ liệu kiểu cũ (5 ca; đảo bản vá thì 3 ca đỏ
+với đúng thông điệp trên).
+
 **Tham số `null` trong `like`/`lower` của JPQL phải `cast(... as string)`, nếu không Postgres đổ
 `function lower(bytea) does not exist`.** Hibernate không suy được kiểu của một tham số `null` nên
 bind dạng `bytea`. Hậu quả: **không lọc gì cả cũng ra HTTP 500**. Bẫy phụ khiến nó rất khó tin cậy

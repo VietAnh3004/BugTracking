@@ -2,12 +2,16 @@
  * Định dạng số cho dashboard.
  *
  * ================== VÌ SAO KIỂM `== null` CHỨ KHÔNG `=== undefined` ==================
- * Backend trả `null` thật cho mọi tỉ lệ có mẫu số 0 (Jackson của dự án không bật `NON_NULL`, nên
- * khoá vẫn có mặt trong JSON với giá trị `null`). Nhưng `openapi-typescript` sinh ra kiểu
- * `unsupportedClaimRate?: number` — tức `number | undefined`. Hai thứ đó LỆCH NHAU: TypeScript
- * tin rằng không bao giờ có `null`, còn runtime thì có.
+ * Backend coi mọi tỉ lệ có mẫu số 0 là "chưa tính được". Nay nó **bỏ hẳn khoá** đó khỏi JSON
+ * (`spring.jackson.default-property-inclusion: non_null`) nên runtime nhận `undefined`, khớp với
+ * kiểu `unsupportedClaimRate?: number` mà `openapi-typescript` sinh ra.
  *
- * Hậu quả nếu viết `value === undefined ? '—' : ...`: nhánh đó KHÔNG chạy với `null`, và
+ * Trước bản vá đó thì Jackson gửi `"unsupportedClaimRate": null` trong khi kiểu khai là
+ * `number | undefined` — hai thứ LỆCH NHAU, và TypeScript hoàn toàn không thấy. Vẫn kiểm `== null`
+ * ở đây để đúng với cả hai dạng: cấu hình serialize là một dòng ai cũng gỡ được, còn hậu quả thì
+ * không nhìn ra (xem dưới).
+ *
+ * Hậu quả nếu viết `value === undefined ? '—' : ...` mà backend gửi `null`: nhánh đó KHÔNG chạy, và
  * `null * 100` trong JavaScript bằng `0`, nên màn hình hiện **`0.0%`** — đúng con số sai nguy hiểm
  * nhất của tuần này. "Chưa ai review" đọc thành "review hết mà 0% khớp", và trình biên dịch không
  * hề cảnh báo vì theo kiểu thì nhánh đó là đủ.

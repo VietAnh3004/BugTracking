@@ -607,9 +607,22 @@ Backend cố ý trả `null` (không phải `0`) cho mọi tỉ lệ có mẫu s
 trong JavaScript bằng `0`, nên dashboard hiện **`0.0%`**. Toàn bộ công sức trả `null` ở backend đổ
 sông, và người chấm đọc "0% khớp với Agent" trong khi sự thật là chưa ai review.
 
-Chữa ở `formatMetric.ts` (kiểm `== null`, bắt cả hai) kèm bộ test canh riêng ca `null`. Bài học
-chung: **kiểu sinh từ OpenAPI mô tả hợp đồng, không mô tả dữ liệu** — chỗ nào backend gửi `null`
-mà spec khai "tuỳ chọn" thì runtime và trình biên dịch không nói cùng một chuyện.
+Chữa lần đầu ở `formatMetric.ts` (kiểm `== null`, bắt cả hai) kèm bộ test canh riêng ca `null`.
+
+**Nhưng đó chỉ là triệu chứng, và cái gốc còn cắn thêm hai lần nữa** khi nghiệm thu bằng trình
+duyệt thật ở cuối tuần: Evidence Explorer **trắng nguyên trang** với `Cannot read properties of
+null (reading 'className')` — `testCase: null` lọt qua `=== undefined` trong `RelatedEvidenceCard`,
+và `toFilePathUrl(null)` chờ sẵn ngay dưới. Cùng một lệch hợp đồng, nhưng lần này không phải một
+con số sai mà là màn hình không mở được.
+
+Nay chữa ở gốc: `spring.jackson.default-property-inclusion: non_null`. Vắng mặt mới là biểu diễn
+đúng của "không có giá trị" theo đúng thứ spec đã khai, nên kiểu sinh ra từ OpenAPI **nói thật**
+thay vì bắt từng component tự nhớ kiểm cả hai dạng. Các chỗ dereference vẫn giữ `== null` làm lớp
+phòng thủ thứ hai.
+
+Bài học chung: **kiểu sinh từ OpenAPI mô tả hợp đồng, không mô tả dữ liệu.** Khi hai thứ đó lệch,
+trình biên dịch đứng về phía hợp đồng và im lặng — nên phải sửa cho dữ liệu khớp hợp đồng, đừng dạy
+từng chỗ gọi cách sống chung với sự lệch đó.
 
 #### Ba quyết định về định nghĩa chỉ số, ghi thẳng vào mã
 
