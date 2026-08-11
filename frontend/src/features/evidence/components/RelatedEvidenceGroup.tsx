@@ -20,6 +20,9 @@ interface RelatedEvidenceGroupProps {
   emptyMessage: string;
   snapshotId: string;
   runId: string;
+  /** Vị trí của bằng chứng đang xem — chỉ để dựng link cho thẻ cấp file, xem `RelatedEvidenceCard`. */
+  anchorFilePath?: string | null;
+  anchorStartLine?: number | null;
 }
 
 export function RelatedEvidenceGroup({
@@ -28,6 +31,8 @@ export function RelatedEvidenceGroup({
   emptyMessage,
   snapshotId,
   runId,
+  anchorFilePath,
+  anchorStartLine,
 }: RelatedEvidenceGroupProps) {
   return (
     <section className="mb-6">
@@ -47,6 +52,8 @@ export function RelatedEvidenceGroup({
               item={item}
               snapshotId={snapshotId}
               runId={runId}
+              anchorFilePath={anchorFilePath}
+              anchorStartLine={anchorStartLine}
             />
           ))}
         </ul>

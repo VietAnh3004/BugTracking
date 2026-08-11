@@ -18,7 +18,7 @@ public record WarningLocationView(
                 String pathRaw,
         @Schema(
                         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-                        description = "Đã đối chiếu với snapshot; NULL nghĩa là không tìm thấy trong mã nguồn đã tải lên")
+                        description = "Đã đối chiếu với snapshot; vắng nghĩa là không tìm thấy trong mã nguồn đã tải lên")
                 String filePath,
         @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) Integer startLine,
         @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) Integer endLine,

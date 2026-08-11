@@ -30,12 +30,12 @@ public record RunMetricsResponse(
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long answerCount,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long claimCount,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long unsupportedClaimCount,
-            @Schema(description = "null khi chưa có nhận định nào") Double unsupportedClaimRate,
+            @Schema(description = "Vắng khi chưa có nhận định nào") Double unsupportedClaimRate,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long citationCount,
             @Schema(description = "Số lượt trích dẫn theo từng kết cục: RESOLVED/WRONG_RUN/UNKNOWN_ID/MALFORMED",
                             requiredMode = Schema.RequiredMode.REQUIRED)
                     Map<String, Long> citationsByResolution,
-            @Schema(description = "null khi chưa có trích dẫn nào") Double citationAccuracy,
+            @Schema(description = "Vắng khi chưa có trích dẫn nào") Double citationAccuracy,
             @Schema(description = "Số lượt trả lời bị CitationValidator hạ cấp",
                             requiredMode = Schema.RequiredMode.REQUIRED)
                     long downgradedAnswerCount) {}
@@ -56,7 +56,7 @@ public record RunMetricsResponse(
             @Schema(description = "Nhóm đối chứng: quyết định mà không dùng Agent",
                             requiredMode = Schema.RequiredMode.REQUIRED)
                     long withoutAgentCount,
-            @Schema(description = "Tỉ lệ quyết định của người khớp verdict Agent; null khi chưa có review nào có Agent")
+            @Schema(description = "Tỉ lệ quyết định của người khớp verdict Agent; vắng khi chưa có review nào có Agent")
                     Double agreementWithAgent) {}
 
     /**
@@ -69,9 +69,9 @@ public record RunMetricsResponse(
     @Schema(description = "So sánh với nhãn chuẩn; rỗng cho tới khi gán nhãn ở tuần 15")
     public record GroundTruthComparison(
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long labelledCount,
-            @Schema(description = "Tỉ lệ verdict Agent khớp nhãn chuẩn; null khi chưa gán nhãn")
+            @Schema(description = "Tỉ lệ verdict Agent khớp nhãn chuẩn; vắng khi chưa gán nhãn")
                     Double agentAccuracy,
-            @Schema(description = "Tỉ lệ quyết định của người khớp nhãn chuẩn; null khi chưa gán nhãn")
+            @Schema(description = "Tỉ lệ quyết định của người khớp nhãn chuẩn; vắng khi chưa gán nhãn")
                     Double humanAccuracy) {}
 
     /** Chi phí đọc từ {@code llm_trace} — nguồn số liệu chương 4 của báo cáo. */
@@ -81,8 +81,8 @@ public record RunMetricsResponse(
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long inputTokens,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long outputTokens,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long toolCallCount,
-            @Schema(description = "null khi chưa gọi model lần nào") Double averageLatencyMs,
-            @Schema(description = "Số vòng lặp trung bình mỗi lượt hỏi; null khi chưa có lượt nào")
+            @Schema(description = "Vắng khi chưa gọi model lần nào") Double averageLatencyMs,
+            @Schema(description = "Số vòng lặp trung bình mỗi lượt hỏi; vắng khi chưa có lượt nào")
                     Double averageIterationsPerAnswer,
             @Schema(description = "Số lượt hỏi hỏng — llm_trace có message_id NULL",
                             requiredMode = Schema.RequiredMode.REQUIRED)

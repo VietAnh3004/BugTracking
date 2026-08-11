@@ -59,6 +59,8 @@ export function EvidenceExplorerPage() {
                   emptyMessage="Không dựng được ngữ cảnh mã nguồn cho vị trí này."
                   snapshotId={snapshotId}
                   runId={runId}
+                  anchorFilePath={data.filePath}
+                  anchorStartLine={data.startLine}
                 />
               </div>
               <div>
@@ -68,6 +70,8 @@ export function EvidenceExplorerPage() {
                   emptyMessage="Không có test nào liên quan tới bằng chứng này."
                   snapshotId={snapshotId}
                   runId={runId}
+                  anchorFilePath={data.filePath}
+                  anchorStartLine={data.startLine}
                 />
                 <RelatedEvidenceGroup
                   title="Độ phủ"
@@ -75,6 +79,8 @@ export function EvidenceExplorerPage() {
                   emptyMessage="Không có dữ liệu độ phủ cho vị trí này."
                   snapshotId={snapshotId}
                   runId={runId}
+                  anchorFilePath={data.filePath}
+                  anchorStartLine={data.startLine}
                 />
                 {data.other.length === 0 ? null : (
                   <RelatedEvidenceGroup
@@ -83,6 +89,8 @@ export function EvidenceExplorerPage() {
                     emptyMessage=""
                     snapshotId={snapshotId}
                     runId={runId}
+                    anchorFilePath={data.filePath}
+                    anchorStartLine={data.startLine}
                   />
                 )}
               </div>

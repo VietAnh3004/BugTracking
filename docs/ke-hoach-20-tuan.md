@@ -691,6 +691,21 @@ dấu tiếng Việt tốn token hơn — chấp nhận vì `evidence_context_bu
 màn hình chắp vá lúc bảo vệ thì không. Ghi ở `docs/evidence-model.md` mục 2. **Không** đụng tới
 message của analyzer (là bằng chứng, sửa là làm sai dữ liệu), log, và exception cho người vận hành.
 
+**1bis. Thẻ bằng chứng hiện nốt ba thứ backend đã trả về mà giao diện đang bỏ.** Cùng lần nghiệm
+thu đó, đối chiếu response thật với những gì render ra:
+
+- **`stackTraceShortId`** → nay là link mở chính bằng chứng STACK_TRACE. Thiếu nó thì câu lý do
+  *"stack trace đi qua dòng 66"* là một khẳng định **không kiểm chứng được** — một mắt xích đứt
+  ngay trên màn hình mang tên "chuỗi bằng chứng".
+- **`failureKind`** (ERROR/FAILURE) → nay là chip cạnh `Trạng thái`. Cột `status` chuẩn hoá chỉ có
+  `PASSED/FAILED/SKIPPED` nên nó **gộp** hai kiểu hỏng khác hẳn: chỉ `ERROR` mới cho stack trace
+  trỏ về mã production, tức mới sinh ra được liên kết `STACK_FRAME`. Giấu nó đi là giấu lý do một
+  liên kết mạnh hơn liên kết khác (`TestFailureKind`, `docs/evidence-model.md` mục 6).
+- **Thẻ độ phủ nhảy tới đúng dòng.** Bằng chứng độ phủ là cấp **file** nên không có dòng riêng,
+  trong khi lý do nói "Dòng 66: COVERED". Nay nó mượn dòng của cảnh báo đang xem — **chỉ khi cùng
+  file**. Điều kiện đó bắt buộc: thẻ test trỏ `UserServiceTest.java` mà gắn dòng 66 của
+  `UserService.java` vào là nhảy tới một dòng không liên quan, sai theo kiểu trông vẫn hợp lý.
+
 **2. Panel đánh giá chuyển xuống CUỐI trang, dưới phần bằng chứng.** Đây là quyết định về giao
 thức user study chứ không phải bố cục: bốn nút quyết định nằm ngay dưới phần đầu là lời mời bấm
 trước khi cuộn xuống đọc — mà "người dùng quyết định SAU KHI xem bằng chứng" chính là thứ tuần
@@ -702,7 +717,6 @@ cục cho gọn" là đủ để đảo nó về mà không ai nhận ra.
 | Món | Vì sao hoãn |
 |---|---|
 | `ground_truth_label` dựng ở V9 nhưng **trống** | Tuần 15 mới gán nhãn. Dashboard hiện rõ "chưa có dữ liệu" thay vì `0%` — một bảng chết trông y hệt một bảng đang dùng |
-| Thẻ test chưa hiện `failureKind` (ERROR/FAILURE) và chưa link tới `stackTraceShortId` | Backend đã trả về cả hai; giao diện bỏ. `failureKind` là thứ phân biệt "ngoại lệ từ mã production" với "assertion từ lớp test" — xem `TestFailureKind` |
 | Chưa có màn hình gán nhãn ground truth | Tuần 15 gán bằng SQL/script là đủ cho 34 cảnh báo; dựng UI cho việc làm một lần là phí |
 | Dashboard chưa có biểu đồ | Số dạng bảng đủ để demo và để nghiệm thu; biểu đồ thuộc phần phân tích số liệu tuần 17-18 |
 | Chưa gộp nhiều người review trên cùng một run ở dashboard | `GET /reviews` trả review của **chính người gọi**. Số tổng hợp có trong `/metrics` và export; màn hình so từng người chỉ cần khi phân tích tuần 17-18 |

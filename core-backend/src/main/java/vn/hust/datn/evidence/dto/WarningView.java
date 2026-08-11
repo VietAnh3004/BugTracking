@@ -25,7 +25,7 @@ public record WarningView(
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID analysisRunId,
         @Schema(
                         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-                        description = "NULL khi không đối chiếu được với snapshot — cảnh báo vẫn hợp lệ, chỉ là không bấm được")
+                        description = "Vắng khi không đối chiếu được với snapshot — cảnh báo vẫn hợp lệ, chỉ là không bấm được")
                 String filePath,
         @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) Integer startLine,
         @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) Integer endLine,

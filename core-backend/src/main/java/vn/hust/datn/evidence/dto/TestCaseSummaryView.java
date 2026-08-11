@@ -25,5 +25,5 @@ public record TestCaseSummaryView(
         @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) Integer durationMs,
         @Schema(
                         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-                        description = "Evidence STACK_TRACE của chính test này; NULL khi test không hỏng")
+                        description = "Evidence STACK_TRACE của chính test này; vắng khi test không hỏng")
                 String stackTraceShortId) {}

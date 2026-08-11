@@ -330,13 +330,26 @@ Trên màn hình bằng chứng phải thấy **4 thẻ**, chia ba nhóm:
 
 | Nhóm | Số thẻ | Nội dung phải thấy |
 |---|---|---|
-| Ngữ cảnh mã nguồn | 1 | `UserService#displayNameOf (METHOD)`, lý do: *"Dòng 66 của cảnh báo nằm trong … (dòng 63-67)"* |
-| Test liên quan | 2 | `UserServiceTest.displayNameOf_khongTonTai_khongDuocNemNPE` nhãn **`STACK_FRAME`**, ba chấm đặc `●●●`, weight `1.00`, lý do trích nguyên văn dòng stack trace đi qua dòng 66 — **và** một thẻ yếu hơn `emailDomainOf_…` nhãn `METHOD_AGGREGATE`, weight `0.60` |
-| Độ phủ | 1 | `rationale` nói rõ *"Dòng 66: COVERED (ci=5 mi=0 mb=0 cb=0)"* |
+| Ngữ cảnh mã nguồn | 1 | `UserService#displayNameOf (METHOD)`, lý do: *"Dòng 66 của cảnh báo nằm trong … (dòng 63-67)"*. Link cuối thẻ mở `UserService.java:63` (đầu method) |
+| Test liên quan | 2 | `UserServiceTest.displayNameOf_khongTonTai_khongDuocNemNPE` nhãn **`STACK_FRAME`**, ba chấm đặc `●●●`, weight `1.00`, lý do trích nguyên văn dòng stack trace đi qua dòng 66 — **và** một thẻ yếu hơn `emailDomainOf_…` nhãn `METHOD_AGGREGATE`, weight `0.60`. Cả hai có chip đỏ **`ERROR`** cạnh `Trạng thái: FAILED`, dòng **`Ngoại lệ: java.lang.NullPointerException`**, và dòng **`Stack trace: EV-xxxx`** bấm được |
+| Độ phủ | 1 | `rationale` nói rõ *"Dòng 66: COVERED (ci=5 mi=0 mb=0 cb=0)"*, và link cuối thẻ nhảy tới **đúng dòng 66** |
 
 Hai thẻ trong nhóm "Test liên quan" là thứ đáng nhìn kỹ nhất: cùng là `SUPPORTS`, cùng trỏ về một
 lớp test, nhưng một cái có **bằng chứng thực thi** (stack trace đi qua đúng dòng) còn cái kia chỉ
 là **suy luận theo method**. Chúng phải trông khác nhau trên màn hình — xem tiếp mục 8.
+
+Ba chi tiết nhỏ trong bảng trên đều có lý do, không phải trang trí:
+
+- **Chip `ERROR`** phân biệt `<error>` (ngoại lệ thoát ra, thường từ **mã production**) với
+  `<failure>` (assertion, ném từ chính lớp test). Chỉ nhóm `ERROR` mới cho stack trace trỏ về dòng
+  bị cảnh báo — tức là mới sinh ra được liên kết `STACK_FRAME`. Cột `Trạng thái` chuẩn hoá chỉ có
+  `PASSED/FAILED/SKIPPED` nên nó **gộp** hai thứ đó lại.
+- **Link `Stack trace: EV-xxxx`** mở chính bằng chứng STACK_TRACE mà câu lý do đang nhắc tới. Không
+  có nó thì *"stack trace đi qua dòng 66"* là một khẳng định không kiểm chứng được — đúng thứ cả
+  màn hình này sinh ra để chống.
+- **Thẻ Độ phủ nhảy tới dòng 66** dù bằng chứng độ phủ là cấp **file** (không có dòng riêng). Nó
+  mượn dòng của cảnh báo đang xem, và **chỉ khi cùng file** — thẻ test trỏ `UserServiceTest.java`
+  thì không mượn, vì dòng 66 ở đó là một dòng hoàn toàn khác.
 
 <br>
 

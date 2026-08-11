@@ -2046,7 +2046,7 @@
           },
           "shortId" : {
             "type" : "string",
-            "description" : "Chỉ khác null khi resolution=RESOLVED; dùng để mở Evidence Explorer"
+            "description" : "Chỉ có khi resolution=RESOLVED; dùng để mở Evidence Explorer"
           }
         },
         "required" : [ "citedShortIdRaw", "resolution" ]
@@ -2123,7 +2123,7 @@
           },
           "filePath" : {
             "type" : "string",
-            "description" : "NULL khi không đối chiếu được với snapshot — cảnh báo vẫn hợp lệ, chỉ là không bấm được"
+            "description" : "Vắng khi không đối chiếu được với snapshot — cảnh báo vẫn hợp lệ, chỉ là không bấm được"
           },
           "startLine" : {
             "type" : "integer",
@@ -2186,12 +2186,12 @@
           "averageLatencyMs" : {
             "type" : "number",
             "format" : "double",
-            "description" : "null khi chưa gọi model lần nào"
+            "description" : "Vắng khi chưa gọi model lần nào"
           },
           "averageIterationsPerAnswer" : {
             "type" : "number",
             "format" : "double",
-            "description" : "Số vòng lặp trung bình mỗi lượt hỏi; null khi chưa có lượt nào"
+            "description" : "Số vòng lặp trung bình mỗi lượt hỏi; vắng khi chưa có lượt nào"
           },
           "failedTurnCount" : {
             "type" : "integer",
@@ -2220,7 +2220,7 @@
           "unsupportedClaimRate" : {
             "type" : "number",
             "format" : "double",
-            "description" : "null khi chưa có nhận định nào"
+            "description" : "Vắng khi chưa có nhận định nào"
           },
           "citationCount" : {
             "type" : "integer",
@@ -2237,7 +2237,7 @@
           "citationAccuracy" : {
             "type" : "number",
             "format" : "double",
-            "description" : "null khi chưa có trích dẫn nào"
+            "description" : "Vắng khi chưa có trích dẫn nào"
           },
           "downgradedAnswerCount" : {
             "type" : "integer",
@@ -2258,12 +2258,12 @@
           "agentAccuracy" : {
             "type" : "number",
             "format" : "double",
-            "description" : "Tỉ lệ verdict Agent khớp nhãn chuẩn; null khi chưa gán nhãn"
+            "description" : "Tỉ lệ verdict Agent khớp nhãn chuẩn; vắng khi chưa gán nhãn"
           },
           "humanAccuracy" : {
             "type" : "number",
             "format" : "double",
-            "description" : "Tỉ lệ quyết định của người khớp nhãn chuẩn; null khi chưa gán nhãn"
+            "description" : "Tỉ lệ quyết định của người khớp nhãn chuẩn; vắng khi chưa gán nhãn"
           }
         },
         "required" : [ "labelledCount" ]
@@ -2300,7 +2300,7 @@
           "agreementWithAgent" : {
             "type" : "number",
             "format" : "double",
-            "description" : "Tỉ lệ quyết định của người khớp verdict Agent; null khi chưa có review nào có Agent"
+            "description" : "Tỉ lệ quyết định của người khớp verdict Agent; vắng khi chưa có review nào có Agent"
           }
         },
         "required" : [ "decisionCounts", "reviewedCount", "warningCount", "withAgentCount", "withoutAgentCount" ]
@@ -2505,7 +2505,7 @@
           },
           "stackTraceShortId" : {
             "type" : "string",
-            "description" : "Evidence STACK_TRACE của chính test này; NULL khi test không hỏng"
+            "description" : "Evidence STACK_TRACE của chính test này; vắng khi test không hỏng"
           }
         },
         "required" : [ "className", "methodName", "status" ]
@@ -2569,7 +2569,7 @@
           },
           "filePath" : {
             "type" : "string",
-            "description" : "Đã đối chiếu với snapshot; NULL nghĩa là không tìm thấy trong mã nguồn đã tải lên"
+            "description" : "Đã đối chiếu với snapshot; vắng nghĩa là không tìm thấy trong mã nguồn đã tải lên"
           },
           "startLine" : {
             "type" : "integer",

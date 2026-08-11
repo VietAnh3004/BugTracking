@@ -886,7 +886,7 @@ export interface components {
             citedShortIdRaw: string;
             /** @enum {string} */
             resolution: "RESOLVED" | "UNKNOWN_ID" | "WRONG_RUN" | "MALFORMED";
-            /** @description Chỉ khác null khi resolution=RESOLVED; dùng để mở Evidence Explorer */
+            /** @description Chỉ có khi resolution=RESOLVED; dùng để mở Evidence Explorer */
             shortId?: string;
         };
         /** @description Một nhận định kèm kết quả hậu kiểm trích dẫn */
@@ -919,7 +919,7 @@ export interface components {
             shortId: string;
             /** Format: uuid */
             analysisRunId: string;
-            /** @description NULL khi không đối chiếu được với snapshot — cảnh báo vẫn hợp lệ, chỉ là không bấm được */
+            /** @description Vắng khi không đối chiếu được với snapshot — cảnh báo vẫn hợp lệ, chỉ là không bấm được */
             filePath?: string;
             /** Format: int32 */
             startLine?: number;
@@ -949,12 +949,12 @@ export interface components {
             toolCallCount: number;
             /**
              * Format: double
-             * @description null khi chưa gọi model lần nào
+             * @description Vắng khi chưa gọi model lần nào
              */
             averageLatencyMs?: number;
             /**
              * Format: double
-             * @description Số vòng lặp trung bình mỗi lượt hỏi; null khi chưa có lượt nào
+             * @description Số vòng lặp trung bình mỗi lượt hỏi; vắng khi chưa có lượt nào
              */
             averageIterationsPerAnswer?: number;
             /**
@@ -973,7 +973,7 @@ export interface components {
             unsupportedClaimCount: number;
             /**
              * Format: double
-             * @description null khi chưa có nhận định nào
+             * @description Vắng khi chưa có nhận định nào
              */
             unsupportedClaimRate?: number;
             /** Format: int64 */
@@ -984,7 +984,7 @@ export interface components {
             };
             /**
              * Format: double
-             * @description null khi chưa có trích dẫn nào
+             * @description Vắng khi chưa có trích dẫn nào
              */
             citationAccuracy?: number;
             /**
@@ -999,12 +999,12 @@ export interface components {
             labelledCount: number;
             /**
              * Format: double
-             * @description Tỉ lệ verdict Agent khớp nhãn chuẩn; null khi chưa gán nhãn
+             * @description Tỉ lệ verdict Agent khớp nhãn chuẩn; vắng khi chưa gán nhãn
              */
             agentAccuracy?: number;
             /**
              * Format: double
-             * @description Tỉ lệ quyết định của người khớp nhãn chuẩn; null khi chưa gán nhãn
+             * @description Tỉ lệ quyết định của người khớp nhãn chuẩn; vắng khi chưa gán nhãn
              */
             humanAccuracy?: number;
         };
@@ -1029,7 +1029,7 @@ export interface components {
             withoutAgentCount: number;
             /**
              * Format: double
-             * @description Tỉ lệ quyết định của người khớp verdict Agent; null khi chưa có review nào có Agent
+             * @description Tỉ lệ quyết định của người khớp verdict Agent; vắng khi chưa có review nào có Agent
              */
             agreementWithAgent?: number;
         };
@@ -1125,7 +1125,7 @@ export interface components {
             failureMessage?: string;
             /** Format: int32 */
             durationMs?: number;
-            /** @description Evidence STACK_TRACE của chính test này; NULL khi test không hỏng */
+            /** @description Evidence STACK_TRACE của chính test này; vắng khi test không hỏng */
             stackTraceShortId?: string;
         };
         WarningDetailView: {
@@ -1148,7 +1148,7 @@ export interface components {
             roleRaw?: string;
             /** @description Nguyên văn analyzer khai */
             pathRaw: string;
-            /** @description Đã đối chiếu với snapshot; NULL nghĩa là không tìm thấy trong mã nguồn đã tải lên */
+            /** @description Đã đối chiếu với snapshot; vắng nghĩa là không tìm thấy trong mã nguồn đã tải lên */
             filePath?: string;
             /** Format: int32 */
             startLine?: number;

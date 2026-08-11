@@ -58,6 +58,6 @@ public record ChatMessageResponse(
     public record CitationView(
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String citedShortIdRaw,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) ClaimCitationResolution resolution,
-            @Schema(description = "Chỉ khác null khi resolution=RESOLVED; dùng để mở Evidence Explorer")
+            @Schema(description = "Chỉ có khi resolution=RESOLVED; dùng để mở Evidence Explorer")
                     String shortId) {}
 }

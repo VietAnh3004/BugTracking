@@ -44,13 +44,18 @@ function itemVoiNull(overrides: Record<string, unknown> = {}): RelatedEvidence {
   } as unknown as RelatedEvidence;
 }
 
-function renderCard(item: RelatedEvidence) {
+function renderCard(
+  item: RelatedEvidence,
+  neo: { anchorFilePath?: string | null; anchorStartLine?: number | null } = {},
+) {
   return render(
     <MemoryRouter>
-      <RelatedEvidenceCard item={item} snapshotId="snap-1" runId="run-1" />
+      <RelatedEvidenceCard item={item} snapshotId="snap-1" runId="run-1" {...neo} />
     </MemoryRouter>,
   );
 }
+
+const FILE_NEO = 'src/main/java/vn/hust/datn/casestudy/vulnshop/user/UserService.java';
 
 describe('RelatedEvidenceCard', () => {
   /** Chính là ca làm trắng trang. */
@@ -99,6 +104,134 @@ describe('RelatedEvidenceCard', () => {
     expect(screen.getByRole('link', { name: /UserService\.java:66/ })).toHaveAttribute(
       'href',
       '/snapshots/snap-1/files/src/main/java/vn/hust/datn/casestudy/vulnshop/user/UserService.java#L66',
+    );
+  });
+
+  /**
+   * Stack trace là một bằng chứng RIÊNG có Evidence ID riêng. Không có link thì câu lý do
+   * "stack trace đi qua dòng 66" thành một khẳng định không kiểm chứng được — đúng thứ mà cả màn
+   * hình này sinh ra để chống.
+   */
+  it('stackTraceShortId thành link mở đúng bằng chứng đó', () => {
+    renderCard(
+      itemVoiNull({
+        testCase: {
+          className: 'UserServiceTest',
+          methodName: 'displayNameOf_khongTonTai_khongDuocNemNPE',
+          status: 'FAILED',
+          failureKind: 'ERROR',
+          stackTraceShortId: 'EV-0453',
+        },
+      }),
+    );
+
+    expect(screen.getByRole('link', { name: 'EV-0453' })).toHaveAttribute(
+      'href',
+      '/snapshots/snap-1/runs/run-1/evidence/EV-0453',
+    );
+  });
+
+  /**
+   * `status` chuẩn hoá chỉ có PASSED/FAILED/SKIPPED nên nó GỘP hai kiểu hỏng khác hẳn nhau: `ERROR`
+   * (ngoại lệ từ mã production — stack trace trỏ về đúng dòng cảnh báo) và `FAILURE` (assertion từ
+   * chính lớp test). Chỉ nhóm ERROR mới làm được liên kết `STACK_FRAME`, nên gộp chúng là giấu đi
+   * lý do một liên kết mạnh hơn liên kết khác.
+   */
+  it('phân biệt ERROR với FAILURE bên cạnh trạng thái đã gộp', () => {
+    const { unmount } = renderCard(
+      itemVoiNull({
+        testCase: { className: 'T', methodName: 'm', status: 'FAILED', failureKind: 'ERROR' },
+      }),
+    );
+    expect(screen.getByText('FAILED')).toBeInTheDocument();
+    expect(screen.getByText('ERROR')).toBeInTheDocument();
+    unmount();
+
+    renderCard(
+      itemVoiNull({
+        testCase: { className: 'T', methodName: 'm', status: 'FAILED', failureKind: 'FAILURE' },
+      }),
+    );
+    expect(screen.getByText('FAILURE')).toBeInTheDocument();
+  });
+
+  it('test không hỏng thì không có chip kiểu hỏng nào', () => {
+    renderCard(
+      itemVoiNull({
+        testCase: { className: 'T', methodName: 'm', status: 'PASSED' },
+      }),
+    );
+
+    expect(screen.getByText('PASSED')).toBeInTheDocument();
+    expect(screen.queryByText('ERROR')).not.toBeInTheDocument();
+    expect(screen.queryByText('FAILURE')).not.toBeInTheDocument();
+  });
+
+  it('hiện tên lớp ngoại lệ tách khỏi thông điệp', () => {
+    renderCard(
+      itemVoiNull({
+        testCase: {
+          className: 'T',
+          methodName: 'm',
+          status: 'FAILED',
+          failureType: 'java.lang.NullPointerException',
+          failureMessage: 'Cannot invoke User.email() because "user" is null',
+        },
+      }),
+    );
+
+    expect(screen.getByText('java.lang.NullPointerException')).toBeInTheDocument();
+    expect(screen.getByText(/Cannot invoke User\.email/)).toBeInTheDocument();
+  });
+
+  /**
+   * Bằng chứng độ phủ là cấp FILE nên không có `startLine` của riêng nó, trong khi câu lý do nói
+   * "Dòng 66: COVERED". Link mở file ở đầu là bỏ rơi người dùng ở một file 70 dòng.
+   */
+  it('thẻ cấp file mượn dòng của cái neo khi CÙNG file', () => {
+    renderCard(
+      itemVoiNull({
+        type: 'COVERAGE_INFORMATION',
+        relation: 'COVERS',
+        filePath: FILE_NEO,
+        rationale: 'Dòng 66: COVERED (ci=5 mi=0 mb=0 cb=0)',
+      }),
+      { anchorFilePath: FILE_NEO, anchorStartLine: 66 },
+    );
+
+    expect(screen.getByRole('link', { name: /UserService\.java:66/ })).toHaveAttribute(
+      'href',
+      `/snapshots/snap-1/files/${FILE_NEO}#L66`,
+    );
+  });
+
+  /**
+   * Điều kiện "cùng file" là bắt buộc: thẻ test trỏ tới `UserServiceTest.java`, gắn dòng 66 của
+   * `UserService.java` vào là nhảy tới một dòng hoàn toàn không liên quan — sai theo kiểu trông
+   * vẫn hợp lý.
+   */
+  it('thẻ trỏ file KHÁC thì KHÔNG mượn dòng của neo', () => {
+    const fileTest = 'src/test/java/vn/hust/datn/casestudy/vulnshop/user/UserServiceTest.java';
+    renderCard(itemVoiNull({ type: 'FAILED_TEST', relation: 'SUPPORTS', filePath: fileTest }), {
+      anchorFilePath: FILE_NEO,
+      anchorStartLine: 66,
+    });
+
+    const link = screen.getByRole('link', { name: /UserServiceTest\.java/ });
+    expect(link).toHaveAttribute('href', `/snapshots/snap-1/files/${fileTest}`);
+    expect(link.getAttribute('href')).not.toContain('#L');
+  });
+
+  /** Thẻ có dòng riêng thì dùng dòng của chính nó, không bị neo đè lên. */
+  it('thẻ có startLine riêng thì giữ nguyên dòng của nó', () => {
+    renderCard(itemVoiNull({ filePath: FILE_NEO, startLine: 63 }), {
+      anchorFilePath: FILE_NEO,
+      anchorStartLine: 66,
+    });
+
+    expect(screen.getByRole('link', { name: /UserService\.java:63/ })).toHaveAttribute(
+      'href',
+      `/snapshots/snap-1/files/${FILE_NEO}#L63`,
     );
   });
 
