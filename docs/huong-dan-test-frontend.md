@@ -383,17 +383,66 @@ báo có vị trí bấm được. Nghĩa là linker không chạy — kiểm `l
 
 ### ✅ 8. Bằng chứng yếu phải nhìn là biết yếu
 
-Mở một cảnh báo bất kỳ trong `PasswordHasher` hoặc `TextNormalizer`. Trong nhóm "Test liên quan"
-phải có thẻ mang nhãn **`NAMING_CONVENTION`**, một chấm đặc `●○○`, và chữ **⚠ liên kết yếu**.
+Đây là điều quan trọng nhất của màn hình **về mặt phương pháp**: một liên kết `STACK_FRAME` (một
+lần chạy thật đã đi qua đúng dòng lỗi rồi ném lỗi) và một liên kết `NAMING_CONVENTION` (lớp test
+tình cờ tên là `FooTest`) **không được trông giống nhau**. Trên vulnshop có **13/132 ≈ 10%** liên
+kết chỉ dựa vào quy ước tên, và người chấm phải thấy con số đó ngay trên màn hình chứ không phải
+tin vào một bảng thống kê rời.
 
-Đây là điều quan trọng nhất của màn hình về mặt phương pháp: một liên kết `STACK_FRAME` (một lần
-chạy thật đã đi qua đúng dòng lỗi) và một liên kết `NAMING_CONVENTION` (lớp test tình cờ cùng tên)
-**không được trông giống nhau**. Trên vulnshop tỉ lệ liên kết yếu là 13/132 ≈ 10%, và người chấm phải
-thấy được nó ngay trên màn hình.
+**Chỉ 3 trong 34 cảnh báo có liên kết yếu**, và cả ba đều là cảnh báo của **semgrep**:
 
-Cũng ở đây, đọc `rationale` của một thẻ **`CONTRADICTS`**: nó phải nói thẳng *"KHÔNG chứng minh cảnh
-báo sai"*. Câu đó nằm trong chính dữ liệu chứ không chỉ trong prompt — vì vulnshop cố tình gài bẫy
-`findByUsername` (SQL injection thật, test vẫn xanh).
+| Cảnh báo | Luật | Vị trí |
+|---|---|---|
+| `use-of-md5` | semgrep | `PasswordHasher.java:40` |
+| `use-of-md5` | semgrep | `PasswordHasher.java:53` |
+| `spring-sqli` | semgrep | `UserRepository.java:35` ← **dùng cái này** |
+
+Cách tìm: ô **"Một phần đường dẫn file"** gõ `UserRepository` → chọn **Công cụ = semgrep** → còn
+đúng một dòng. Mở nó.
+
+> **Đừng mở cảnh báo của spotbugs ở cùng dòng đó.** Nó có liên kết `METHOD_AGGREGATE` (`●●○ 0.50`),
+> không phải liên kết yếu — và đó chính là ca so sánh ở dưới.
+
+Trong nhóm **"Test liên quan"** phải thấy 3 thẻ, mỗi thẻ mang:
+
+- nhãn **`Chỉ theo quy ước tên`** trên nền hổ phách,
+- **`●○○ 0.25`** và mã enum `NAMING_CONVENTION`,
+- chữ **⚠ liên kết yếu**.
+
+#### Ca so sánh: cùng một dòng, hai công cụ, hai mức tin cậy
+
+Mở cả hai cảnh báo ở `UserRepository.java:35` (bỏ bộ lọc công cụ thì thấy cả hai) và đặt cạnh nhau:
+
+| | spotbugs `SQL_INJECTION_SPRING_JDBC` | semgrep `spring-sqli` |
+|---|---|---|
+| Liên kết tới test | `Tổng hợp theo method` **`●●○ 0.50`** | `Chỉ theo quy ước tên` **`●○○ 0.25` ⚠ liên kết yếu** |
+| Số thẻ test | 3 | 3 |
+
+**Cùng một dòng mã, cùng một lỗ hổng, nhưng hệ thống tin hai bên khác nhau — và nói ra vì sao.**
+Lý do nằm ở dữ liệu công cụ cấp: SpotBugs khai `Method/@name` nên biết cảnh báo thuộc method
+`findByUsername` và đối chiếu được với độ phủ mức method; SARIF của Semgrep **không có tên method**
+nên chỉ còn quy ước tên lớp để bám. Kiểm bằng SQL nếu muốn: cột `symbol` của cảnh báo spotbugs là
+`…UserRepository#findByUsername`, còn của semgrep là rỗng.
+
+#### Đọc câu lý do của thẻ `Phản bác`
+
+Vẫn ở cảnh báo semgrep đó, đọc `rationale` của một thẻ **`Phản bác`** (CONTRADICTS). Nó phải nói
+thẳng:
+
+> *Test xanh `…UserRepositoryIntegrationTest#findByUsername_sqlInjection_traVeToanBoBang` phủ dòng
+> này. **KHÔNG chứng minh cảnh báo sai** — vulnshop có test xanh **CHỨNG MINH lỗ hổng có thật**.*
+
+Đọc kỹ tên test trong câu đó: `findByUsername_sqlInjection_traVeToanBoBang` — một test **XANH** mà
+tên nó nói rằng SQL injection trả về **toàn bộ bảng**. Đây là cạm bẫy trung tâm của vulnshop
+(TP-01), và nó nằm trong **chính dữ liệu**, không phải chỉ trong prompt của Agent. Ai kết luận
+"có test phủ + test xanh ⇒ báo nhầm" là sai, và màn hình phải nói ra điều đó trước khi họ kịp kết
+luận.
+
+**Hỏng thì trông thế nào**: ba thẻ đó trông y hệt thẻ `STACK_FRAME` ở mục 7 — mất chấm, mất nhãn,
+mất chữ "liên kết yếu". Khi đó Evidence Explorer chỉ còn là một danh sách "có liên quan", và tỉ lệ
+10% liên kết yếu mà tuần 15 phải báo cáo trở thành một con số người đọc không kiểm được. Hỏng kiểu
+thứ hai: câu lý do bị cắt cho gọn, mất vế *"KHÔNG chứng minh cảnh báo sai"* — mời người đọc rơi
+đúng vào bẫy.
 
 ### ✅ 9. Rỗng là một kết luận, không phải một khoảng trống
 

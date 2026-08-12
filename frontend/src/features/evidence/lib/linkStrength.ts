@@ -6,9 +6,10 @@
  * một liên kết `NAMING_CONVENTION` (lớp test tình cờ tên là `FooTest`) trông giống hệt nhau trên
  * giao diện nếu chỉ hiện tên bằng chứng. Chúng KHÔNG giống nhau chút nào.
  *
- * Trên vulnshop, 10/123 liên kết chỉ dựa vào quy ước đặt tên. Đó chính là con số tuần 15 phải báo
- * cáo, và người chấm phải nhìn thấy được nó ngay trên màn hình chứ không phải tin vào một bảng
- * thống kê rời.
+ * Trên vulnshop, **13/132** liên kết chỉ dựa vào quy ước đặt tên, và cả 13 nằm trên đúng 3 cảnh
+ * báo của semgrep — vì SARIF của Semgrep không khai tên method, nên linker chỉ còn tên lớp để bám.
+ * Đó chính là con số tuần 15 phải báo cáo, và người chấm phải nhìn thấy được nó ngay trên màn hình
+ * chứ không phải tin vào một bảng thống kê rời.
  * ================================================================================
  */
 
