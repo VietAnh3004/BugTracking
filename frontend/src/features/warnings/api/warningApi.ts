@@ -1,6 +1,7 @@
 /** Lời gọi API cảnh báo tĩnh. Kiểu lấy từ `api-types.ts` nên FE/BE không thể lệch shape. */
 
 import { apiClient } from '@/shared/lib/apiClient';
+import { uploadForm } from '@/shared/lib/uploadClient';
 
 import type { components } from '@/shared/lib/api-types';
 
@@ -24,6 +25,27 @@ export function listAnalysisRuns(snapshotId: string): Promise<AnalysisRunPage> {
 
 export function getAnalysisRun(runId: string): Promise<AnalysisRun> {
   return apiClient.get<AnalysisRun>(`/api/v1/analysis-runs/${runId}`);
+}
+
+/**
+ * Nạp artifact analyzer. MỌI file đi chung field lặp `artifacts` — backend chọn parser theo NỘI
+ * DUNG file, không theo tên field hay tên file (xem Javadoc `AnalysisRunController.ingest`).
+ *
+ * Trả 201 kể cả khi run ra `FAILED`: người gọi phải đọc `status`, không được coi "không ném lỗi"
+ * là thành công.
+ */
+export function ingestArtifacts(
+  snapshotId: string,
+  files: File[],
+  onProgress?: (percent: number) => void,
+): Promise<AnalysisRun> {
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append('artifacts', file);
+  }
+  return uploadForm<AnalysisRun>(`/api/v1/snapshots/${snapshotId}/analysis-runs`, formData, {
+    onProgress,
+  });
 }
 
 /**

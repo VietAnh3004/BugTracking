@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 
 import * as warningApi from '@/features/warnings/api/warningApi';
 
@@ -39,4 +40,23 @@ export function useWarnings(runId: string, filters: WarningFilters, page = 0) {
     staleTime: Infinity,
     enabled: runId !== '',
   });
+}
+
+/** Nạp artifact analyzer — tiến trình giữ ở `useState`, cùng lý do với `useUploadSnapshot`. */
+export function useIngestArtifacts(snapshotId: string) {
+  const queryClient = useQueryClient();
+  const [progress, setProgress] = useState(0);
+
+  const mutation = useMutation({
+    mutationFn: (files: File[]) => {
+      setProgress(0);
+      return warningApi.ingestArtifacts(snapshotId, files, setProgress);
+    },
+    onSuccess: () => {
+      // Kể cả run FAILED cũng là một hàng mới trong danh sách run của snapshot.
+      void queryClient.invalidateQueries({ queryKey: warningKeys.runsBySnapshot(snapshotId) });
+    },
+  });
+
+  return { ...mutation, progress };
 }

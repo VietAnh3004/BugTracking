@@ -1,5 +1,6 @@
 package vn.hust.datn.evidence.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +15,10 @@ import vn.hust.datn.evidence.domain.RepositorySnapshot;
 public interface RepositorySnapshotRepository extends JpaRepository<RepositorySnapshot, UUID> {
 
     Page<RepositorySnapshot> findByProjectIdOrderByCreatedAtDesc(UUID projectId, Pageable pageable);
+
+    /** Prefix object storage của mọi snapshot trong dự án — để dọn MinIO sau khi xoá dự án. */
+    @Query("SELECT s.storageKey FROM RepositorySnapshot s WHERE s.projectId = :projectId")
+    List<String> findStorageKeysByProjectId(@Param("projectId") UUID projectId);
 
     /**
      * Lọc quyền sở hữu NGAY TRONG câu truy vấn, cùng khuôn với {@code ProjectRepository.findByIdAndOwnerId}

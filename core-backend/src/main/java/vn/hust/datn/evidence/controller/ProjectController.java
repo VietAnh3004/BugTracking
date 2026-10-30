@@ -6,13 +6,16 @@ import java.util.UUID;
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import vn.hust.datn.evidence.config.security.CurrentUser;
@@ -58,5 +61,11 @@ public class ProjectController {
     @GetMapping("/{id}")
     public ProjectResponse get(@PathVariable UUID id, @AuthenticationPrincipal CurrentUser currentUser) {
         return projectMapper.toResponse(projectService.get(id, currentUser.id()));
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable UUID id, @AuthenticationPrincipal CurrentUser currentUser) {
+        projectService.delete(id, currentUser.id());
     }
 }

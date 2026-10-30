@@ -24,9 +24,17 @@ export interface UploadOptions {
   signal?: AbortSignal;
 }
 
-export async function uploadFile<T>(
+export function uploadFile<T>(path: string, file: File, options: UploadOptions = {}): Promise<T> {
+  const formData = new FormData();
+  // Tên field phải khớp @RequestParam("file") của SnapshotController.
+  formData.append('file', file);
+  return uploadForm<T>(path, formData, options);
+}
+
+/** Bản tổng quát của `uploadFile`: người gọi tự dựng `FormData` (vd nhiều file chung một field). */
+export async function uploadForm<T>(
   path: string,
-  file: File,
+  formData: FormData,
   options: UploadOptions = {},
 ): Promise<T> {
   // Làm mới token TRƯỚC khi bắt đầu, không thử-lại-khi-401 giữa chừng: với file lớn, thử lại nghĩa
@@ -35,9 +43,6 @@ export async function uploadFile<T>(
 
   return new Promise<T>((resolve, reject) => {
     const request = new XMLHttpRequest();
-    const formData = new FormData();
-    // Tên field phải khớp @RequestParam("file") của SnapshotController.
-    formData.append('file', file);
 
     request.open('POST', resolveUrl(path));
 

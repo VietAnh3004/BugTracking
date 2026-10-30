@@ -1,0 +1,13 @@
+# Lối tắt để chạy toàn bộ hệ thống từ thư mục gốc repo:
+#
+#   cp infra/.env.example infra/.env   # một lần, điền giá trị thật
+#   docker compose up --build
+#
+# Định nghĩa thật nằm ở infra/docker-compose.yml; biến môi trường lấy từ infra/.env (include tự
+# đọc .env cạnh file được include). `name` phải khai lại ở đây: nếu không, project lấy tên thư mục
+# gốc và tạo container/volume mới, tách khỏi dữ liệu của project `evidence-agent` sẵn có.
+
+name: evidence-agent
+
+include:
+  - infra/docker-compose.yml

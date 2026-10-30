@@ -7,12 +7,14 @@
  * mất chỗ đang đứng.
  */
 
+import { useState } from 'react';
 import { Link, Outlet, useParams } from 'react-router-dom';
 
 import { FileTree } from '@/features/snapshots/components/FileTree';
 import { useSnapshot, useSnapshotFiles } from '@/features/snapshots/hooks/useSnapshots';
 import { buildFileTree } from '@/features/snapshots/lib/buildFileTree';
 import { fromRouteParam } from '@/features/snapshots/lib/filePathUrl';
+import { ArtifactUploadPanel } from '@/features/warnings/components/ArtifactUploadPanel';
 import { useAnalysisRuns } from '@/features/warnings/hooks/useWarnings';
 import { ApiError } from '@/shared/lib/apiClient';
 import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
@@ -25,6 +27,7 @@ export function SnapshotBrowserLayout() {
 
   const snapshot = useSnapshot(snapshotId);
   const files = useSnapshotFiles(snapshotId);
+  const [showIngest, setShowIngest] = useState(false);
 
   if (snapshot.isPending || files.isPending) {
     return <FullPageSpinner label="Đang tải cây file…" />;
@@ -48,8 +51,21 @@ export function SnapshotBrowserLayout() {
         <span className="text-ink-muted flex items-center gap-3 text-sm">
           <LatestRunLink snapshotId={snapshotId} />
           {snapshot.data.fileCount} file · {snapshot.data.sourceRef ?? snapshot.data.id}
+          {showIngest ? null : (
+            <button
+              type="button"
+              onClick={() => setShowIngest(true)}
+              className="border-brand text-brand hover:bg-brand-subtle cursor-pointer rounded border px-3 py-1 font-semibold"
+            >
+              Nạp kết quả phân tích
+            </button>
+          )}
         </span>
       </div>
+
+      {showIngest ? (
+        <ArtifactUploadPanel snapshotId={snapshotId} onClose={() => setShowIngest(false)} />
+      ) : null}
 
       {/* Cây cuộn độc lập với nội dung file: repo vài trăm file thì cột trái luôn dài hơn màn hình. */}
       <div className="grid gap-4 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
