@@ -336,3 +336,61 @@ async def test_ngan_sach_rong_rai_thi_khong_cat_gi(settings: Settings) -> None:
 
     ket_qua_tool = next(m for m in provider.calls[-1]["messages"] if m["role"] == "tool")
     assert "Đã cắt" not in ket_qua_tool["content"]
+
+
+class _OverloadedProvider(ScriptedProvider):
+    """Trả lời được vòng đầu, rồi sập như Gemini free lúc "high demand"."""
+
+    async def chat(self, messages, tools=None, response_schema=None):  # type: ignore[no-untyped-def]
+        if self.calls:
+            self.calls.append({"messages": messages})
+            raise RuntimeError("openai-compatible:x tra ve HTTP 503: UNAVAILABLE: high demand")
+        return await super().chat(messages, tools=tools, response_schema=response_schema)
+
+
+@respx.mock
+async def test_luot_goi_model_hong_van_co_dong_trace(settings: Settings) -> None:
+    """Gặp thật với Gemini free: model trả 503 ở vòng giữa và cả lượt hỏi hỏng.
+
+    Trước đây lượt gọi hỏng không để lại trace nào — "hỏng vì quá tải" không đếm được, nên tỉ
+    lệ lượt hỏi thất bại báo cáo ở tuần 15 sẽ thấp hơn thực tế mà không ai biết.
+    """
+    respx.post(f"{BASE}/get_warning").mock(return_value=httpx.Response(200, json={}))
+    provider = _OverloadedProvider([_wants_tool("get_warning", evidence_id="EV-001A")])
+    loop = AgentLoop(provider, EvidenceToolClient(settings), settings)
+
+    events = await _collect(loop)
+
+    error = events[-1]
+    assert isinstance(error, ErrorEvent)
+    assert "503" in error.message
+    assert [t.iteration for t in error.traces] == [0, 1]
+    failed = error.traces[-1]
+    assert failed.error_message is not None and "high demand" in failed.error_message
+    assert failed.request_messages, "trace hong van phai ghi model da duoc gui gi"
+
+
+@respx.mock
+async def test_luot_nop_khong_ket_thuc_bang_luot_cua_model(settings: Settings) -> None:
+    """Gặp thật ở lần chạy Gemini đầu tiên: 400 "Requests ending with a model turn are not
+    supported". Claude đời mới cũng từ chối kiểu này (prefill). Provider giả chấp nhận mọi thứ
+    nên không test nào lộ ra — phải ép bằng chính hình dạng hội thoại gửi đi.
+    """
+    respx.post(f"{BASE}/get_warning").mock(return_value=httpx.Response(200, json={}))
+    loop, provider = _build(
+        settings,
+        [
+            _wants_tool("get_warning", evidence_id="EV-001A"),
+            LlmResponse(content="Ket luan: day la loi that."),
+            _submit(),
+        ],
+    )
+
+    events = await _collect(loop)
+
+    assert isinstance(events[-1], AnswerEvent)
+    submit_messages = provider.calls[-1]["messages"]
+    assert submit_messages[-1]["role"] == "user"
+    # Kết luận model vừa viết vẫn nằm trong hội thoại: bước nộp định dạng lại, không suy luận lại.
+    assert submit_messages[-2] == {**submit_messages[-2], "role": "assistant"}
+    assert "Ket luan" in submit_messages[-2]["content"]

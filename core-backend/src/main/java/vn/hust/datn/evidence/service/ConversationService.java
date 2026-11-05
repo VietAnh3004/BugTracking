@@ -186,10 +186,12 @@ public class ConversationService {
             }
             case AgentClient.AgentEvent.ERROR -> {
                 // Lượt hỏng: agent-service đã kèm trace tới thời điểm chết trong payload.
-                AgentAnswer.Trace[] partial = parseErrorTraces(event);
+                ErrorPayload payload = parseError(event);
                 traces.clear();
-                traces.addAll(List.of(partial));
-                throw new AgentUnavailableException(event.data());
+                traces.addAll(payload.tracesOrEmpty());
+                // Chỉ chuyển câu giải thích, KHÔNG chuyển nguyên payload: trước đây cả mảng trace
+                // đi thẳng ra giao diện dưới dạng một chuỗi JSON đã bị thay dấu nháy.
+                throw new AgentUnavailableException(payload.messageOr(event.data()));
             }
             // status/tool_call/tool_result forward nguyên văn: chúng chỉ là tiến trình, không
             // chứa kết luận nào cần hậu kiểm.
@@ -197,13 +199,22 @@ public class ConversationService {
         }
     }
 
-    private AgentAnswer.Trace[] parseErrorTraces(AgentClient.AgentEvent event) {
+    private ErrorPayload parseError(AgentClient.AgentEvent event) {
         try {
-            record ErrorPayload(String message, List<AgentAnswer.Trace> traces) {}
-            ErrorPayload payload = agentClient.parse(event, ErrorPayload.class);
-            return payload.traces() == null ? new AgentAnswer.Trace[0] : payload.traces().toArray(AgentAnswer.Trace[]::new);
+            return agentClient.parse(event, ErrorPayload.class);
         } catch (RuntimeException e) {
-            return new AgentAnswer.Trace[0];
+            return new ErrorPayload(null, null);
+        }
+    }
+
+    private record ErrorPayload(String message, List<AgentAnswer.Trace> traces) {
+
+        List<AgentAnswer.Trace> tracesOrEmpty() {
+            return traces == null ? List.of() : traces;
+        }
+
+        String messageOr(String fallback) {
+            return message == null || message.isBlank() ? fallback : message;
         }
     }
 
@@ -233,7 +244,9 @@ public class ConversationService {
     }
 
     private void sendError(SseEmitter emitter, String message) {
-        sendRaw(emitter, "error", "{\"message\":\"%s\"}".formatted(message.replace("\"", "'")));
+        // Để Jackson dựng JSON. Ghép chuỗi + thay dấu nháy hỏng ngay khi thông điệp có dấu `\`
+        // hay xuống dòng — lỗi trong lúc báo lỗi, người dùng thấy một luồng SSE câm.
+        send(emitter, "error", Map.of("message", message));
         emitter.complete();
     }
 

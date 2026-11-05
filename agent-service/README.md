@@ -24,7 +24,7 @@ Xem [ADR 0010](../docs/adr/0010-vong-lap-agent-va-hau-kiem-trich-dan.md).
 | `config.py` | Cấu hình từ biến môi trường, fail-fast khi thiếu |
 | `main.py` | FastAPI app: `GET /health`, `POST /analyze` (SSE) |
 | `schemas/` | `Claim`, `Verdict`, `AnalysisResponse`, và hợp đồng HTTP |
-| `providers/` | `LlmProvider` + `AnthropicProvider` + `ScriptedProvider` |
+| `providers/` | `LlmProvider` + `AnthropicProvider` + `OpenAICompatibleProvider` (Gemini, Groq, Ollama… qua `LLM_BASE_URL`) + `ScriptedProvider` |
 | `tools/` | Khai báo 5 evidence tool và cổng ra core-backend |
 | `agent/` | Vòng lặp retrieval → reasoning → structured output |
 | `prompts/` | Prompt Jinja2, tách khỏi code và version hoá |

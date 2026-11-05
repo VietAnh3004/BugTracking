@@ -1,14 +1,18 @@
 package vn.hust.datn.evidence.repository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import vn.hust.datn.evidence.domain.AnalysisRun;
+import vn.hust.datn.evidence.domain.AnalysisRunStatus;
 
 public interface AnalysisRunRepository extends JpaRepository<AnalysisRun, UUID> {
 
@@ -24,4 +28,23 @@ public interface AnalysisRunRepository extends JpaRepository<AnalysisRun, UUID> 
             "SELECT p.ownerId FROM AnalysisRun r, RepositorySnapshot s, Project p "
                     + "WHERE r.id = :runId AND r.snapshotId = s.id AND s.projectId = p.id")
     Optional<UUID> findOwnerIdByRunId(@Param("runId") UUID runId);
+
+    /**
+     * Hạ mọi run còn {@code RUNNING} bắt đầu TRƯỚC {@code cutoff} xuống {@code FAILED} — xem
+     * {@code OrphanedRunRecovery}. Điều kiện {@code status} nằm ngay trong WHERE nên một run vừa
+     * kịp kết thúc thật không bị ghi đè.
+     *
+     * <p>{@code @Transactional} ngay tại đây vì người gọi duy nhất gọi từ một event listener,
+     * không có transaction bao ngoài.
+     */
+    @Transactional
+    @Modifying
+    @Query("UPDATE AnalysisRun r SET r.status = :failed, r.errorMessage = :reason, r.finishedAt = :finishedAt "
+            + "WHERE r.status = :running AND r.startedAt < :cutoff")
+    int failRunningStartedBefore(
+            @Param("cutoff") OffsetDateTime cutoff,
+            @Param("reason") String reason,
+            @Param("finishedAt") OffsetDateTime finishedAt,
+            @Param("running") AnalysisRunStatus running,
+            @Param("failed") AnalysisRunStatus failed);
 }

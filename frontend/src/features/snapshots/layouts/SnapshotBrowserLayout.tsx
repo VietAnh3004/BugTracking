@@ -15,7 +15,8 @@ import { useSnapshot, useSnapshotFiles } from '@/features/snapshots/hooks/useSna
 import { buildFileTree } from '@/features/snapshots/lib/buildFileTree';
 import { fromRouteParam } from '@/features/snapshots/lib/filePathUrl';
 import { ArtifactUploadPanel } from '@/features/warnings/components/ArtifactUploadPanel';
-import { useAnalysisRuns } from '@/features/warnings/hooks/useWarnings';
+import { SandboxRunButton, SandboxRunStatus } from '@/features/warnings/components/SandboxRun';
+import { useAnalysisRuns, useSandboxRun } from '@/features/warnings/hooks/useWarnings';
 import { ApiError } from '@/shared/lib/apiClient';
 import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
@@ -28,6 +29,7 @@ export function SnapshotBrowserLayout() {
   const snapshot = useSnapshot(snapshotId);
   const files = useSnapshotFiles(snapshotId);
   const [showIngest, setShowIngest] = useState(false);
+  const sandbox = useSandboxRun(snapshotId);
 
   if (snapshot.isPending || files.isPending) {
     return <FullPageSpinner label="Đang tải cây file…" />;
@@ -48,9 +50,10 @@ export function SnapshotBrowserLayout() {
         <Link to={`/projects/${snapshot.data.projectId}`} className="text-brand text-sm">
           ← Về dự án
         </Link>
-        <span className="text-ink-muted flex items-center gap-3 text-sm">
+        <span className="text-ink-muted flex flex-wrap items-center justify-end gap-3 text-sm">
           <LatestRunLink snapshotId={snapshotId} />
           {snapshot.data.fileCount} file · {snapshot.data.sourceRef ?? snapshot.data.id}
+          <SandboxRunButton sandbox={sandbox} />
           {showIngest ? null : (
             <button
               type="button"
@@ -62,6 +65,8 @@ export function SnapshotBrowserLayout() {
           )}
         </span>
       </div>
+
+      <SandboxRunStatus sandbox={sandbox} snapshotId={snapshotId} />
 
       {showIngest ? (
         <ArtifactUploadPanel snapshotId={snapshotId} onClose={() => setShowIngest(false)} />
@@ -90,10 +95,15 @@ export function SnapshotBrowserLayout() {
  *
  * Lấy run MỚI NHẤT (backend đã sắp `started_at DESC`) chứ không bắt người dùng chọn: đợt này mỗi
  * snapshot thường chỉ có một run, và một màn hình chọn run cho một phần tử là nghi thức thừa.
+ *
+ * Bỏ qua run RUNNING/FAILED: màn hình cảnh báo trả 409 cho cả hai. Từ khi có phân tích tự động,
+ * run mới nhất rất hay là run đang chạy — trỏ vào nó là dẫn người dùng tới một trang lỗi.
  */
 function LatestRunLink({ snapshotId }: { snapshotId: string }) {
   const runs = useAnalysisRuns(snapshotId);
-  const latest = runs.data?.items[0];
+  const latest = runs.data?.items.find(
+    (run) => run.status === 'SUCCEEDED' || run.status === 'SUCCEEDED_CLEAN',
+  );
   if (latest === undefined) {
     return null;
   }

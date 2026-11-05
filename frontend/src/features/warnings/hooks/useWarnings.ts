@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import * as warningApi from '@/features/warnings/api/warningApi';
 
@@ -59,4 +59,56 @@ export function useIngestArtifacts(snapshotId: string) {
   });
 
   return { ...mutation, progress };
+}
+
+/** Hỏi lại mỗi 2 giây — khớp nhịp mà Javadoc `AnalysisRunController.runInSandbox` đề nghị. */
+const SANDBOX_POLL_MS = 2000;
+
+/**
+ * Chạy analyzer trong Docker sandbox rồi THEO DÕI run cho tới khi nó rời `RUNNING`.
+ *
+ * Run được theo dõi là run vừa bấm chạy ở trang này, HOẶC run mới nhất của snapshot nếu nó còn
+ * `RUNNING` — để tải lại trang (hay mở tab khác) giữa lúc đang phân tích vẫn thấy tiến trình, thay
+ * vì một nút "Phân tích" bấm được lần nữa và xếp thêm một lượt chạy vào hàng đợi.
+ */
+export function useSandboxRun(snapshotId: string) {
+  const queryClient = useQueryClient();
+  const runs = useAnalysisRuns(snapshotId);
+
+  const start = useMutation({
+    mutationFn: () => warningApi.startSandboxRun(snapshotId),
+    onSuccess: (run) => {
+      queryClient.setQueryData(warningKeys.run(run.id), run);
+      void queryClient.invalidateQueries({ queryKey: warningKeys.runsBySnapshot(snapshotId) });
+    },
+  });
+
+  const latest = runs.data?.items[0];
+  const watchedId = start.data?.id ?? (latest?.status === 'RUNNING' ? latest.id : '');
+
+  const watched = useQuery({
+    queryKey: warningKeys.run(watchedId),
+    queryFn: () => warningApi.getAnalysisRun(watchedId),
+    enabled: watchedId !== '',
+    refetchInterval: (query) => (query.state.data?.status === 'RUNNING' ? SANDBOX_POLL_MS : false),
+  });
+
+  // Run vừa rời RUNNING: làm mới danh sách run để link "Cảnh báo (N)" trỏ sang run mới.
+  const status = watchedId === '' ? undefined : watched.data?.status;
+  useEffect(() => {
+    if (status !== undefined && status !== 'RUNNING') {
+      void queryClient.invalidateQueries({ queryKey: warningKeys.runsBySnapshot(snapshotId) });
+    }
+  }, [status, snapshotId, queryClient]);
+
+  const run = watchedId === '' ? undefined : watched.data;
+  return {
+    start: () => start.mutate(),
+    startError: start.error,
+    run,
+    running: start.isPending || run?.status === 'RUNNING',
+    // Kết quả cuối chỉ hiện cho run bấm chạy TẠI trang này; run do nơi khác chạy thì link
+    // "Cảnh báo (N)" đã đủ báo là xong.
+    finishedHere: start.data !== undefined && run !== undefined && run.status !== 'RUNNING',
+  };
 }

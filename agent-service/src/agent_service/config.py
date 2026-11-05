@@ -7,7 +7,7 @@ phải giữa một phiên hội thoại của người dùng.
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, HttpUrl
+from pydantic import Field, HttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # "scripted" là provider giả trả kịch bản định sẵn. Nó nằm trong danh sách hợp lệ có chủ đích:
@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     llm_provider: LlmProviderName = Field(..., description="Nhà cung cấp LLM đang dùng")
     llm_api_key: str = Field(..., min_length=1, description="Khoá API của provider")
     llm_model: str = Field(..., min_length=1, description="Định danh model")
+    # Chỉ provider "openai" đọc: trỏ client tương thích OpenAI sang Gemini, Groq, OpenRouter,
+    # Ollama… Bỏ trống thì gọi chính OpenAI. Chuỗi rỗng = bỏ trống, vì docker-compose truyền
+    # biến chưa đặt dưới dạng "" chứ không phải vắng mặt.
+    llm_base_url: str | None = Field(default=None, description="Base URL API tương thích OpenAI")
 
     # KHÔNG mặc định 0.0. Họ model Claude 5 (và Opus 4.7 trở đi) TỪ CHỐI tham số này bằng lỗi
     # 400 — đặt sẵn một giá trị nghĩa là mọi request đều hỏng ngay khi bật provider thật. Để
@@ -53,7 +57,18 @@ class Settings(BaseSettings):
     prompt_version: str = Field(default="v1", min_length=1)
 
     request_timeout_seconds: float = Field(default=120.0, gt=0)
+    # Số lần SDK tự thử lại khi gặp 429/5xx/mất kết nối, giãn cách tăng dần (tối đa ~8 giây).
+    # Mặc định 2 = mặc định của SDK. Gói free (Gemini…) hay trả 503 "high demand" theo đợt:
+    # 2 lần cách nhau dưới 1 giây là quá ngắn, một lượt hỏi 5-9 vòng gọi gần như chắc hỏng.
+    llm_max_retries: int = Field(default=2, ge=0, le=10)
     log_level: str = Field(default="INFO")
+
+    @field_validator("llm_base_url", mode="before")
+    @classmethod
+    def _blank_base_url_is_unset(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
 
 @lru_cache

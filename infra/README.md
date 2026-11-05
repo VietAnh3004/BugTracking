@@ -105,12 +105,19 @@ artifact thủ công (`POST /api/v1/snapshots/{id}/analysis-runs`) vẫn chạy.
 ANALYSIS_RUNNER=docker
 ```
 
-Rồi **gỡ comment** mount socket trong `docker-compose.yml`:
+Rồi **gỡ comment CẢ HAI khối** trong `docker-compose.yml`:
 
 ```yaml
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "0"
 ```
+
+`group_add` không phải tuỳ chọn: socket thuộc `root:root` mode `660` (Docker Desktop), còn image
+core-backend chạy `USER app`. Chỉ mount socket thì sandbox chết ngay lượt đầu với lỗi kết nối tới
+daemon — gặp thật khi bật lần đầu. Thêm group sở hữu socket thay vì cho cả core-backend chạy bằng
+root. Trên máy Linux, gid của socket có thể khác 0: kiểm bằng `stat -c %g /var/run/docker.sock`.
 
 ### ⚠️ Mount socket đó = cấp quyền root trên máy chủ
 

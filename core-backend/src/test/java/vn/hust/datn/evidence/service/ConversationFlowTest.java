@@ -263,6 +263,52 @@ class ConversationFlowTest extends AbstractIntegrationTest {
         assertThat(conversationService.messages(conversation.id(), owner.getId())).hasSize(1);
     }
 
+    /**
+     * Gặp thật với Gemini free: model trả 503 "high demand" ở vòng giữa, agent-service gửi sự
+     * kiện {@code error} kèm trace của cả lượt gọi hỏng. Lượt hỏng đó phải thành một dòng
+     * {@code llm_trace} có lý do — thiếu nó thì "hỏng vì quá tải" không đếm được ở tuần 15.
+     */
+    @Test
+    void agentBaoLoiGiuaChung_ghiCaLuotGoiHong() {
+        doAnswer(invocation -> {
+                    Consumer<AgentClient.AgentEvent> onEvent = invocation.getArgument(1);
+                    onEvent.accept(new AgentClient.AgentEvent(
+                            "error",
+                            """
+                            {"type":"error","message":"tra ve HTTP 503: UNAVAILABLE: high demand",
+                             "traces":[
+                              {"iteration":0,"provider":"gemini","model":"m","prompt_version":"v1"},
+                              {"iteration":1,"provider":"gemini","model":"m","prompt_version":"v1",
+                               "error_message":"tra ve HTTP 503: UNAVAILABLE: high demand"}]}
+                            """));
+                    return null;
+                })
+                .when(agentClient)
+                .analyze(any(), any());
+        ConversationResponse conversation = openConversation();
+
+        conversationService.ask(conversation.id(), owner.getId(), "Hoi luc model qua tai");
+
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(20));
+        List<String> errors = List.of();
+        while (Instant.now().isBefore(deadline) && errors.size() < 2) {
+            errors = jdbcTemplate.queryForList(
+                    "SELECT coalesce(error_message, '') FROM llm_trace WHERE conversation_id = ? ORDER BY iteration",
+                    String.class,
+                    conversation.id());
+            if (errors.size() < 2) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+
+        assertThat(errors).containsExactly("", "tra ve HTTP 503: UNAVAILABLE: high demand");
+    }
+
     /** Lịch sử phải đi kèm sang agent, nếu không mọi câu hỏi tiếp theo đều là câu đầu tiên. */
     @Test
     void luotThuHaiMangTheoLichSu() {

@@ -37,6 +37,11 @@ _BUDGET_EXHAUSTED = (
     "và nói rõ trong `suggested_next_checks` những gì còn chưa kiểm được."
 )
 
+_SUBMIT_NOW = (
+    "Hãy nộp câu trả lời cuối cùng theo đúng lược đồ, dựa trên phân tích ở trên. Mọi nhận định "
+    "phải kèm Evidence ID đã lấy từ kết quả tool; không bịa ID."
+)
+
 _CONTEXT_EXHAUSTED = (
     "\n\n[Đã cắt: ngân sách bằng chứng của phiên này đã hết, phần còn lại không được đưa vào. "
     "Hãy kết luận dựa trên phần đã có, và ghi phần chưa xem được vào `suggested_next_checks`.]"
@@ -80,6 +85,12 @@ class AgentLoop:
             async for event in self._retrieve(messages, traces, analysis_run_id):
                 yield event
             yield await self._submit(messages, traces)
+        except _ModelCallFailedError as exc:
+            # Lượt gọi hỏng cũng là một dòng llm_trace: thiếu nó thì "hỏng vì model quá tải"
+            # không đếm được, và tỉ lệ lượt hỏi thất bại tuần 15 báo cáo thấp hơn thực tế.
+            traces.append(exc.trace)
+            logger.warning("goi model hong o vong %s: %s", exc.trace.iteration, exc)
+            yield ErrorEvent(message=str(exc), traces=traces)
         except Exception as exc:
             logger.exception("agent loop hong o vong %s", len(traces))
             yield ErrorEvent(message=str(exc), traces=traces)
@@ -100,6 +111,10 @@ class AgentLoop:
                 # chỉ định dạng lại kết luận này, không suy luận lại từ đầu.
                 if response.content:
                     messages.append(Message(role="assistant", content=response.content))
+                    # Bước nộp KHÔNG được kết thúc bằng lượt của model: Gemini trả 400 "Requests
+                    # ending with a model turn are not supported", Claude đời mới cũng từ chối
+                    # (prefill). Gặp thật ở lần chạy Gemini đầu tiên — provider giả không lộ ra.
+                    messages.append(Message(role="user", content=_SUBMIT_NOW))
                 return
 
             messages.append(
@@ -188,7 +203,21 @@ class AgentLoop:
         response_schema: dict[str, Any] | None = None,
     ) -> tuple[Any, LlmTraceEntry]:
         started = time.monotonic()
-        response = await self._provider.chat(messages, tools=tools, response_schema=response_schema)
+        try:
+            response = await self._provider.chat(
+                messages, tools=tools, response_schema=response_schema
+            )
+        except Exception as exc:
+            failed = LlmTraceEntry(
+                iteration=iteration,
+                provider=self._provider.provider_name,
+                model=self._provider.model_name,
+                prompt_version=self._prompt_version,
+                latency_ms=int((time.monotonic() - started) * 1000),
+                request_messages=[_trace_message(m) for m in messages],
+                error_message=str(exc),
+            )
+            raise _ModelCallFailedError(failed) from exc
         latency_ms = int((time.monotonic() - started) * 1000)
 
         trace = LlmTraceEntry(
@@ -204,6 +233,14 @@ class AgentLoop:
             response_content=response.content,
         )
         return response, trace
+
+
+class _ModelCallFailedError(Exception):
+    """Lượt gọi model hỏng, mang theo trace của chính lượt đó để vẫn ghi được vào llm_trace."""
+
+    def __init__(self, trace: LlmTraceEntry) -> None:
+        super().__init__(trace.error_message)
+        self.trace = trace
 
 
 def _trace_message(message: Message) -> dict[str, Any]:

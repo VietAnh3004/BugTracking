@@ -28,6 +28,14 @@ export function getAnalysisRun(runId: string): Promise<AnalysisRun> {
 }
 
 /**
+ * Cho backend tự chạy analyzer trong Docker sandbox. BẤT ĐỒNG BỘ: trả ngay (202) một run `RUNNING`,
+ * người gọi theo dõi bằng `getAnalysisRun` cho tới khi nó rời `RUNNING`.
+ */
+export function startSandboxRun(snapshotId: string): Promise<AnalysisRun> {
+  return apiClient.post<AnalysisRun>(`/api/v1/snapshots/${snapshotId}/analysis-runs/sandbox`);
+}
+
+/**
  * Nạp artifact analyzer. MỌI file đi chung field lặp `artifacts` — backend chọn parser theo NỘI
  * DUNG file, không theo tên field hay tên file (xem Javadoc `AnalysisRunController.ingest`).
  *

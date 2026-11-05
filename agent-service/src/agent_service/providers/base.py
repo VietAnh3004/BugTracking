@@ -24,6 +24,11 @@ class ToolCall(BaseModel):
     id: str
     name: str
     arguments: dict[str, Any]
+    # Dữ liệu riêng của provider, gửi trả NGUYÊN VĂN ở lượt sau. Agent loop không đọc nó. Vì
+    # sao cần: Gemini 3 qua endpoint tương thích OpenAI đính "thought signature" vào tool call và
+    # đòi gửi lại y nguyên, nhưng tài liệu không chốt nó nằm ở trường nào — giữ trọn mọi trường
+    # lạ thì đúng bất kể vị trí, còn bóc đúng một trường thì hỏng ngay khi họ đổi tên.
+    provider_data: dict[str, Any] = Field(default_factory=dict)
 
 
 class Message(BaseModel):

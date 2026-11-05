@@ -25,12 +25,22 @@ def build_provider(settings: Settings) -> LlmProvider:
                 "Thieu goi 'anthropic'. Cai bang: pip install -e '.[anthropic]'"
             ) from exc
 
+    if settings.llm_provider == "openai":
+        try:
+            from agent_service.providers.openai_provider import OpenAICompatibleProvider
+
+            return OpenAICompatibleProvider(settings)
+        except ImportError as exc:  # pragma: no cover - phụ thuộc môi trường cài đặt
+            raise ProviderNotAvailableError(
+                "Thieu goi 'openai'. Cai bang: pip install -e '.[openai]'"
+            ) from exc
+
     if settings.llm_provider == "scripted":
         from agent_service.providers.scripted import ScriptedProvider
 
         return ScriptedProvider.from_settings(settings)
 
     raise ProviderNotAvailableError(
-        f"Provider '{settings.llm_provider}' chua co cai dat. Tuan 12-13 moi lam anthropic; "
-        "openai va ollama la viec cua tuan 15 khi chay thuc nghiem nhieu provider."
+        f"Provider '{settings.llm_provider}' chua co cai dat rieng. Voi Ollama, dung "
+        "LLM_PROVIDER=openai va LLM_BASE_URL=http://<host>:11434/v1 (endpoint tuong thich OpenAI)."
     )

@@ -38,7 +38,9 @@ class AnthropicProvider(LlmProvider):
         if client is None:
             from anthropic import AsyncAnthropic
 
-            client = AsyncAnthropic(api_key=settings.llm_api_key)
+            client = AsyncAnthropic(
+                api_key=settings.llm_api_key, max_retries=settings.llm_max_retries
+            )
 
         self._client = client
         self._model = settings.llm_model
