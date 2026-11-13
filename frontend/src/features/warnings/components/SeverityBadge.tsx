@@ -13,17 +13,28 @@
 import type { WarningSeverity } from '@/features/warnings/api/warningApi';
 
 const SEVERITY_CLASSES: Record<WarningSeverity, string> = {
-  HIGH: 'bg-sev-high text-white',
-  MEDIUM: 'bg-sev-medium text-white',
-  LOW: 'bg-sev-low text-white',
-  INFO: 'bg-sev-info text-white',
+  HIGH: 'bg-sev-high/10 text-sev-high ring-sev-high/25',
+  MEDIUM: 'bg-sev-medium/10 text-sev-medium ring-sev-medium/25',
+  LOW: 'bg-sev-low/10 text-sev-low ring-sev-low/25',
+  INFO: 'bg-sev-info/10 text-sev-info ring-sev-info/25',
+};
+
+const DOT_CLASSES: Record<WarningSeverity, string> = {
+  HIGH: 'bg-sev-high',
+  MEDIUM: 'bg-sev-medium',
+  LOW: 'bg-sev-low',
+  INFO: 'bg-sev-info',
 };
 
 export function SeverityBadge({ severity }: { severity: WarningSeverity }) {
   return (
     <span
-      className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${SEVERITY_CLASSES[severity]}`}
+      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-wide ring-1 ring-inset ${SEVERITY_CLASSES[severity]}`}
     >
+      <span
+        aria-hidden="true"
+        className={`size-1.5 shrink-0 rounded-full ${DOT_CLASSES[severity]}`}
+      />
       {severity}
     </span>
   );

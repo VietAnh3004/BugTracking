@@ -10,7 +10,7 @@
  * Container duy nhất: gọi API rồi truyền số đã định dạng xuống, mọi component con thuần trình bày.
  */
 
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { ExportButtons } from '@/features/review/components/ExportButtons';
 import { Metric, MetricCard } from '@/features/review/components/MetricCard';
@@ -18,6 +18,7 @@ import { useRunMetrics } from '@/features/review/hooks/useReview';
 import { formatCount, formatDecimal, formatRatio } from '@/features/review/lib/formatMetric';
 import { ApiError } from '@/shared/lib/apiClient';
 import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
+import { PageHeader } from '@/shared/ui/PageHeader';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
 
 /** Bốn kết cục của CitationValidator, giữ nguyên thứ tự "tốt → xấu" để đọc thành một dãy. */
@@ -47,21 +48,18 @@ export function DashboardPage() {
   const { citationQuality: citation, reviewProgress: review, groundTruth, agentCost } = data;
 
   return (
-    <section className="flex flex-col gap-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Link
-            to={`/snapshots/${snapshotId}/runs/${runId}/warnings`}
-            className="text-brand text-sm"
-          >
-            ← Về danh sách cảnh báo
-          </Link>
-          <h1 className="mt-1 mb-0 text-xl font-semibold">Chỉ số của lần phân tích</h1>
-        </div>
-        <ExportButtons runId={runId} />
-      </header>
+    <section className="flex flex-col gap-5">
+      <PageHeader
+        back={{
+          to: `/snapshots/${snapshotId}/runs/${runId}/warnings`,
+          label: 'Về danh sách cảnh báo',
+        }}
+        title="Chỉ số của lần phân tích"
+        description="Rê chuột lên tên chỉ số có gạch chấm để xem định nghĩa. Dấu gạch nghĩa là chưa đủ dữ liệu để tính, không phải 0%."
+        actions={<ExportButtons runId={runId} />}
+      />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid items-start gap-5 lg:grid-cols-2">
         <MetricCard
           title="Chất lượng trích dẫn"
           note="Mỗi nhận định của Agent phải gắn Evidence ID kiểm chứng được. Hai tỉ lệ dưới đây là thước đo trung tâm của đồ án."

@@ -92,13 +92,13 @@ services:
     # container KHONG phai ranh gioi bao mat truoc lo hong kernel, va he thong nay chi nhan repo
     # tu nguoi dung DA XAC THUC.
     #
-    # volumes:
-    #   - /var/run/docker.sock:/var/run/docker.sock
-    # # Socket thuoc root:root mode 660 (Docker Desktop), con image chay USER app (khong phai root):
-    # # thieu dong nay thi sandbox chet ngay luot dau voi loi ket noi toi daemon. Them GROUP so huu
-    # # socket (gid 0) thay vi cho ca core-backend chay bang root.
-    # group_add:
-    #   - "0"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    # Socket thuoc root:root mode 660 (Docker Desktop), con image chay USER app (khong phai root):
+    # thieu dong nay thi sandbox chet ngay luot dau voi loi ket noi toi daemon. Them GROUP so huu
+    # socket (gid 0) thay vi cho ca core-backend chay bang root.
+    group_add:
+      - "0"
     # ==========================================================================================
     depends_on:
       postgres:

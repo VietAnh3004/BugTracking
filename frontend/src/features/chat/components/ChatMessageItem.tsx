@@ -13,7 +13,7 @@ export function ChatMessageItem({ message, snapshotId, runId }: ChatMessageItemP
   if (message.role === 'USER') {
     return (
       <li className="flex justify-end">
-        <p className="max-w-[85%] rounded-lg bg-sky-600 px-3 py-2 text-sm whitespace-pre-wrap text-white">
+        <p className="bg-brand m-0 max-w-[85%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm whitespace-pre-wrap text-white shadow-xs">
           {message.content}
         </p>
       </li>
@@ -21,12 +21,12 @@ export function ChatMessageItem({ message, snapshotId, runId }: ChatMessageItemP
   }
 
   return (
-    <li className="rounded-lg border border-slate-200 bg-white p-4">
+    <li className="border-border bg-surface rounded-2xl rounded-bl-md border p-4 shadow-xs sm:p-5">
       {message.verdict != null && (
         <VerdictBadge verdict={message.verdict} downgradedFrom={message.downgradedFromVerdict} />
       )}
 
-      <p className="mt-3 text-sm whitespace-pre-wrap text-slate-800">{message.content}</p>
+      <p className="text-ink mt-3 text-sm whitespace-pre-wrap">{message.content}</p>
 
       {message.claims.length > 0 && (
         <ul className="mt-3 space-y-2">
@@ -38,7 +38,9 @@ export function ChatMessageItem({ message, snapshotId, runId }: ChatMessageItemP
 
       {message.contradictingShortIds.length > 0 && (
         <section className="mt-3">
-          <h3 className="text-xs font-medium text-slate-600">Bằng chứng đi ngược lại kết luận</h3>
+          <h3 className="text-ink-muted text-xs font-semibold tracking-wider uppercase">
+            Bằng chứng đi ngược lại kết luận
+          </h3>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {message.contradictingShortIds.map((shortId) => (
               <CitationChip
@@ -57,8 +59,10 @@ export function ChatMessageItem({ message, snapshotId, runId }: ChatMessageItemP
 
       {message.suggestedNextChecks.length > 0 && (
         <section className="mt-3">
-          <h3 className="text-xs font-medium text-slate-600">Nên kiểm tra thêm</h3>
-          <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs text-slate-700">
+          <h3 className="text-ink-muted text-xs font-semibold tracking-wider uppercase">
+            Nên kiểm tra thêm
+          </h3>
+          <ul className="text-ink mt-1 list-inside list-disc space-y-0.5 text-xs">
             {message.suggestedNextChecks.map((check) => (
               <li key={check}>{check}</li>
             ))}

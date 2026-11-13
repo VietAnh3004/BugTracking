@@ -23,6 +23,7 @@ import { RelatedEvidenceGroup } from '@/features/evidence/components/RelatedEvid
 import { useEvidenceDetail } from '@/features/evidence/hooks/useEvidenceDetail';
 import { ApiError } from '@/shared/lib/apiClient';
 import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
+import { IconArrowLeft } from '@/shared/ui/icons';
 
 export function EvidenceExplorerPage() {
   const params = useParams();
@@ -33,12 +34,13 @@ export function EvidenceExplorerPage() {
   const { data, isPending, isError, error } = useEvidenceDetail(runId, shortId);
 
   return (
-    <article>
+    <article className="flex flex-col gap-5">
       <Link
         to={`/snapshots/${snapshotId}/runs/${runId}/warnings`}
-        className="text-brand mb-4 inline-block text-sm"
+        className="text-ink-muted hover:text-brand inline-flex items-center gap-1 self-start text-sm font-medium"
       >
-        ‹ Về danh sách cảnh báo
+        <IconArrowLeft className="size-3.5" />
+        Về danh sách cảnh báo
       </Link>
 
       {isPending ? <FullPageSpinner label="Đang tải bằng chứng…" /> : null}
@@ -51,7 +53,7 @@ export function EvidenceExplorerPage() {
           {data.relatedTotal === 0 ? (
             <EmptyEvidenceNotice locationResolved={data.filePath != null} />
           ) : (
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
               <div>
                 <RelatedEvidenceGroup
                   title="Ngữ cảnh mã nguồn"
@@ -108,7 +110,7 @@ export function EvidenceExplorerPage() {
            * Đánh đổi đã chấp nhận: người muốn đổi ý phải cuộn xuống cuối. Chấp nhận được vì đổi ý
            * là thao tác hiếm, còn đọc-rồi-quyết là thao tác chính.
            */}
-          <div className="mt-8">
+          <div className="mt-2">
             <ReviewPanel runId={runId} shortId={shortId} />
           </div>
         </>
@@ -137,7 +139,10 @@ function EvidenceError({ error }: { error: unknown }) {
           : 'Không tải được bằng chứng.';
 
   return (
-    <p className="text-sev-high border-sev-high rounded border p-3 text-sm" role="alert">
+    <p
+      className="m-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+      role="alert"
+    >
       {message}
     </p>
   );

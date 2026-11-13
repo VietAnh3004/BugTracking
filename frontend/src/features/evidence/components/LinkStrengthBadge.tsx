@@ -26,14 +26,16 @@ export function LinkStrengthBadge({ relation, method, weight }: LinkStrengthBadg
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5 text-xs" title={info.explain}>
       <span className="text-ink font-semibold">{RELATION_LABELS[relation]}</span>
-      <span className={`inline-block rounded px-1.5 py-0.5 ${TIER_CLASSES[info.tier]}`}>
+      <span
+        className={`inline-block rounded-md px-1.5 py-0.5 font-medium ring-1 ring-inset ${TIER_CLASSES[info.tier]}`}
+      >
         {info.label}
       </span>
       <span className="text-ink-muted tabular-nums" aria-label={`độ tin cậy ${String(weight)}`}>
         {TIER_DOTS[info.tier]} {weight.toFixed(2)}
       </span>
       {/* Mã enum nguyên văn: đây là thứ tuần 15 đếm, và người chấm phải đối chiếu được với SQL. */}
-      <code className="text-ink-muted font-mono text-[11px]">{method}</code>
+      <code className="text-ink-subtle font-mono text-[10px]">{method}</code>
       {info.tier === 'weak' ? (
         <span className="text-sev-medium font-semibold">⚠ liên kết yếu</span>
       ) : null}

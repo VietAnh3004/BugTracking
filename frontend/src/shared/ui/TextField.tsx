@@ -1,3 +1,5 @@
+import { INPUT } from '@/shared/ui/styles';
+
 /**
  * Ô nhập có nhãn. Thuần trình bày: không biết form nào đang dùng nó, không gọi API.
  *
@@ -30,8 +32,8 @@ export function TextField({
   placeholder,
 }: TextFieldProps) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-ink text-sm font-medium">
         {label}
       </label>
       <input
@@ -42,7 +44,7 @@ export function TextField({
         autoComplete={autoComplete}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="border-border focus:border-brand rounded border px-3 py-2 outline-none"
+        className={INPUT}
       />
     </div>
   );

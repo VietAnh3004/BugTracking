@@ -83,9 +83,9 @@ export const RELATION_LABELS: Record<EvidenceLinkRelation, string> = {
  * không màu — mà test đọc CHỮ thì vẫn xanh (cạm bẫy đã gặp thật với `SeverityBadge`).
  */
 export const TIER_CLASSES: Record<StrengthTier, string> = {
-  direct: 'bg-sev-info text-white',
-  derived: 'bg-ink-muted text-white',
-  weak: 'bg-sev-medium text-white',
+  direct: 'bg-sky-50 text-sky-800 ring-sky-600/25',
+  derived: 'bg-slate-100 text-slate-700 ring-slate-500/25',
+  weak: 'bg-orange-50 text-orange-800 ring-orange-600/25',
 };
 
 /** Ba chấm đặc/rỗng — đọc được mức tin cậy mà không cần đọc chữ. */

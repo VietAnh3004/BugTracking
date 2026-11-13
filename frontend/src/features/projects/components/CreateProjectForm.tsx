@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 import { useCreateProject } from '@/features/projects/hooks/useCreateProject';
 import { ApiError } from '@/shared/lib/apiClient';
+import { buttonClass } from '@/shared/ui/styles';
 import { TextField } from '@/shared/ui/TextField';
 
 import type { FormEvent } from 'react';
@@ -31,7 +32,7 @@ export function CreateProjectForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="border-border flex flex-col gap-3 rounded border p-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <TextField id="project-name" label="Tên dự án" value={name} onChange={setName} />
       <TextField
         id="project-description"
@@ -42,7 +43,7 @@ export function CreateProjectForm() {
       />
 
       {createProject.isError ? (
-        <p className="text-sm text-red-700" role="alert">
+        <p className="m-0 text-sm text-red-700" role="alert">
           {describeError(createProject.error)}
         </p>
       ) : null}
@@ -50,7 +51,7 @@ export function CreateProjectForm() {
       <button
         type="submit"
         disabled={createProject.isPending}
-        className="bg-brand hover:bg-brand-hover cursor-pointer self-start rounded px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+        className={`${buttonClass('primary')} w-full`}
       >
         {createProject.isPending ? 'Đang tạo…' : 'Tạo dự án'}
       </button>

@@ -19,7 +19,7 @@ import { Outlet } from 'react-router-dom';
 
 export function NarrowContent() {
   return (
-    <div className="mx-auto w-full max-w-[880px]">
+    <div className="mx-auto w-full max-w-[1040px]">
       <Outlet />
     </div>
   );

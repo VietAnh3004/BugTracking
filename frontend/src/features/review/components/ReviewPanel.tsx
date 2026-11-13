@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { ReviewDecision } from '@/features/review/api/reviewApi';
 import { useReviews, useSubmitReview } from '@/features/review/hooks/useReview';
+import { CARD, INPUT } from '@/shared/ui/styles';
 
 /**
  * Bốn lựa chọn của người dùng về một cảnh báo.
@@ -16,25 +17,25 @@ const CHOICES: { value: ReviewDecision; label: string; hint: string; className: 
     value: 'ACCEPT',
     label: 'Đúng là lỗi',
     hint: 'Cảnh báo có căn cứ, nên sửa mã.',
-    className: 'border-red-300 bg-red-50 text-red-800',
+    className: 'border-red-300 bg-red-50 text-red-800 ring-2 ring-red-200',
   },
   {
     value: 'REJECT',
     label: 'Báo nhầm',
     hint: 'Cảnh báo sai — nêu lý do trong mã ở phần ghi chú.',
-    className: 'border-emerald-300 bg-emerald-50 text-emerald-800',
+    className: 'border-emerald-300 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-200',
   },
   {
     value: 'UNCERTAIN',
     label: 'Chưa quyết được',
     hint: 'Đã xem đủ bằng chứng nhưng vẫn không chắc.',
-    className: 'border-amber-300 bg-amber-50 text-amber-800',
+    className: 'border-amber-300 bg-amber-50 text-amber-800 ring-2 ring-amber-200',
   },
   {
     value: 'INSUFFICIENT_EVIDENCE',
     label: 'Thiếu bằng chứng',
     hint: 'Hệ thống chưa đưa ra đủ bằng chứng để phán xét.',
-    className: 'border-slate-300 bg-slate-50 text-slate-700',
+    className: 'border-slate-400 bg-slate-100 text-slate-800 ring-2 ring-slate-200',
   },
 ];
 
@@ -78,9 +79,9 @@ export function ReviewPanel({ runId, shortId, messageId = null }: ReviewPanelPro
   }
 
   return (
-    <section className="border-border rounded-md border p-3">
-      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-ink m-0 text-sm font-semibold">Đánh giá của bạn</h3>
+    <section className={`${CARD} p-5`}>
+      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-ink m-0 text-base font-semibold">Đánh giá của bạn</h3>
         {existing === undefined ? (
           <span className="text-ink-muted text-xs">Chưa đánh giá</span>
         ) : (
@@ -91,7 +92,11 @@ export function ReviewPanel({ runId, shortId, messageId = null }: ReviewPanelPro
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <p className="text-ink-muted mt-0 mb-3 text-sm">
+        Sau khi xem bằng chứng ở trên, cảnh báo này là gì?
+      </p>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {CHOICES.map((choice) => {
           const active = existing?.decision === choice.value;
           return (
@@ -101,11 +106,14 @@ export function ReviewPanel({ runId, shortId, messageId = null }: ReviewPanelPro
               title={choice.hint}
               disabled={submit.isPending}
               onClick={() => choose(choice.value)}
-              className={`rounded-md border px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${
-                active ? choice.className : 'border-border text-ink-muted hover:bg-slate-50'
+              aria-pressed={active}
+              className={`flex cursor-pointer flex-col items-start gap-0.5 rounded-lg border px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                active
+                  ? choice.className
+                  : 'border-border bg-surface text-ink hover:border-border-strong hover:bg-surface-muted'
               }`}
             >
-              {choice.label}
+              <span className="text-sm font-semibold">{choice.label}</span>
             </button>
           );
         })}
@@ -121,7 +129,7 @@ export function ReviewPanel({ runId, shortId, messageId = null }: ReviewPanelPro
         rows={2}
         maxLength={2000}
         placeholder="Vì sao? (ghi chú này đi vào báo cáo)"
-        className="border-border mt-2 w-full resize-none rounded-md border px-2 py-1.5 text-xs"
+        className={`${INPUT} mt-3 resize-none`}
       />
 
       {submit.isError ? (

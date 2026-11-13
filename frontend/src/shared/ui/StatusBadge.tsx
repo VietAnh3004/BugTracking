@@ -16,10 +16,18 @@
 export type StatusTone = 'ok' | 'warning' | 'danger' | 'neutral';
 
 const TONE_CLASSES: Record<StatusTone, string> = {
-  ok: 'bg-green-100 text-green-800',
-  warning: 'bg-yellow-100 text-yellow-800',
-  danger: 'bg-red-100 text-red-800',
-  neutral: 'bg-slate-200 text-slate-700',
+  ok: 'bg-green-100 text-green-800 ring-green-600/20',
+  warning: 'bg-amber-100 text-amber-800 ring-amber-600/20',
+  danger: 'bg-red-100 text-red-800 ring-red-600/20',
+  neutral: 'bg-slate-100 text-slate-700 ring-slate-500/20',
+};
+
+/** Chấm màu đầu nhãn — đọc được trạng thái bằng màu kể cả khi lướt qua không đọc chữ. */
+const DOT_CLASSES: Record<StatusTone, string> = {
+  ok: 'bg-green-500',
+  warning: 'bg-amber-500',
+  danger: 'bg-red-500',
+  neutral: 'bg-slate-400',
 };
 
 interface StatusBadgeProps {
@@ -30,8 +38,9 @@ interface StatusBadgeProps {
 export function StatusBadge({ tone, label }: StatusBadgeProps) {
   return (
     <span
-      className={`inline-block rounded-full px-2.5 py-0.5 text-sm font-semibold ${TONE_CLASSES[tone]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${TONE_CLASSES[tone]}`}
     >
+      <span aria-hidden="true" className={`size-1.5 shrink-0 rounded-full ${DOT_CLASSES[tone]}`} />
       {label}
     </span>
   );

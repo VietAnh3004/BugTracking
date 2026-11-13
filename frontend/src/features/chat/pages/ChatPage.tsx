@@ -9,6 +9,8 @@ import {
   useCreateConversation,
   useMessages,
 } from '@/features/chat/hooks/useConversation';
+import { IconArrowLeft, IconChat } from '@/shared/ui/icons';
+import { buttonClass, CARD, INPUT } from '@/shared/ui/styles';
 
 /**
  * Hỏi đáp với Agent về một lần phân tích.
@@ -59,56 +61,64 @@ export function ChatPage() {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-8rem)] w-full max-w-4xl flex-col gap-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">Hỏi Agent</h1>
-          <p className="text-sm text-slate-600">
-            Mọi nhận định đều kèm Evidence ID đã được đối chiếu với kho bằng chứng.{' '}
-            <Link
-              to={`/snapshots/${snapshotId}/runs/${runId}/warnings`}
-              className="text-sky-700 hover:underline"
-            >
-              Về bảng cảnh báo
-            </Link>
-          </p>
-        </div>
+    <div className="mx-auto flex h-[calc(100vh-11rem)] min-h-[32rem] w-full max-w-4xl flex-col gap-4">
+      <header className="flex flex-col gap-3">
+        <Link
+          to={`/snapshots/${snapshotId}/runs/${runId}/warnings`}
+          className="text-ink-muted hover:text-brand inline-flex items-center gap-1 self-start text-sm font-medium"
+        >
+          <IconArrowLeft className="size-3.5" />
+          Về bảng cảnh báo
+        </Link>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-ink m-0 text-2xl font-semibold tracking-tight">Hỏi Agent</h1>
+            <p className="text-ink-muted mt-1 mb-0 text-sm">
+              Mọi nhận định đều kèm Evidence ID đã được đối chiếu với kho bằng chứng.
+            </p>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <label htmlFor="conversation-picker" className="sr-only">
-            Chọn phiên hỏi đáp
-          </label>
-          <select
-            id="conversation-picker"
-            value={selectedId}
-            onChange={(event) => selectConversation(event.target.value)}
-            className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
-          >
-            <option value="">— chọn phiên —</option>
-            {(conversations.data ?? []).map((conversation) => (
-              <option key={conversation.id} value={conversation.id}>
-                {conversation.title}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => void startConversation()}
-            disabled={createConversation.isPending}
-            className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
-          >
-            Phiên mới{focus != null ? ` về ${focus}` : ''}
-          </button>
+          <div className="flex items-center gap-2">
+            <label htmlFor="conversation-picker" className="sr-only">
+              Chọn phiên hỏi đáp
+            </label>
+            <select
+              id="conversation-picker"
+              value={selectedId}
+              onChange={(event) => selectConversation(event.target.value)}
+              className={`${INPUT} w-56`}
+            >
+              <option value="">— chọn phiên —</option>
+              {(conversations.data ?? []).map((conversation) => (
+                <option key={conversation.id} value={conversation.id}>
+                  {conversation.title}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => void startConversation()}
+              disabled={createConversation.isPending}
+              className={buttonClass('primary')}
+            >
+              Phiên mới{focus != null ? ` về ${focus}` : ''}
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <div className={`${CARD} bg-surface-muted flex-1 overflow-y-auto p-4 sm:p-5`}>
         {selectedId === '' ? (
-          <p className="text-sm text-slate-600">
-            Chưa có phiên nào được chọn. Bấm <strong>Phiên mới</strong> để bắt đầu.
-          </p>
+          <div className="text-ink-muted flex h-full flex-col items-center justify-center gap-3 text-center text-sm">
+            <span className="bg-brand-subtle text-brand grid size-12 place-items-center rounded-xl">
+              <IconChat className="size-6" />
+            </span>
+            <p className="m-0 max-w-sm">
+              Chưa có phiên nào được chọn. Bấm <strong>Phiên mới</strong> để bắt đầu.
+            </p>
+          </div>
         ) : messages.isPending ? (
-          <p className="text-sm text-slate-600">Đang tải lịch sử…</p>
+          <p className="text-ink-muted text-sm">Đang tải lịch sử…</p>
         ) : (
           <ul className="space-y-3">
             {(messages.data ?? []).map((message) => (
@@ -127,7 +137,10 @@ export function ChatPage() {
         </div>
 
         {error != null && (
-          <p role="alert" className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-800">
+          <p
+            role="alert"
+            className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          >
             {error}
           </p>
         )}
@@ -135,7 +148,7 @@ export function ChatPage() {
         <div ref={bottom} />
       </div>
 
-      <form onSubmit={(event) => void submit(event)} className="flex items-end gap-2">
+      <form onSubmit={(event) => void submit(event)} className={`${CARD} flex items-end gap-2 p-2`}>
         <label htmlFor="question" className="sr-only">
           Câu hỏi
         </label>
@@ -146,12 +159,12 @@ export function ChatPage() {
           rows={2}
           disabled={selectedId === '' || isStreaming}
           placeholder="Ví dụ: có test nào liên quan tới cảnh báo này không?"
-          className="flex-1 resize-none rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100"
+          className="text-ink placeholder:text-ink-subtle disabled:bg-surface-muted flex-1 resize-none rounded-lg border-0 bg-transparent px-3 py-2 text-sm outline-none"
         />
         <button
           type="submit"
           disabled={selectedId === '' || isStreaming || draft.trim() === ''}
-          className="rounded-md bg-sky-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className={buttonClass('primary')}
         >
           {isStreaming ? 'Đang hỏi…' : 'Gửi'}
         </button>

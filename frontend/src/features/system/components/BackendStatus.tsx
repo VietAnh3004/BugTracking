@@ -1,5 +1,5 @@
 /**
- * Hiển thị trạng thái kết nối backend.
+ * Hiển thị trạng thái kết nối backend, gọn trong một dòng ở chân trang.
  *
  * Component chỉ ráp giao diện; toàn bộ logic lấy dữ liệu nằm trong `useBackendHealth`.
  * Cả ba trạng thái bất đồng bộ đều được render, không chỉ trường hợp thành công.
@@ -26,21 +26,21 @@ export function BackendStatus() {
         : 'Không gọi được backend (kiểm tra backend đã chạy chưa và CORS_ORIGINS có chứa origin này không)';
 
     return (
-      <div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <StatusBadge tone="danger" label="Mất kết nối backend" />
-        <p className="text-sm text-red-700">{reason}</p>
-        <p className="text-ink-muted text-xs">API: {appConfig.apiBaseUrl}</p>
+        <p className="m-0 text-xs text-red-700">{reason}</p>
+        <p className="text-ink-subtle m-0 font-mono text-xs">API: {appConfig.apiBaseUrl}</p>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       <StatusBadge
         tone={data.status === 'UP' ? 'ok' : 'warning'}
         label={`Backend: ${data.status}`}
       />
-      <p className="text-ink-muted text-xs">API: {appConfig.apiBaseUrl}</p>
+      <p className="text-ink-subtle m-0 font-mono text-xs">API: {appConfig.apiBaseUrl}</p>
     </div>
   );
 }

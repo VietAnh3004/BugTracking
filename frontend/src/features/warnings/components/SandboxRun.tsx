@@ -9,7 +9,9 @@ import { Link } from 'react-router-dom';
 
 import { formatElapsed } from '@/features/warnings/lib/formatElapsed';
 import { ApiError } from '@/shared/lib/apiClient';
+import { IconPlay } from '@/shared/ui/icons';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
+import { buttonClass, TEXT_LINK } from '@/shared/ui/styles';
 
 import type { useSandboxRun } from '@/features/warnings/hooks/useWarnings';
 
@@ -21,8 +23,16 @@ export function SandboxRunButton({ sandbox }: { sandbox: SandboxRunState }) {
       type="button"
       onClick={sandbox.start}
       disabled={sandbox.running}
-      className="bg-brand hover:bg-brand-hover cursor-pointer rounded px-3 py-1 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+      className={buttonClass('primary')}
     >
+      {sandbox.running ? (
+        <span
+          aria-hidden="true"
+          className="inline-block size-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+        />
+      ) : (
+        <IconPlay className="size-3.5" />
+      )}
       {sandbox.running ? 'Đang phân tích…' : 'Phân tích tự động'}
     </button>
   );
@@ -39,7 +49,10 @@ export function SandboxRunStatus({
 
   if (startError !== null) {
     return (
-      <p className="m-0 text-sm text-red-700" role="alert">
+      <p
+        className="m-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        role="alert"
+      >
         {describeStartError(startError)}
       </p>
     );
@@ -47,7 +60,11 @@ export function SandboxRunStatus({
 
   if (running) {
     return (
-      <div role="status" aria-live="polite" className="flex flex-col gap-1">
+      <div
+        role="status"
+        aria-live="polite"
+        className="border-brand-ring bg-brand-subtle flex flex-col gap-1 rounded-xl border px-4 py-3"
+      >
         <StatusBadge
           tone="neutral"
           label="Đang phân tích tự động — biên dịch, chạy test, SpotBugs, Semgrep"
@@ -70,7 +87,10 @@ export function SandboxRunStatus({
 
   if (run.status === 'FAILED') {
     return (
-      <div role="alert" className="flex flex-col gap-1">
+      <div
+        role="alert"
+        className="flex flex-col gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
+      >
         <StatusBadge tone="danger" label="Phân tích tự động thất bại" />
         <p className="m-0 text-sm text-red-700">{run.errorMessage ?? 'Backend không ghi lý do.'}</p>
       </div>
@@ -78,7 +98,10 @@ export function SandboxRunStatus({
   }
 
   return (
-    <div role="status" className="flex flex-wrap items-center gap-3">
+    <div
+      role="status"
+      className="flex flex-wrap items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3"
+    >
       <StatusBadge
         tone="ok"
         label={
@@ -89,7 +112,7 @@ export function SandboxRunStatus({
       />
       <Link
         to={`/snapshots/${snapshotId}/runs/${run.id}/warnings`}
-        className="text-brand text-sm font-semibold"
+        className={`${TEXT_LINK} text-sm`}
       >
         Xem danh sách cảnh báo →
       </Link>

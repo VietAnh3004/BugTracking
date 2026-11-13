@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { CHUA_CO } from '@/features/review/lib/formatMetric';
+import { CARD } from '@/shared/ui/styles';
 
 /** Một nhóm chỉ số. `note` để nói rõ chỉ số nghĩa là gì — người chấm không đoán được từ nhãn. */
 export function MetricCard({
@@ -13,10 +14,12 @@ export function MetricCard({
   children: ReactNode;
 }) {
   return (
-    <section className="border-border rounded-md border p-4">
-      <h2 className="text-ink m-0 text-sm font-semibold">{title}</h2>
-      {note === undefined ? null : <p className="text-ink-muted mt-1 mb-0 text-xs">{note}</p>}
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">{children}</dl>
+    <section className={`${CARD} p-5`}>
+      <h2 className="text-ink m-0 text-base font-semibold">{title}</h2>
+      {note === undefined ? null : (
+        <p className="text-ink-muted mt-1 mb-0 text-xs leading-relaxed">{note}</p>
+      )}
+      <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{children}</dl>
     </section>
   );
 }
@@ -30,12 +33,15 @@ export function MetricCard({
 export function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
   const missing = value === CHUA_CO;
   return (
-    <div>
-      <dt className="text-ink-muted text-xs" title={hint}>
+    <div className="bg-surface-muted rounded-lg px-3 py-2.5">
+      <dt
+        className={`text-ink-muted text-xs ${hint === undefined ? '' : 'cursor-help underline decoration-dotted underline-offset-2'}`}
+        title={hint}
+      >
         {label}
       </dt>
       <dd
-        className={`m-0 text-lg font-semibold ${missing ? 'text-ink-muted font-normal' : ''}`}
+        className={`m-0 mt-0.5 text-xl tracking-tight tabular-nums ${missing ? 'text-ink-subtle font-normal' : 'text-ink font-semibold'}`}
         // Dấu gạch một mình không nói được gì cho người dùng trình đọc màn hình.
         aria-label={missing ? `${label}: chưa đủ dữ liệu để tính` : undefined}
       >

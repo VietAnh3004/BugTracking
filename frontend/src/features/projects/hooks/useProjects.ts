@@ -12,10 +12,24 @@ import { apiClient } from '@/shared/lib/apiClient';
 import type { components } from '@/shared/lib/api-types';
 
 export type ProjectPage = components['schemas']['PageResponseProjectResponse'];
+export type Project = components['schemas']['ProjectResponse'];
 
 export function useProjects() {
   return useQuery({
     queryKey: ['projects'],
     queryFn: () => apiClient.get<ProjectPage>('/api/v1/projects'),
+  });
+}
+
+/**
+ * Một dự án — để trang chi tiết hiện được TÊN dự án thay vì chỉ có UUID trên URL.
+ *
+ * Khoá `['projects', id]` nằm dưới `['projects']` có chủ đích: tạo/xoá dự án invalidate `['projects']`
+ * thì bản chi tiết cũng được làm mới theo, không phải nhớ invalidate riêng.
+ */
+export function useProject(projectId: string) {
+  return useQuery({
+    queryKey: ['projects', projectId],
+    queryFn: () => apiClient.get<Project>(`/api/v1/projects/${projectId}`),
   });
 }

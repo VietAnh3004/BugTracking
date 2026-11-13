@@ -15,6 +15,8 @@ import type { ReviewDecision } from '@/features/review/api/reviewApi';
 import { DecisionBadge } from '@/features/review/components/DecisionBadge';
 import { toFilePathUrl, toLineHash } from '@/features/snapshots/lib/filePathUrl';
 import { SeverityBadge } from '@/features/warnings/components/SeverityBadge';
+import { displaySummary } from '@/features/warnings/lib/displaySummary';
+import { CARD } from '@/shared/ui/styles';
 
 import type { Warning } from '@/features/warnings/api/warningApi';
 
@@ -35,8 +37,8 @@ interface WarningTableProps {
 export function WarningTable({ warnings, snapshotId, runId, reviewByShortId }: WarningTableProps) {
   return (
     // `overflow-x-auto` + `min-w`: dưới ngưỡng đó thì bảng tự cuộn ngang, KHÔNG bóp cột cho vừa.
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[64rem] table-fixed border-collapse text-sm">
+    <div className={`${CARD} overflow-x-auto`}>
+      <table className="w-full min-w-[60rem] table-fixed border-collapse text-sm">
         {/*
          * `table-fixed` + colgroup là bắt buộc chứ không phải trang trí. Ở chế độ `table-auto` mặc
          * định, trình duyệt chia chỗ theo chiều rộng TỐI THIỂU của nội dung — mà cột Vị trí dùng
@@ -45,32 +47,31 @@ export function WarningTable({ warnings, snapshotId, runId, reviewByShortId }: W
          * và kéo hàng cao vống lên. Chốt cứng chiều rộng thì bố cục không còn phụ thuộc nội dung.
          */}
         <colgroup>
-          <col className="w-24" />
           <col className="w-28" />
-          <col className="w-64" />
           <col className="w-72" />
+          <col className="w-64" />
           <col />
-          <col className="w-32" />
+          <col className="w-36" />
         </colgroup>
         <thead>
-          <tr className="border-border text-ink-muted border-b text-left">
-            <th className="py-2 pr-3 font-medium">Mức</th>
-            <th className="py-2 pr-3 font-medium">Công cụ</th>
-            <th className="py-2 pr-3 font-medium">Luật</th>
-            <th className="py-2 pr-3 font-medium">Vị trí</th>
-            <th className="py-2 pr-3 font-medium">Tóm tắt</th>
-            <th className="py-2 font-medium">Đánh giá</th>
+          <tr className="border-border bg-surface-muted text-ink-muted border-b text-left text-xs tracking-wider uppercase">
+            <th className="py-2.5 pr-3 pl-4 font-semibold">Mức</th>
+            <th className="py-2.5 pr-3 font-semibold">Luật · công cụ</th>
+            <th className="py-2.5 pr-3 font-semibold">Vị trí</th>
+            <th className="py-2.5 pr-3 font-semibold">Mô tả</th>
+            <th className="py-2.5 pr-4 font-semibold">Đánh giá</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-border divide-y">
           {warnings.map((warning) => (
-            <tr key={warning.evidenceId} className="border-border border-b align-top">
-              <td className="py-2 pr-3">
+            <tr key={warning.evidenceId} className="hover:bg-surface-muted/70 align-top">
+              <td className="py-3 pr-3 pl-4">
                 <SeverityBadge severity={warning.severityNormalized} />
               </td>
-              <td className="text-ink-muted py-2 pr-3">{warning.tool}</td>
-              <td className="py-2 pr-3">
-                <span className="font-mono text-xs break-all">{warning.ruleIdNormalized}</span>
+              <td className="py-3 pr-3">
+                <span className="text-ink block font-mono text-xs font-medium break-all">
+                  {warning.ruleIdNormalized}
+                </span>
                 {/*
                  * `shortId` là lối vào Evidence Explorer, và nó vá luôn một lỗ hổng sẵn có: khi
                  * `filePath` NULL (không đối chiếu được với snapshot) thì cột Vị trí không render
@@ -80,19 +81,25 @@ export function WarningTable({ warnings, snapshotId, runId, reviewByShortId }: W
                  * Cũng là chỗ dạy người dùng rằng Evidence ID bấm được — đúng affordance mà
                  * citation của chatbot sẽ dùng lại ở tuần 12-13.
                  */}
-                <Link
-                  to={`/snapshots/${snapshotId}/runs/${runId}/evidence/${warning.shortId}`}
-                  className="text-brand ml-2 font-mono text-xs"
-                  title="Mở Evidence Explorer: ngữ cảnh mã, test liên quan và độ phủ"
-                >
-                  {warning.shortId}
-                </Link>
+                <span className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <Link
+                    to={`/snapshots/${snapshotId}/runs/${runId}/evidence/${warning.shortId}`}
+                    className="bg-brand-subtle text-brand hover:bg-brand rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold transition-colors hover:text-white"
+                    title="Mở Evidence Explorer: ngữ cảnh mã, test liên quan và độ phủ"
+                  >
+                    {warning.shortId}
+                  </Link>
+                  <span className="text-ink-subtle text-xs">{warning.tool}</span>
+                </span>
               </td>
-              <td className="py-2 pr-3">
+              <td className="py-3 pr-3">
                 <WarningLocation warning={warning} snapshotId={snapshotId} />
               </td>
-              <td className="py-2 pr-3">{warning.summary}</td>
-              <td className="py-2">
+              {/* Bảng hiện bản rút gọn; câu đầy đủ (như Agent đọc) vẫn xem được khi rê chuột. */}
+              <td className="text-ink py-3 pr-3 leading-relaxed" title={warning.summary}>
+                {displaySummary(warning.summary)}
+              </td>
+              <td className="py-3 pr-4">
                 <DecisionBadge decision={reviewByShortId?.get(warning.shortId)} />
               </td>
             </tr>
@@ -134,10 +141,10 @@ function WarningLocation({ warning, snapshotId }: { warning: Warning; snapshotId
   return (
     <Link
       to={`/snapshots/${snapshotId}/files/${toFilePathUrl(warning.filePath)}${hash}`}
-      className="text-brand block font-mono text-xs"
+      className="group block font-mono text-xs"
     >
-      {dir === '' ? null : <span className="text-ink-muted block break-all">{dir}</span>}
-      <span className="block break-all">
+      {dir === '' ? null : <span className="text-ink-subtle block break-all">{dir}</span>}
+      <span className="text-brand block font-medium break-all group-hover:underline">
         {fileName}
         {suffix}
       </span>

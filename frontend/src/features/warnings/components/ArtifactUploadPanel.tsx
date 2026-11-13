@@ -14,7 +14,9 @@ import { Link } from 'react-router-dom';
 
 import { useIngestArtifacts } from '@/features/warnings/hooks/useWarnings';
 import { ApiError } from '@/shared/lib/apiClient';
+import { IconUpload } from '@/shared/ui/icons';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
+import { buttonClass, CARD, TEXT_LINK } from '@/shared/ui/styles';
 
 import type { AnalysisRun } from '@/features/warnings/api/warningApi';
 import type { DragEvent } from 'react';
@@ -66,17 +68,14 @@ export function ArtifactUploadPanel({ snapshotId, onClose }: ArtifactUploadPanel
   }
 
   return (
-    <section
-      aria-label="Nạp kết quả phân tích"
-      className="border-border flex flex-col gap-3 rounded border p-4"
-    >
+    <section aria-label="Nạp kết quả phân tích" className={`${CARD} flex flex-col gap-4 p-5`}>
       <div className="flex items-center justify-between gap-3">
         <h2 className="m-0 text-base font-semibold">Nạp kết quả phân tích</h2>
         <button
           type="button"
           onClick={onClose}
           disabled={ingest.isPending}
-          className="text-ink-muted cursor-pointer text-sm hover:underline disabled:cursor-not-allowed"
+          className={buttonClass('ghost', 'sm')}
         >
           Đóng
         </button>
@@ -98,15 +97,13 @@ export function ArtifactUploadPanel({ snapshotId, onClose }: ArtifactUploadPanel
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
-        className={`rounded border-2 border-dashed p-4 text-center ${
-          dragging ? 'border-brand bg-brand-subtle' : 'border-border'
+        className={`flex flex-col items-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors ${
+          dragging ? 'border-brand bg-brand-subtle' : 'border-border-strong bg-surface-muted'
         }`}
       >
+        <IconUpload className="text-brand mb-2 size-6" />
         <p className="text-ink-muted mt-0 mb-2 text-sm">Kéo thả file vào đây, hoặc</p>
-        <label
-          htmlFor={inputId}
-          className="border-brand text-brand hover:bg-brand-subtle inline-block cursor-pointer rounded border px-4 py-1.5 font-semibold"
-        >
+        <label htmlFor={inputId} className={buttonClass('secondary')}>
           Chọn file
         </label>
         <input
@@ -128,7 +125,7 @@ export function ArtifactUploadPanel({ snapshotId, onClose }: ArtifactUploadPanel
           {files.map((file) => (
             <li
               key={fileKey(file)}
-              className="bg-surface-muted flex items-center justify-between gap-3 rounded px-3 py-1"
+              className="bg-surface-muted flex items-center justify-between gap-3 rounded-lg px-3 py-1.5"
             >
               <span className="min-w-0 truncate font-mono">{file.name}</span>
               <span className="text-ink-muted flex shrink-0 items-center gap-3">
@@ -152,16 +149,16 @@ export function ArtifactUploadPanel({ snapshotId, onClose }: ArtifactUploadPanel
         type="button"
         onClick={submit}
         disabled={files.length === 0 || ingest.isPending}
-        className="bg-brand hover:bg-brand-hover cursor-pointer self-start rounded px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+        className={`${buttonClass('primary')} self-start`}
       >
         {ingest.isPending ? 'Đang nạp…' : `Nạp ${String(files.length)} file`}
       </button>
 
       {ingest.isPending ? (
         <div role="status" aria-live="polite">
-          <div className="bg-border h-2 w-full overflow-hidden rounded">
+          <div className="bg-border h-2 w-full overflow-hidden rounded-full">
             <div
-              className="bg-brand h-full transition-[width]"
+              className="bg-brand h-full rounded-full transition-[width]"
               style={{ width: `${String(ingest.progress)}%` }}
             />
           </div>
@@ -212,7 +209,7 @@ function IngestResult({ run, snapshotId }: { run: AnalysisRun; snapshotId: strin
       ) : null}
       <Link
         to={`/snapshots/${snapshotId}/runs/${run.id}/warnings`}
-        className="text-brand self-start font-semibold"
+        className={`${TEXT_LINK} self-start text-sm`}
       >
         Xem danh sách cảnh báo →
       </Link>

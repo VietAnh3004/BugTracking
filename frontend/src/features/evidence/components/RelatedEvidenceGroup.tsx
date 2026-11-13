@@ -35,17 +35,20 @@ export function RelatedEvidenceGroup({
   anchorStartLine,
 }: RelatedEvidenceGroupProps) {
   return (
-    <section className="mb-6">
-      <h3 className="text-ink mb-2 text-sm font-semibold tracking-wide uppercase">
-        {title} <span className="text-ink-muted tabular-nums">({items.length})</span>
+    <section className="mb-6 last:mb-0">
+      <h3 className="text-ink-muted mt-0 mb-2.5 flex items-center gap-2 text-xs font-semibold tracking-wider uppercase">
+        {title}{' '}
+        <span className="bg-surface-sunken text-ink-muted rounded-full px-2 py-0.5 text-[11px] tabular-nums">
+          ({items.length})
+        </span>
       </h3>
 
       {items.length === 0 ? (
-        <p className="border-border text-ink m-0 rounded border border-dashed p-3 text-sm">
+        <p className="border-border-strong bg-surface text-ink m-0 rounded-xl border border-dashed px-4 py-3 text-sm">
           {emptyMessage}
         </p>
       ) : (
-        <ul className="m-0 grid list-none gap-2 p-0">
+        <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0">
           {items.map((item) => (
             <RelatedEvidenceCard
               key={`${item.shortId}-${item.relation}-${item.method}`}

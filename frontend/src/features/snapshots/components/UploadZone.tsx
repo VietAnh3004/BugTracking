@@ -11,6 +11,8 @@ import { useRef, useState } from 'react';
 
 import { useUploadSnapshot } from '@/features/snapshots/hooks/useSnapshots';
 import { ApiError } from '@/shared/lib/apiClient';
+import { IconUpload } from '@/shared/ui/icons';
+import { buttonClass } from '@/shared/ui/styles';
 
 import type { DragEvent } from 'react';
 
@@ -40,16 +42,16 @@ export function UploadZone({ projectId }: { projectId: string }) {
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
-      className={`rounded border-2 border-dashed p-6 text-center ${
-        dragging ? 'border-brand bg-brand-subtle' : 'border-border'
+      className={`flex flex-col items-center rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
+        dragging ? 'border-brand bg-brand-subtle' : 'border-border-strong bg-surface-muted'
       }`}
     >
+      <span className="bg-surface text-brand mb-3 grid size-11 place-items-center rounded-full shadow-xs">
+        <IconUpload className="size-5" />
+      </span>
       <p className="text-ink-muted mt-0 mb-3 text-sm">Kéo thả file .zip của repo vào đây, hoặc</p>
 
-      <label
-        htmlFor="snapshot-file"
-        className="bg-brand hover:bg-brand-hover inline-block cursor-pointer rounded px-4 py-2 font-semibold text-white"
-      >
+      <label htmlFor="snapshot-file" className={buttonClass('primary')}>
         Chọn file zip
       </label>
       <input
@@ -67,10 +69,10 @@ export function UploadZone({ projectId }: { projectId: string }) {
       />
 
       {upload.isPending ? (
-        <div className="mt-4" role="status" aria-live="polite">
-          <div className="bg-border h-2 w-full overflow-hidden rounded">
+        <div className="mt-4 w-full" role="status" aria-live="polite">
+          <div className="bg-border h-2 w-full overflow-hidden rounded-full">
             <div
-              className="bg-brand h-full transition-[width]"
+              className="bg-brand h-full rounded-full transition-[width]"
               style={{ width: `${String(upload.progress)}%` }}
             />
           </div>

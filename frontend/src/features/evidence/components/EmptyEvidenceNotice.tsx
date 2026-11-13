@@ -15,7 +15,7 @@
 
 export function EmptyEvidenceNotice({ locationResolved }: { locationResolved: boolean }) {
   return (
-    <div className="border-border text-ink rounded border border-dashed p-4">
+    <div className="border-border-strong bg-surface text-ink rounded-xl border border-dashed p-5">
       <p className="mt-0 mb-2 font-semibold">
         Không có bằng chứng nào liên kết tới bằng chứng này.
       </p>

@@ -21,7 +21,9 @@ import { useLineTarget } from '@/features/snapshots/hooks/useLineTarget';
 import { fromRouteParam } from '@/features/snapshots/lib/filePathUrl';
 import { ApiError } from '@/shared/lib/apiClient';
 import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
+import { IconCode, IconFile } from '@/shared/ui/icons';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
+import { CARD } from '@/shared/ui/styles';
 
 export function SourceViewerPage() {
   const params = useParams<{ snapshotId: string; '*': string }>();
@@ -34,7 +36,16 @@ export function SourceViewerPage() {
   const targetRange = useLineTarget(data !== undefined);
 
   if (path === '') {
-    return <p className="text-ink-muted">Chọn một file ở cây bên trái để xem nội dung.</p>;
+    return (
+      <div
+        className={`${CARD} text-ink-muted flex flex-col items-center px-6 py-16 text-center text-sm`}
+      >
+        <span className="bg-surface-sunken mb-3 grid size-11 place-items-center rounded-xl">
+          <IconCode className="size-5" />
+        </span>
+        <p className="m-0">Chọn một file ở cây bên trái để xem nội dung.</p>
+      </div>
+    );
   }
 
   if (isPending) {
@@ -46,19 +57,22 @@ export function SourceViewerPage() {
   }
 
   return (
-    <article className="min-w-0">
-      <header className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="m-0 font-mono text-sm break-all">{path}</h2>
-        <span className="text-ink-muted text-sm">{data.totalLines} dòng</span>
+    <article className={`${CARD} min-w-0 overflow-hidden`}>
+      <header className="border-border bg-surface-muted flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5">
+        <h2 className="text-ink m-0 flex min-w-0 items-center gap-2 font-mono text-[13px] font-medium break-all">
+          <IconFile className="text-ink-muted size-4" />
+          {path}
+        </h2>
+        <span className="text-ink-muted text-xs">{data.totalLines} dòng</span>
       </header>
 
       {data.truncated ? (
-        <p className="border-border bg-surface-muted text-ink-muted mb-2 rounded border px-3 py-2 text-sm">
+        <p className="border-border m-0 border-b bg-amber-50 px-4 py-2 text-sm text-amber-800">
           Đang hiển thị dòng {data.fromLine}–{data.toLine} trên tổng {data.totalLines} dòng.
         </p>
       ) : null}
 
-      <div className="bg-code-bg border-border overflow-x-auto rounded border p-2 font-mono text-sm">
+      <div className="bg-code-bg overflow-x-auto py-2 font-mono text-[13px] leading-6">
         {data.lines.map((text, index) => {
           // Số dòng thật = dòng bắt đầu của lát + vị trí trong lát. Dùng chỉ số mảng làm số dòng là
           // sai ngay khi người dùng mở một khoảng dòng bắt đầu từ giữa file.

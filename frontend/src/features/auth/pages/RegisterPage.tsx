@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthForm } from '@/features/auth/components/AuthForm';
 import { useRegister } from '@/features/auth/hooks/useRegister';
 import { ApiError } from '@/shared/lib/apiClient';
+import { TEXT_LINK } from '@/shared/ui/styles';
 import { TextField } from '@/shared/ui/TextField';
 
 import type { FormEvent } from 'react';
@@ -26,6 +27,7 @@ export function RegisterPage() {
   return (
     <AuthForm
       title="Đăng ký"
+      subtitle="Tạo tài khoản để tải mã nguồn lên và phân tích."
       submitLabel="Tạo tài khoản"
       pending={register.isPending}
       errorMessage={register.isError ? describeRegisterError(register.error) : null}
@@ -33,7 +35,7 @@ export function RegisterPage() {
       footer={
         <>
           Đã có tài khoản?{' '}
-          <Link to="/login" className="text-brand">
+          <Link to="/login" className={TEXT_LINK}>
             Đăng nhập
           </Link>
         </>

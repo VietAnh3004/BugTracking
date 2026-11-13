@@ -19,7 +19,10 @@ import { WarningTable } from '@/features/warnings/components/WarningTable';
 import { useAnalysisRun, useWarnings } from '@/features/warnings/hooks/useWarnings';
 import { ApiError } from '@/shared/lib/apiClient';
 import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
+import { IconChart, IconChat } from '@/shared/ui/icons';
+import { PageHeader } from '@/shared/ui/PageHeader';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
+import { buttonClass, CARD } from '@/shared/ui/styles';
 
 import type { WarningFilters as Filters } from '@/features/warnings/api/warningApi';
 
@@ -44,36 +47,46 @@ export function WarningsPage() {
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Link to={`/snapshots/${snapshotId}`} className="text-brand text-sm">
-            ← Về cây mã nguồn
-          </Link>
-          <h1 className="mt-1 mb-0 text-xl font-semibold">Cảnh báo phân tích tĩnh</h1>
-          {/*
-           * Lối vào dashboard đặt ngay đây vì đó là chỗ người dùng đang đứng khi muốn biết "mình
-           * đã review được bao nhiêu rồi" — không ai đi tìm một mục menu riêng cho việc đó.
-           */}
-          <Link
-            to={`/snapshots/${snapshotId}/runs/${runId}/dashboard`}
-            className="text-brand mt-1 inline-block text-sm"
-          >
-            Xem chỉ số &amp; tải báo cáo →
-          </Link>
-        </div>
-        <RunSummary
-          findingCount={run.data.findingCount}
-          locationCount={run.data.locationCount}
-          unresolvedLocationCount={run.data.unresolvedLocationCount}
-          linkCount={run.data.linkCount}
-          unlinkedWarningCount={run.data.unlinkedWarningCount}
-        />
-      </header>
+    <section className="flex flex-col gap-5">
+      <PageHeader
+        back={{ to: `/snapshots/${snapshotId}`, label: 'Về cây mã nguồn' }}
+        title="Cảnh báo phân tích tĩnh"
+        description="Mở một cảnh báo để xem ngữ cảnh mã, test liên quan và độ phủ trước khi đánh giá."
+        actions={
+          <>
+            <Link
+              to={`/snapshots/${snapshotId}/runs/${runId}/chat`}
+              className={buttonClass('secondary')}
+            >
+              <IconChat className="size-4" />
+              Hỏi Agent
+            </Link>
+            {/*
+             * Lối vào dashboard đặt ngay đây vì đó là chỗ người dùng đang đứng khi muốn biết
+             * "mình đã review được bao nhiêu rồi" — không ai đi tìm một mục menu riêng cho việc đó.
+             */}
+            <Link
+              to={`/snapshots/${snapshotId}/runs/${runId}/dashboard`}
+              className={buttonClass('primary')}
+            >
+              <IconChart className="size-4" />
+              Xem chỉ số &amp; tải báo cáo →
+            </Link>
+          </>
+        }
+      />
+
+      <RunSummary
+        findingCount={run.data.findingCount}
+        locationCount={run.data.locationCount}
+        unresolvedLocationCount={run.data.unresolvedLocationCount}
+        linkCount={run.data.linkCount}
+        unlinkedWarningCount={run.data.unlinkedWarningCount}
+      />
 
       {/* Run hỏng thì nói thẳng lý do — đây là chỗ duy nhất người dùng đọc được errorMessage. */}
       {run.data.status === 'FAILED' ? (
-        <p className="m-0 text-sm text-red-700">
+        <p className="m-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           Lần phân tích này đã hỏng: {run.data.errorMessage ?? 'không rõ lý do'}
         </p>
       ) : null}
@@ -81,12 +94,16 @@ export function WarningsPage() {
         <p className="text-ink-muted m-0 text-sm">{run.data.cleanAckNote}</p>
       ) : null}
 
-      <WarningFilters value={filters} onChange={setFilters} />
+      <div className={`${CARD} px-4 py-3`}>
+        <WarningFilters value={filters} onChange={setFilters} />
+      </div>
 
       {warnings.isPending ? <StatusBadge tone="neutral" label="Đang tải cảnh báo…" /> : null}
       {warnings.isError ? <WarningsLoadError error={warnings.error} /> : null}
       {warnings.isSuccess && warnings.data.items.length === 0 ? (
-        <p className="text-ink-muted m-0 text-sm">Không có cảnh báo nào khớp bộ lọc hiện tại.</p>
+        <p className={`${CARD} text-ink-muted m-0 px-4 py-10 text-center text-sm`}>
+          Không có cảnh báo nào khớp bộ lọc hiện tại.
+        </p>
       ) : null}
       {warnings.isSuccess && warnings.data.items.length > 0 ? (
         <>
@@ -126,21 +143,58 @@ function RunSummary({
   const resolved = locationCount - unresolvedLocationCount;
   const linked = findingCount - unlinkedWarningCount;
   return (
-    <div className="text-ink-muted text-right text-sm">
-      <p className="m-0">{findingCount} cảnh báo tĩnh</p>
-      <p className={`m-0 ${unresolvedLocationCount > 0 ? 'text-sev-medium font-medium' : ''}`}>
-        {resolved}/{locationCount} vị trí đối chiếu được với mã nguồn
-      </p>
+    <div className="grid gap-3 sm:grid-cols-3">
+      <StatTile value={String(findingCount)} caption="cảnh báo tĩnh" />
+      <StatTile
+        value={percent(resolved, locationCount)}
+        caption={`${String(resolved)}/${String(locationCount)} vị trí đối chiếu được với mã nguồn`}
+        warn={unresolvedLocationCount > 0}
+      />
       {/*
-       * Bộ đếm liên kết cùng một lý do tồn tại với hai dòng trên: một liên kết KHÔNG sinh ra được
+       * Bộ đếm liên kết cùng một lý do tồn tại với ô bên cạnh: một liên kết KHÔNG sinh ra được
        * trông y hệt "dự án này không có bằng chứng liên quan". Không hiện ra thì muốn biết
        * 30/34 cảnh báo trơ trọi phải mở DB.
        */}
-      <p className={`m-0 ${unlinkedWarningCount > 0 ? 'text-sev-medium font-medium' : ''}`}>
-        {linked}/{findingCount} cảnh báo có bằng chứng liên quan ({linkCount} liên kết)
+      <StatTile
+        value={percent(linked, findingCount)}
+        caption={`${String(linked)}/${String(findingCount)} cảnh báo có bằng chứng liên quan (${String(linkCount)} liên kết)`}
+        warn={unlinkedWarningCount > 0}
+      />
+    </div>
+  );
+}
+
+/** Ô số liệu: con số lớn để quét mắt, câu đầy đủ bên dưới để đọc chính xác. */
+function StatTile({
+  value,
+  caption,
+  warn = false,
+}: {
+  value: string;
+  caption: string;
+  warn?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-xl border px-4 py-3 shadow-xs ${warn ? 'border-orange-200 bg-orange-50' : 'border-border bg-surface'}`}
+    >
+      <p
+        className={`m-0 text-2xl font-semibold tracking-tight tabular-nums ${warn ? 'text-sev-medium' : 'text-ink'}`}
+      >
+        {value}
+      </p>
+      <p
+        className={`mt-0.5 mb-0 text-sm ${warn ? 'text-sev-medium font-medium' : 'text-ink-muted'}`}
+      >
+        {caption}
       </p>
     </div>
   );
+}
+
+/** Mẫu số 0 thì hiện gạch — "0/0" không phải 0% cũng không phải 100%. */
+function percent(part: number, whole: number): string {
+  return whole === 0 ? '—' : `${String(Math.round((part / whole) * 100))}%`;
 }
 
 function RunLoadError({ error }: { error: unknown }) {

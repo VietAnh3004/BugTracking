@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthForm } from '@/features/auth/components/AuthForm';
 import { useLogin } from '@/features/auth/hooks/useLogin';
 import { ApiError } from '@/shared/lib/apiClient';
+import { TEXT_LINK } from '@/shared/ui/styles';
 import { TextField } from '@/shared/ui/TextField';
 
 import type { FormEvent } from 'react';
@@ -29,6 +30,7 @@ export function LoginPage() {
   return (
     <AuthForm
       title="Đăng nhập"
+      subtitle="Tiếp tục phân tích cảnh báo dựa trên bằng chứng."
       submitLabel="Đăng nhập"
       pending={login.isPending}
       errorMessage={login.isError ? describeLoginError(login.error) : null}
@@ -36,7 +38,7 @@ export function LoginPage() {
       footer={
         <>
           Chưa có tài khoản?{' '}
-          <Link to="/register" className="text-brand">
+          <Link to="/register" className={TEXT_LINK}>
             Đăng ký
           </Link>
         </>

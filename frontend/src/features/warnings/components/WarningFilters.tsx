@@ -8,6 +8,8 @@
  * MEDIUM.
  */
 
+import { INPUT } from '@/shared/ui/styles';
+
 import type {
   WarningFilters as Filters,
   WarningSeverity,
@@ -25,10 +27,10 @@ interface WarningFiltersProps {
 export function WarningFilters({ value, onChange }: WarningFiltersProps) {
   return (
     <div className="flex flex-wrap items-end gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-ink-muted">Công cụ</span>
+      <label className="flex w-44 flex-col gap-1 text-sm">
+        <span className="text-ink-muted text-xs font-medium">Công cụ</span>
         <select
-          className="border-border rounded border bg-white px-2 py-1"
+          className={INPUT}
           value={value.tool ?? ''}
           onChange={(event) => {
             const next = event.target.value;
@@ -44,10 +46,10 @@ export function WarningFilters({ value, onChange }: WarningFiltersProps) {
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-ink-muted">Mức nghiêm trọng</span>
+      <label className="flex w-44 flex-col gap-1 text-sm">
+        <span className="text-ink-muted text-xs font-medium">Mức nghiêm trọng</span>
         <select
-          className="border-border rounded border bg-white px-2 py-1"
+          className={INPUT}
           value={value.severity ?? ''}
           onChange={(event) => {
             const next = event.target.value;
@@ -70,10 +72,10 @@ export function WarningFilters({ value, onChange }: WarningFiltersProps) {
        * bảng rỗng và không có gì cho biết vì sao.
        */}
       <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
-        <span className="text-ink-muted">Một phần đường dẫn file</span>
+        <span className="text-ink-muted text-xs font-medium">Một phần đường dẫn file</span>
         <input
           type="text"
-          className="border-border rounded border bg-white px-2 py-1"
+          className={INPUT}
           placeholder="UserService  ·  vulnshop/user  ·  .java"
           value={value.filePath ?? ''}
           onChange={(event) => {

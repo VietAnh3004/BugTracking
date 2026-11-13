@@ -19,7 +19,10 @@ import { SandboxRunButton, SandboxRunStatus } from '@/features/warnings/componen
 import { useAnalysisRuns, useSandboxRun } from '@/features/warnings/hooks/useWarnings';
 import { ApiError } from '@/shared/lib/apiClient';
 import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
+import { IconAlert, IconUpload } from '@/shared/ui/icons';
+import { PageHeader } from '@/shared/ui/PageHeader';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
+import { buttonClass, CARD } from '@/shared/ui/styles';
 
 export function SnapshotBrowserLayout() {
   const params = useParams<{ snapshotId: string; '*': string }>();
@@ -45,26 +48,33 @@ export function SnapshotBrowserLayout() {
   const tree = buildFileTree(files.data);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <Link to={`/projects/${snapshot.data.projectId}`} className="text-brand text-sm">
-          ← Về dự án
-        </Link>
-        <span className="text-ink-muted flex flex-wrap items-center justify-end gap-3 text-sm">
-          <LatestRunLink snapshotId={snapshotId} />
-          {snapshot.data.fileCount} file · {snapshot.data.sourceRef ?? snapshot.data.id}
-          <SandboxRunButton sandbox={sandbox} />
-          {showIngest ? null : (
-            <button
-              type="button"
-              onClick={() => setShowIngest(true)}
-              className="border-brand text-brand hover:bg-brand-subtle cursor-pointer rounded border px-3 py-1 font-semibold"
-            >
-              Nạp kết quả phân tích
-            </button>
-          )}
-        </span>
-      </div>
+    <div className="flex flex-col gap-5">
+      <PageHeader
+        back={{ to: `/projects/${snapshot.data.projectId}`, label: 'Về dự án' }}
+        title={snapshot.data.sourceRef ?? snapshot.data.id}
+        meta={
+          <span className="text-ink-muted text-sm">
+            {snapshot.data.fileCount} file · snapshot{' '}
+            <code className="font-mono text-xs">{snapshot.data.id.slice(0, 8)}</code>
+          </span>
+        }
+        actions={
+          <>
+            <LatestRunLink snapshotId={snapshotId} />
+            {showIngest ? null : (
+              <button
+                type="button"
+                onClick={() => setShowIngest(true)}
+                className={buttonClass('secondary')}
+              >
+                <IconUpload className="size-4" />
+                Nạp kết quả phân tích
+              </button>
+            )}
+            <SandboxRunButton sandbox={sandbox} />
+          </>
+        }
+      />
 
       <SandboxRunStatus sandbox={sandbox} snapshotId={snapshotId} />
 
@@ -73,11 +83,14 @@ export function SnapshotBrowserLayout() {
       ) : null}
 
       {/* Cây cuộn độc lập với nội dung file: repo vài trăm file thì cột trái luôn dài hơn màn hình. */}
-      <div className="grid gap-4 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
+      <div className="grid items-start gap-4 md:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]">
         <nav
           aria-label="Cây file"
-          className="border-border max-h-[70vh] overflow-auto border-r pr-2"
+          className={`${CARD} max-h-[75vh] overflow-auto p-2 md:sticky md:top-20`}
         >
+          <p className="text-ink-muted m-0 px-2 pt-1 pb-2 text-xs font-semibold tracking-wider uppercase">
+            Tệp tin
+          </p>
           <FileTree nodes={tree} snapshotId={snapshotId} activePath={activePath} />
         </nav>
 
@@ -108,7 +121,11 @@ function LatestRunLink({ snapshotId }: { snapshotId: string }) {
     return null;
   }
   return (
-    <Link to={`/snapshots/${snapshotId}/runs/${latest.id}/warnings`} className="text-brand">
+    <Link
+      to={`/snapshots/${snapshotId}/runs/${latest.id}/warnings`}
+      className={buttonClass('secondary')}
+    >
+      <IconAlert className="text-sev-medium size-4" />
       Cảnh báo ({latest.findingCount})
     </Link>
   );

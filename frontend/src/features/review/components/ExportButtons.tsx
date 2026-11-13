@@ -1,6 +1,8 @@
 import { useState } from 'react';
 
 import { downloadFile } from '@/shared/lib/downloadClient';
+import { IconDownload } from '@/shared/ui/icons';
+import { buttonClass } from '@/shared/ui/styles';
 
 /**
  * Hai nút tải báo cáo của một lần phân tích.
@@ -37,16 +39,18 @@ export function ExportButtons({ runId }: { runId: string }) {
           type="button"
           disabled={busy !== null}
           onClick={() => void download('csv')}
-          className="border-border rounded-md border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+          className={buttonClass('secondary')}
         >
+          <IconDownload className="size-4" />
           {busy === 'csv' ? 'Đang tải…' : 'Tải CSV'}
         </button>
         <button
           type="button"
           disabled={busy !== null}
           onClick={() => void download('json')}
-          className="border-border rounded-md border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+          className={buttonClass('secondary')}
         >
+          <IconDownload className="size-4" />
           {busy === 'json' ? 'Đang tải…' : 'Tải JSON'}
         </button>
       </div>

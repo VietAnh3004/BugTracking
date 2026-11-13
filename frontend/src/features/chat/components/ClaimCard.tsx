@@ -19,11 +19,11 @@ export function ClaimCard({ claim, snapshotId, runId }: ClaimCardProps) {
 
   return (
     <li
-      className={`rounded-md border p-3 ${
-        unsupported ? 'border-amber-300 bg-amber-50/40' : 'border-slate-200 bg-white'
+      className={`rounded-xl border p-3 ${
+        unsupported ? 'border-amber-300 bg-amber-50/60' : 'border-border bg-surface-muted'
       }`}
     >
-      <p className="text-sm text-slate-800">{claim.text}</p>
+      <p className="text-ink text-sm">{claim.text}</p>
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {claim.citations.length === 0 ? (
@@ -41,7 +41,7 @@ export function ClaimCard({ claim, snapshotId, runId }: ClaimCardProps) {
           ))
         )}
         {claim.confidence != null && (
-          <span className="ml-auto text-xs text-slate-500">
+          <span className="text-ink-subtle ml-auto text-xs">
             Agent tự đánh giá độ chắc chắn {Math.round(claim.confidence * 100)}%
           </span>
         )}

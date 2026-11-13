@@ -1,5 +1,6 @@
 /**
- * Khung ứng dụng: tiêu đề, danh tính người dùng, và vùng `Outlet` cho route con.
+ * Khung ứng dụng: thanh trên cùng (tên ứng dụng, danh tính người dùng), vùng `Outlet` cho route con
+ * và chân trang trạng thái backend.
  *
  * Là layout route (không phải component thường) nên nó KHÔNG bị unmount khi chuyển giữa các route
  * con — trạng thái trong khung giữ nguyên khi đổi trang, và `BackendStatus` không phải gọi lại API
@@ -7,50 +8,87 @@
  *
  * Bề ngang ở đây chỉ là TRẦN chung (1400px). Ràng buộc thật của từng nhóm route nằm ở
  * `NarrowContent` / `WideContent` — tách ra vì Evidence Explorer và bảng cảnh báo cần rộng hơn
- * 880px, còn trang đăng nhập thì không nên giãn ra cả màn hình.
+ * hẳn, còn trang đăng nhập thì không nên giãn ra cả màn hình.
+ *
+ * Thanh trên cùng `sticky`: các màn hình chính (bảng 34 cảnh báo, file mã nguồn vài trăm dòng)
+ * đều dài, và người dùng vẫn cần thấy mình đang ở ứng dụng nào và đăng xuất ở đâu khi đã cuộn sâu.
  */
 
 import { Link, Outlet } from 'react-router-dom';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { BackendStatus } from '@/features/system/components/BackendStatus';
+import { IconLogo } from '@/shared/ui/icons';
+import { buttonClass } from '@/shared/ui/styles';
 
 export function RootLayout() {
   const { status, user, signOut } = useAuth();
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-6 py-8 font-sans">
-      <header className="border-border flex items-start justify-between border-b pb-4">
-        <div>
-          <Link to="/projects" className="text-ink no-underline">
-            <h1 className="mb-1 text-2xl font-semibold">
-              Nền tảng phân tích chương trình dựa trên bằng chứng
-            </h1>
+    <div className="flex min-h-screen flex-col font-sans">
+      <header className="border-border bg-surface/90 sticky top-0 z-30 border-b backdrop-blur">
+        <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
+          <Link to="/projects" className="group flex min-w-0 items-center gap-3">
+            <span className="bg-brand grid size-9 shrink-0 place-items-center rounded-lg text-white shadow-sm">
+              <IconLogo className="size-5" />
+            </span>
+            <span className="min-w-0">
+              <h1 className="text-ink group-hover:text-brand m-0 truncate text-[15px] leading-tight font-semibold">
+                Nền tảng phân tích chương trình dựa trên bằng chứng
+              </h1>
+              <p className="text-ink-muted m-0 hidden truncate text-xs sm:block">
+                Đồ án tốt nghiệp — Nguyễn Việt Anh, 20224923
+              </p>
+            </span>
           </Link>
-          <p className="text-ink-muted mt-0">Đồ án tốt nghiệp — Nguyễn Việt Anh, 20224923</p>
-        </div>
 
-        {status === 'authenticated' && user !== null ? (
-          <div className="flex shrink-0 flex-col items-end gap-1">
-            <span className="text-ink-muted text-sm">{user.displayName}</span>
-            <button
-              type="button"
-              onClick={() => void signOut()}
-              className="text-brand cursor-pointer text-sm underline"
-            >
-              Đăng xuất
-            </button>
-          </div>
-        ) : null}
+          {status === 'authenticated' && user !== null ? (
+            <div className="flex shrink-0 items-center gap-3">
+              <span className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="bg-brand-subtle text-brand grid size-8 place-items-center rounded-full text-xs font-semibold"
+                >
+                  {initialsOf(user.displayName)}
+                </span>
+                <span className="text-ink hidden text-sm font-medium md:inline">
+                  {user.displayName}
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => void signOut()}
+                className={buttonClass('secondary', 'sm')}
+              >
+                Đăng xuất
+              </button>
+            </div>
+          ) : null}
+        </div>
       </header>
 
-      <main className="pt-6">
+      <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <Outlet />
       </main>
 
-      <footer className="border-border mt-8 border-t pt-4">
-        <BackendStatus />
+      <footer className="border-border bg-surface border-t">
+        <div className="mx-auto w-full max-w-[1400px] px-4 py-3 sm:px-6">
+          <BackendStatus />
+        </div>
       </footer>
     </div>
   );
+}
+
+/** "Nguyễn Việt Anh" → "VA": hai chữ cái cuối, đúng cách người Việt gọi tên nhau. */
+function initialsOf(displayName: string): string {
+  const words = displayName
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word !== '');
+  const picked = words.length <= 2 ? words : words.slice(-2);
+  return picked
+    .map((word) => word.charAt(0).toUpperCase())
+    .join('')
+    .slice(0, 2);
 }

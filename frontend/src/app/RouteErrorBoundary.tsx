@@ -8,18 +8,22 @@
 
 import { Link, isRouteErrorResponse, useRouteError } from 'react-router-dom';
 
+import { buttonClass, CARD } from '@/shared/ui/styles';
+
 export function RouteErrorBoundary() {
   const error = useRouteError();
 
   const { title, detail } = describeError(error);
 
   return (
-    <div className="mx-auto max-w-[880px] px-6 py-8 font-sans" role="alert">
-      <h1 className="mb-2 text-2xl font-semibold">{title}</h1>
-      <p className="text-ink-muted">{detail}</p>
-      <Link to="/projects" className="text-brand mt-4 inline-block">
-        Về danh sách dự án
-      </Link>
+    <div className="mx-auto max-w-[880px] px-4 py-10 font-sans sm:px-6" role="alert">
+      <div className={`${CARD} p-6 sm:p-8`}>
+        <h1 className="text-ink mt-0 mb-2 text-2xl font-semibold">{title}</h1>
+        <p className="text-ink-muted m-0 text-sm break-words">{detail}</p>
+        <Link to="/projects" className={`${buttonClass('primary')} mt-6`}>
+          Về danh sách dự án
+        </Link>
+      </div>
     </div>
   );
 }

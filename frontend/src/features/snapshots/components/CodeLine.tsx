@@ -25,17 +25,20 @@ interface CodeLineProps {
 
 export function CodeLine({ lineNumber, text, highlighted, render }: CodeLineProps) {
   return (
-    <div id={`L${String(lineNumber)}`} className={`flex ${highlighted ? 'bg-line-highlight' : ''}`}>
+    <div
+      id={`L${String(lineNumber)}`}
+      className={`flex scroll-mt-24 ${highlighted ? 'bg-line-highlight shadow-[inset_3px_0_0_var(--color-sev-medium)]' : ''}`}
+    >
       {/*
         `select-none` là bắt buộc, không phải trang trí: thiếu nó thì bôi đen nhiều dòng để copy sẽ
         dính cả số dòng vào clipboard — ai cũng thấy ngay khi demo. `tabular-nums` giữ các chữ số
         cùng bề rộng để cột số dòng không nhấp nháy khi cuộn.
       */}
-      <span className="text-ink-muted w-12 shrink-0 pr-3 text-right tabular-nums select-none">
+      <span className="text-ink-subtle w-14 shrink-0 pr-4 text-right tabular-nums select-none">
         {lineNumber}
       </span>
       {/* `whitespace-pre` giữ nguyên thụt lề của mã nguồn; `break-words` để dòng dài không tràn ngang. */}
-      <code className="min-w-0 flex-1 whitespace-pre">
+      <code className="text-ink min-w-0 flex-1 pr-4 whitespace-pre">
         {render === undefined ? text : render(text)}
       </code>
     </div>

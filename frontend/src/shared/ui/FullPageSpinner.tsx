@@ -8,12 +8,12 @@
 
 export function FullPageSpinner({ label }: { label: string }) {
   return (
-    <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
+    <div className="flex items-center justify-center py-16" role="status" aria-live="polite">
       <span
-        className="border-border border-t-brand mr-3 inline-block size-5 animate-spin rounded-full border-2"
+        className="border-brand-ring border-t-brand mr-3 inline-block size-5 animate-spin rounded-full border-2"
         aria-hidden="true"
       />
-      <span className="text-ink-muted">{label}</span>
+      <span className="text-ink-muted text-sm">{label}</span>
     </div>
   );
 }

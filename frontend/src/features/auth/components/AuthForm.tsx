@@ -5,10 +5,15 @@
  * Thuần trình bày: không gọi API, không biết `useLogin`/`useRegister` tồn tại.
  */
 
+import { IconLogo } from '@/shared/ui/icons';
+import { buttonClass, CARD } from '@/shared/ui/styles';
+
 import type { FormEvent, ReactNode } from 'react';
 
 interface AuthFormProps {
   title: string;
+  /** Một câu dưới tiêu đề nói màn hình này để làm gì. */
+  subtitle?: string;
   submitLabel: string;
   pending: boolean;
   errorMessage: string | null;
@@ -19,6 +24,7 @@ interface AuthFormProps {
 
 export function AuthForm({
   title,
+  subtitle,
   submitLabel,
   pending,
   errorMessage,
@@ -27,29 +33,42 @@ export function AuthForm({
   footer,
 }: AuthFormProps) {
   return (
-    <section className="mx-auto max-w-sm">
-      <h2 className="mt-0 mb-4 text-lg font-semibold">{title}</h2>
+    <section className="mx-auto w-full max-w-md pt-4 sm:pt-10">
+      <div className={`${CARD} p-6 sm:p-8`}>
+        <div className="mb-6 flex flex-col items-center text-center">
+          <span className="bg-brand-subtle text-brand mb-4 grid size-12 place-items-center rounded-xl">
+            <IconLogo className="size-6" />
+          </span>
+          <h2 className="text-ink m-0 text-xl font-semibold tracking-tight">{title}</h2>
+          {subtitle === undefined ? null : (
+            <p className="text-ink-muted mt-1 mb-0 text-sm">{subtitle}</p>
+          )}
+        </div>
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        {children}
+        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+          {children}
 
-        {/* role="alert" để trình đọc màn hình thông báo ngay, và để test tìm lỗi theo vai trò. */}
-        {errorMessage !== null ? (
-          <p className="text-sm text-red-700" role="alert">
-            {errorMessage}
-          </p>
-        ) : null}
+          {/* role="alert" để trình đọc màn hình thông báo ngay, và để test tìm lỗi theo vai trò. */}
+          {errorMessage !== null ? (
+            <p
+              className="m-0 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+              role="alert"
+            >
+              {errorMessage}
+            </p>
+          ) : null}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="bg-brand hover:bg-brand-hover cursor-pointer rounded px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pending ? 'Đang xử lý…' : submitLabel}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={pending}
+            className={`${buttonClass('primary')} mt-1 w-full`}
+          >
+            {pending ? 'Đang xử lý…' : submitLabel}
+          </button>
+        </form>
+      </div>
 
-      <p className="text-ink-muted mt-4 text-sm">{footer}</p>
+      <p className="text-ink-muted mt-5 text-center text-sm">{footer}</p>
     </section>
   );
 }

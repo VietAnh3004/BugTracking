@@ -14,21 +14,35 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Nền và đường viền — thang xám trung tính, không ngả xanh/ấm. */
+  /*
+   * Font chữ: ưu tiên Inter nếu máy có, rơi về font hệ thống. Không tải web font từ CDN — frontend
+   * phải chạy được trên server không ra Internet (ADR 0002), và font hệ thống của Windows/macOS
+   * đều hiển thị tiếng Việt có dấu đầy đủ.
+   */
+  --font-sans:
+    'Inter', 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue',
+    Arial, sans-serif;
+
+  /* Nền và đường viền — thang xám trung tính, hơi ngả lạnh để hợp với màu thương hiệu. */
   --color-surface: #ffffff;
-  --color-surface-muted: #f8fafc;
-  --color-border: #e2e8f0;
-  --color-ink: #0f172a;
-  --color-ink-muted: #64748b;
+  --color-surface-muted: #f6f7fb;
+  --color-surface-sunken: #eef1f6;
+  --color-border: #e4e7ee;
+  --color-border-strong: #cfd5df;
+  --color-ink: #111827;
+  --color-ink-muted: #5f6b7d;
+  --color-ink-subtle: #8a94a6;
 
   /* Màu thương hiệu, dùng cho hành động chính và trạng thái đang chọn. */
-  --color-brand: #1d4ed8;
-  --color-brand-hover: #1e40af;
-  --color-brand-subtle: #eff6ff;
+  --color-brand: #4f46e5;
+  --color-brand-hover: #4338ca;
+  --color-brand-subtle: #eef2ff;
+  --color-brand-ring: #c7d2fe;
 
   /* Source viewer: nền khối mã và dải làm nổi dòng được evidence trỏ tới (#L42). */
-  --color-code-bg: #f8fafc;
-  --color-line-highlight: #fef9c3;
+  --color-code-bg: #fbfcfe;
+  --color-code-gutter: #f3f5f9;
+  --color-line-highlight: #fef3c7;
 
   /*
    * Font mã nguồn phải là monospace THẬT: source viewer canh số dòng theo cột, font tỷ lệ làm
@@ -59,13 +73,15 @@
 @theme static {
   --color-sev-high: #dc2626;
   --color-sev-medium: #ea580c;
-  --color-sev-low: #ca8a04;
+  /* Vàng đậm hơn mức thường: nhãn mức độ là chữ màu trên nền nhạt, vàng sáng không đủ tương phản. */
+  --color-sev-low: #a16207;
   --color-sev-info: #0284c7;
 }
 
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
@@ -73,4 +89,15 @@ body {
   min-height: 100vh;
   background-color: var(--color-surface-muted);
   color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/*
+ * Vòng focus cho người dùng bàn phím. `:focus-visible` (không phải `:focus`) để bấm chuột không
+ * hiện viền — nhưng Tab thì luôn thấy mình đang đứng ở đâu.
+ */
+:where(a, button, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 6px;
 }

@@ -9,7 +9,9 @@ import { Link } from 'react-router-dom';
 import { DeleteProjectButton } from '@/features/projects/components/DeleteProjectButton';
 import { useProjects } from '@/features/projects/hooks/useProjects';
 import { ApiError } from '@/shared/lib/apiClient';
+import { IconArrowRight, IconBox } from '@/shared/ui/icons';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
+import { CARD } from '@/shared/ui/styles';
 
 export function ProjectList() {
   const { data, isPending, isError, error } = useProjects();
@@ -27,27 +29,54 @@ export function ProjectList() {
   }
 
   if (data.items === undefined || data.items.length === 0) {
-    return <StatusBadge tone="neutral" label="Chưa có dự án nào." />;
+    return (
+      <div className="border-border-strong bg-surface flex flex-col items-center rounded-xl border border-dashed px-6 py-12 text-center">
+        <span className="bg-surface-sunken text-ink-muted mb-3 grid size-11 place-items-center rounded-xl">
+          <IconBox className="size-5" />
+        </span>
+        <StatusBadge tone="neutral" label="Chưa có dự án nào." />
+        <p className="text-ink-muted mt-2 mb-0 text-sm">
+          Tạo dự án đầu tiên ở khung bên cạnh để bắt đầu.
+        </p>
+      </div>
+    );
   }
 
   return (
-    <ul className="m-0 list-none p-0">
+    <ul className="m-0 grid list-none gap-3 p-0">
       {data.items.map((project) => (
         <li
           key={project.id}
-          className="border-border flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b py-2"
+          className={`${CARD} group hover:border-brand-ring flex flex-wrap items-center justify-between gap-x-4 gap-y-3 p-4 transition-colors`}
         >
-          <div>
-            <Link to={`/projects/${project.id}`} className="text-brand font-semibold">
-              {project.name}
-            </Link>
-            {project.description ? (
-              <p className="text-ink-muted mt-1 mb-0 text-sm">{project.description}</p>
-            ) : null}
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="bg-brand-subtle text-brand grid size-10 shrink-0 place-items-center rounded-lg">
+              <IconBox className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <Link
+                to={`/projects/${project.id}`}
+                className="text-ink hover:text-brand inline-flex items-center gap-1 text-base font-semibold"
+              >
+                {project.name}
+                <IconArrowRight className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+              </Link>
+              {project.description ? (
+                <p className="text-ink-muted mt-0.5 mb-0 text-sm">{project.description}</p>
+              ) : null}
+              <p className="text-ink-subtle mt-1 mb-0 text-xs">
+                Tạo ngày {formatDate(project.createdAt)}
+              </p>
+            </div>
           </div>
           <DeleteProjectButton projectId={project.id} projectName={project.name} />
         </li>
       ))}
     </ul>
   );
+}
+
+function formatDate(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString('vi-VN');
 }

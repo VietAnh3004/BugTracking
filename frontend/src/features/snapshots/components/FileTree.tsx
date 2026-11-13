@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
 import { toFilePathUrl } from '@/features/snapshots/lib/filePathUrl';
+import { IconChevronRight, IconFile, IconFolder } from '@/shared/ui/icons';
 
 import type { TreeNode } from '@/features/snapshots/lib/buildFileTree';
 
@@ -51,7 +52,7 @@ export function FileTree({ nodes, snapshotId, activePath }: FileTreeProps) {
   }
 
   if (nodes.length === 0) {
-    return <p className="text-ink-muted text-sm">Snapshot này không có file nào.</p>;
+    return <p className="text-ink-muted px-2 text-sm">Snapshot này không có file nào.</p>;
   }
 
   return (
@@ -81,7 +82,7 @@ interface TreeItemProps {
 function TreeItem({ node, snapshotId, depth, expanded, onToggle }: TreeItemProps) {
   // Thụt lề bằng padding nội tuyến chứ không phải class Tailwind ghép động (`pl-${n}`): class ghép
   // chuỗi không được scanner sinh ra, xem `src/index.css`.
-  const indent = { paddingLeft: `${String(depth * 12)}px` };
+  const indent = { paddingLeft: `${String(8 + depth * 14)}px` };
 
   if (node.type === 'DIRECTORY') {
     const isOpen = expanded.has(node.path);
@@ -91,12 +92,13 @@ function TreeItem({ node, snapshotId, depth, expanded, onToggle }: TreeItemProps
           type="button"
           onClick={() => onToggle(node.path)}
           aria-expanded={isOpen}
-          className="hover:bg-surface-muted flex w-full cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-left text-sm"
+          className="text-ink hover:bg-surface-sunken flex w-full cursor-pointer items-center gap-1.5 rounded-md py-1 pr-2 text-left text-[13px]"
           style={indent}
         >
-          <span aria-hidden="true" className="text-ink-muted">
-            {isOpen ? '▾' : '▸'}
-          </span>
+          <IconChevronRight
+            className={`text-ink-subtle size-3.5 transition-transform ${isOpen ? 'rotate-90' : ''}`}
+          />
+          <IconFolder className="text-brand/70 size-4" />
           <span className="truncate font-medium">{node.name}</span>
         </button>
 
@@ -124,11 +126,16 @@ function TreeItem({ node, snapshotId, depth, expanded, onToggle }: TreeItemProps
         to={`/snapshots/${snapshotId}/files/${toFilePathUrl(node.path)}`}
         style={indent}
         className={({ isActive }) =>
-          `block truncate rounded px-1 py-0.5 text-sm ${
-            isActive ? 'bg-brand-subtle text-brand font-medium' : 'hover:bg-surface-muted'
+          `flex items-center gap-1.5 truncate rounded-md py-1 pr-2 text-[13px] ${
+            isActive
+              ? 'bg-brand-subtle text-brand font-semibold'
+              : 'text-ink-muted hover:bg-surface-sunken hover:text-ink'
           }`
         }
       >
+        {/* Chừa chỗ bằng đúng mũi tên của thư mục để tên file thẳng cột với tên thư mục anh em. */}
+        <span aria-hidden="true" className="size-3.5 shrink-0" />
+        <IconFile className="size-4 opacity-70" />
         {/* Đánh dấu file không đọc được ngay trên cây để người dùng biết trước khi bấm. */}
         {node.name}
         {node.file?.binary === true ? <span className="text-ink-muted"> (nhị phân)</span> : null}

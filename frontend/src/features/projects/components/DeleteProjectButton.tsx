@@ -13,6 +13,7 @@ import { useState } from 'react';
 
 import { useDeleteProject } from '@/features/projects/hooks/useDeleteProject';
 import { ApiError } from '@/shared/lib/apiClient';
+import { buttonClass } from '@/shared/ui/styles';
 import { TextField } from '@/shared/ui/TextField';
 
 import type { FormEvent } from 'react';
@@ -47,7 +48,7 @@ export function DeleteProjectButton({ projectId, projectName }: DeleteProjectBut
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="cursor-pointer rounded border border-red-300 px-3 py-1 text-sm text-red-700 hover:bg-red-50"
+        className={buttonClass('dangerOutline', 'sm')}
       >
         Xoá
       </button>
@@ -57,7 +58,7 @@ export function DeleteProjectButton({ projectId, projectName }: DeleteProjectBut
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex basis-full flex-col gap-3 rounded border border-red-300 bg-red-50 p-4"
+      className="flex basis-full flex-col gap-3 rounded-lg border border-red-200 bg-red-50/70 p-4"
     >
       <p className="m-0 text-sm">
         Xoá vĩnh viễn dự án <strong>{projectName}</strong> cùng toàn bộ snapshot, cảnh báo, hội
@@ -82,7 +83,7 @@ export function DeleteProjectButton({ projectId, projectName }: DeleteProjectBut
         <button
           type="submit"
           disabled={!nameMatches || deleteProject.isPending}
-          className="cursor-pointer rounded bg-red-700 px-4 py-2 font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className={buttonClass('danger')}
         >
           {deleteProject.isPending ? 'Đang xoá…' : 'Xoá vĩnh viễn'}
         </button>
@@ -90,7 +91,7 @@ export function DeleteProjectButton({ projectId, projectName }: DeleteProjectBut
           type="button"
           onClick={close}
           disabled={deleteProject.isPending}
-          className="border-border cursor-pointer rounded border bg-white px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className={buttonClass('secondary')}
         >
           Huỷ
         </button>

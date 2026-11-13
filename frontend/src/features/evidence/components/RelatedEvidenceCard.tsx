@@ -10,6 +10,8 @@ import type { RelatedEvidence } from '@/features/evidence/api/evidenceApi';
 import { FailureKindBadge } from '@/features/evidence/components/FailureKindBadge';
 import { LinkStrengthBadge } from '@/features/evidence/components/LinkStrengthBadge';
 import { toFilePathUrl, toLineHash } from '@/features/snapshots/lib/filePathUrl';
+import { IconFile } from '@/shared/ui/icons';
+import { CARD } from '@/shared/ui/styles';
 
 interface RelatedEvidenceCardProps {
   item: RelatedEvidence;
@@ -41,15 +43,17 @@ export function RelatedEvidenceCard({
   const dongDeNhay = item.startLine ?? (cungFileVoiNeo ? anchorStartLine : null);
 
   return (
-    <li className="border-border rounded border p-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+    <li className={`${CARD} min-w-0 p-4`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Link
           to={`/snapshots/${snapshotId}/runs/${runId}/evidence/${item.shortId}`}
-          className="text-brand font-mono text-xs font-semibold"
+          className="bg-brand-subtle text-brand hover:bg-brand rounded px-1.5 py-0.5 font-mono text-xs font-semibold transition-colors hover:text-white"
         >
           {item.shortId}
         </Link>
-        <span className="text-ink-muted font-mono text-[11px]">{item.type}</span>
+        <span className="bg-surface-sunken text-ink-muted rounded px-1.5 py-0.5 font-mono text-[10px] tracking-wide">
+          {item.type}
+        </span>
       </div>
 
       {/*
@@ -60,7 +64,11 @@ export function RelatedEvidenceCard({
         Bằng chứng có `testCase` thì khối có cấu trúc phủ hết nội dung câu tóm tắt, nên bỏ câu đó
         đi TRÊN MÀN HÌNH. Dữ liệu trong DB không đổi — Agent vẫn đọc `summary` như cũ.
       */}
-      {item.testCase != null ? null : <p className="text-ink mt-1 mb-2 text-sm">{item.summary}</p>}
+      {item.testCase != null ? null : (
+        <p className="text-ink mt-2 mb-3 text-sm leading-relaxed [overflow-wrap:anywhere]">
+          {item.summary}
+        </p>
+      )}
 
       {/*
         `== null` chứ không `=== undefined`: xem ghi chú ở `application.yml` của core-backend.
@@ -69,7 +77,7 @@ export function RelatedEvidenceCard({
         phải thiếu mất một dòng.
       */}
       {item.testCase == null ? null : (
-        <dl className="text-ink-muted mt-1 mb-2 text-xs">
+        <dl className="bg-surface-muted text-ink-muted mt-2 mb-3 flex flex-col gap-1 rounded-lg px-3 py-2 text-xs">
           <div className="flex gap-1">
             <dt className="font-semibold">Test:</dt>
             <dd className="font-mono break-all">
@@ -141,15 +149,18 @@ export function RelatedEvidenceCard({
         người đọc rơi đúng vào cái bẫy vulnshop gài.
       */}
       {item.rationale == null ? null : (
-        <p className="text-ink-muted mt-2 mb-0 text-xs italic">{item.rationale}</p>
+        <p className="border-border-strong text-ink-muted mt-2.5 mb-0 border-l-2 pl-2.5 text-xs leading-relaxed [overflow-wrap:anywhere]">
+          {item.rationale}
+        </p>
       )}
 
       {item.filePath == null ? null : (
         <Link
           to={`/snapshots/${snapshotId}/files/${toFilePathUrl(item.filePath)}${toLineHash(dongDeNhay, item.endLine)}`}
-          className="text-brand mt-2 inline-block font-mono text-xs"
+          className="text-brand mt-2.5 flex items-center gap-1.5 font-mono text-xs font-medium break-all hover:underline"
         >
-          ↗ {item.filePath}
+          <IconFile className="size-3.5" />
+          {item.filePath}
           {dongDeNhay == null ? '' : `:${String(dongDeNhay)}`}
         </Link>
       )}
