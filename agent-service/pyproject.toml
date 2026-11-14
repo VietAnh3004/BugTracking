@@ -69,4 +69,8 @@ ignore_missing_imports = true
 # ---------------------------------------------------------------------------
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Cho `from tests.conftest import ...` chạy được với lệnh `pytest` trần (CI dùng lệnh này), không
+# chỉ với `python -m pytest` — lệnh sau tự thêm thư mục hiện tại vào sys.path nên che mất lỗi:
+# máy dev xanh 77/77 trong khi CI đỏ ở bước thu thập test.
+pythonpath = ["."]
 asyncio_mode = "auto"
