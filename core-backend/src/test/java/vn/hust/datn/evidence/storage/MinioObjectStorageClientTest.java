@@ -25,14 +25,24 @@ import vn.hust.datn.evidence.config.properties.StorageProperties;
  * container pattern" đã áp dụng cho Postgres ở {@code AbstractIntegrationTest}, tự viết riêng ở
  * đây vì đây là JUnit thuần, không kế thừa được base class đó.
  *
- * <p>Ghim đúng tag {@code minio/minio:RELEASE.2025-04-22T22-12-26Z} như trong
- * {@code infra/docker-compose.yml} — không kéo thêm image thứ hai, và test đúng bản đang chạy
- * thật. Nếu image không kéo được trên máy này, xem CLAUDE.md (mirror.gcr.io).
+ * <p>Dùng ĐÚNG image của {@code infra/docker-compose.yml} — không kéo thêm image thứ hai, và test
+ * đúng bản đang chạy thật. Hai chỗ phải đổi cùng nhau.
+ *
+ * <p>Image của Chainguard, ghim theo DIGEST: {@code minio/minio} đã bị gỡ khỏi Docker Hub (kéo về
+ * nhận {@code denied}, kể cả qua mirror.gcr.io và quay.io), và CI đỏ cả 5 test ở lớp này với
+ * {@code ExceptionInInitializerError} — thông điệp không hề nhắc tới image. Chainguard bản miễn phí
+ * chỉ có tag {@code latest}, nên ghim digest để mỗi lần chạy ra đúng một bản. Image vẫn chạy được
+ * bằng {@link MinIOContainer} vì entrypoint là {@code /usr/bin/minio} — cùng lệnh {@code server}.
  */
 class MinioObjectStorageClientTest {
 
+    private static final String MINIO_IMAGE =
+            "cgr.dev/chainguard/minio@sha256:0f9fda72fbc6bd3560ea903aec2ceefa20f6ba82628d67656f37fb370c39ae9c";
+
+    // `asCompatibleSubstituteFor`: MinIOContainer từ chối image không mang tên "minio/minio" để
+    // tránh dùng nhầm — đây là thay thế có chủ đích, khai báo ra thay vì để nó ném lỗi.
     private static final MinIOContainer MINIO =
-            new MinIOContainer(DockerImageName.parse("minio/minio:RELEASE.2025-04-22T22-12-26Z"));
+            new MinIOContainer(DockerImageName.parse(MINIO_IMAGE).asCompatibleSubstituteFor("minio/minio"));
 
     static {
         MINIO.start();

@@ -37,6 +37,19 @@ phân giải nổi tên đó. Giá trị đúng cho máy local là `http://local
 là `http://localhost:3000`; chạy `npm run dev` thì là `http://localhost:5173`. Sai một cổng là mọi
 request bị chặn CORS ngay màn hình đầu. Mặc định trong `.env.example` đã có cả hai.
 
+## Vì sao MinIO dùng image `cgr.dev/chainguard/minio`
+
+Image gốc `minio/minio` đã bị gỡ khỏi Docker Hub: `docker pull` báo
+`denied: requested access to the resource is denied`, và mirror.gcr.io lẫn quay.io đều không còn
+tag cũ. Hậu quả gặp thật (13/11/2026): CI đỏ cả 5 test của `MinioObjectStorageClientTest` với
+`ExceptionInInitializerError` — một thông điệp không hề nhắc tới image — trong khi trên máy dev
+vẫn xanh vì image cũ còn nằm trong cache Docker cục bộ.
+
+Bản Chainguard miễn phí chỉ có tag `latest`, nên compose và test **ghim theo digest** để mỗi lần
+kéo ra đúng một bản. Entrypoint là `/usr/bin/minio` và image có sẵn `mc`, nên `command` và
+healthcheck trong compose không phải đổi. Đổi digest thì đổi **cả hai chỗ**: `docker-compose.yml`
+và `MinioObjectStorageClientTest`.
+
 ## Kiểm chứng
 
 ```bash
@@ -62,11 +75,11 @@ cấu hình compose hay đăng nhập registry.
 
 ```bash
 docker pull mirror.gcr.io/pgvector/pgvector:pg16
-docker pull mirror.gcr.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
-
 docker tag mirror.gcr.io/pgvector/pgvector:pg16 pgvector/pgvector:pg16
-docker tag mirror.gcr.io/minio/minio:RELEASE.2025-04-22T22-12-26Z minio/minio:RELEASE.2025-04-22T22-12-26Z
 ```
+
+MinIO không cần bước này: từ 11/2026 compose dùng image của Chainguard (`cgr.dev`, không phải
+Docker Hub) — xem mục ngay dưới.
 
 `mirror.gcr.io` là cache đọc-qua (read-through) của Google cho toàn bộ Docker Hub công khai, bao
 gồm cả image không thuộc namespace `library` (như `pgvector/pgvector`). Chỉ cần tải một lần —
