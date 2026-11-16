@@ -22,7 +22,9 @@ import org.springframework.validation.annotation.Validated;
  * @param resendCooldown khoảng cách tối thiểu giữa hai email cùng loại cho một người — chặn dùng
  *     form "quên mật khẩu" để dội email vào hộp thư người khác
  * @param mailFrom địa chỉ người gửi; rỗng = dùng {@code spring.mail.username} (Gmail bắt buộc
- *     người gửi trùng tài khoản đăng nhập SMTP)
+ *     người gửi trùng tài khoản đăng nhập SMTP). Nhận cả dạng {@code Tên <địa-chỉ>}.
+ * @param mailFromName tên người gửi hiện trong hộp thư (vd "Evidence Agent"); rỗng = chỉ hiện địa
+ *     chỉ. Đặt tên ở đây thay vì nhét vào {@code mailFrom} để tên có dấu được mã hoá đúng.
  * @param mailAsync gửi email trên luồng riêng sau khi commit. Tắt trong test để kiểm nội dung
  *     email ngay sau request.
  * @param googleClientId OAuth Client ID của Google; rỗng = tắt đăng nhập Google
@@ -35,6 +37,7 @@ public record AccountProperties(
         @NotNull Duration resetPasswordTtl,
         @NotNull Duration resendCooldown,
         String mailFrom,
+        String mailFromName,
         boolean mailAsync,
         String googleClientId) {
 

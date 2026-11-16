@@ -126,6 +126,8 @@ app:
     reset-password-ttl: ${RESET_PASSWORD_TTL:PT30M}
     resend-cooldown: ${ACCOUNT_MAIL_COOLDOWN:PT60S}
     mail-from: ${MAIL_FROM:}
+    # Tên người gửi hiện trong hộp thư người nhận, có dấu được.
+    mail-from-name: ${MAIL_FROM_NAME:Nền tảng phân tích bằng chứng}
     mail-async: true
     # Rỗng = tắt đăng nhập Google (frontend tự ẩn nút).
     google-client-id: ${GOOGLE_CLIENT_ID:}

@@ -45,7 +45,7 @@ class NimbusGoogleIdTokenVerifierTest {
         otherPrivateKey = (RSAPrivateKey) generator.generateKeyPair().getPrivate();
 
         AccountProperties properties = new AccountProperties(
-                "http://app", Duration.ofHours(24), Duration.ofMinutes(30), Duration.ofSeconds(60), null, false, CLIENT_ID);
+                "http://app", Duration.ofHours(24), Duration.ofMinutes(30), Duration.ofSeconds(60), null, null, false, CLIENT_ID);
         verifier = new NimbusGoogleIdTokenVerifier(
                 properties, NimbusJwtDecoder.withPublicKey((RSAPublicKey) pair.getPublic()).build());
     }
