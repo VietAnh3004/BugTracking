@@ -9,6 +9,7 @@ export type AnalysisRun = components['schemas']['AnalysisRunResponse'];
 export type Warning = components['schemas']['WarningView'];
 export type WarningPage = components['schemas']['PageResponseWarningView'];
 export type AnalysisRunPage = components['schemas']['PageResponseAnalysisRunResponse'];
+export type LinkRebuild = components['schemas']['LinkRebuildResponse'];
 
 export type WarningTool = Warning['tool'];
 export type WarningSeverity = Warning['severityNormalized'];
@@ -33,6 +34,14 @@ export function getAnalysisRun(runId: string): Promise<AnalysisRun> {
  */
 export function startSandboxRun(snapshotId: string): Promise<AnalysisRun> {
   return apiClient.post<AnalysisRun>(`/api/v1/snapshots/${snapshotId}/analysis-runs/sandbox`);
+}
+
+/**
+ * Tính lại toàn bộ liên kết bằng chứng của một run, KHÔNG chạy lại analyzer. Đồng bộ: trả kết quả
+ * ngay (thao tác thuần DB). Evidence ID không đổi — chỉ các liên kết giữa chúng được dựng lại.
+ */
+export function rebuildLinks(runId: string): Promise<LinkRebuild> {
+  return apiClient.post<LinkRebuild>(`/api/v1/analysis-runs/${runId}/links/rebuild`);
 }
 
 /**

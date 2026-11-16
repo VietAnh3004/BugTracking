@@ -50,7 +50,14 @@ function emptyMetrics() {
       withoutAgentCount: 0,
       agreementWithAgent: null,
     },
-    groundTruth: { labelledCount: 0, agentAccuracy: null, humanAccuracy: null },
+    groundTruth: {
+      labelledCount: 0,
+      agentAccuracy: null,
+      humanAccuracy: null,
+      doubleLabelledCount: 0,
+      raterAgreement: null,
+      cohensKappa: null,
+    },
     agentCost: {
       modelCallCount: 0,
       inputTokens: 0,
@@ -86,9 +93,9 @@ describe('DashboardPage', () => {
 
     expect(await screen.findByText('Unsupported Claim Rate')).toBeInTheDocument();
 
-    // Sáu tỉ lệ: unsupported, accuracy, agreement, agentAccuracy, humanAccuracy + 2 số thực
-    // (latency, iterations) — tất cả đều phải là dấu gạch.
-    expect(screen.getAllByText('—')).toHaveLength(7);
+    // Bảy tỉ lệ: unsupported, accuracy, agreement, agentAccuracy, humanAccuracy, đồng thuận giữa
+    // hai người gán, kappa + 2 số thực (latency, iterations) — tất cả đều phải là dấu gạch.
+    expect(screen.getAllByText('—')).toHaveLength(9);
     expect(screen.queryByText(/0\.0%/)).not.toBeInTheDocument();
   });
 

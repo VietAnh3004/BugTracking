@@ -30,7 +30,7 @@ export function ChatPage() {
   const conversations = useConversations(runId);
   const messages = useMessages(selectedId);
   const createConversation = useCreateConversation(runId);
-  const { ask, steps, isStreaming, error } = useAskAgent(selectedId);
+  const { ask, stop, steps, isStreaming, stopped, error } = useAskAgent(selectedId);
 
   const [draft, setDraft] = useState('');
   const bottom = useRef<HTMLDivElement>(null);
@@ -136,6 +136,12 @@ export function ChatPage() {
           <AgentProgress steps={steps} isStreaming={isStreaming} />
         </div>
 
+        {stopped && (
+          <p role="status" className="text-ink-muted mt-3 text-sm">
+            Đã dừng lượt hỏi. Câu hỏi vẫn nằm trong lịch sử, có thể hỏi lại bất cứ lúc nào.
+          </p>
+        )}
+
         {error != null && (
           <p
             role="alert"
@@ -161,13 +167,25 @@ export function ChatPage() {
           placeholder="Ví dụ: có test nào liên quan tới cảnh báo này không?"
           className="text-ink placeholder:text-ink-subtle disabled:bg-surface-muted flex-1 resize-none rounded-lg border-0 bg-transparent px-3 py-2 text-sm outline-none"
         />
-        <button
-          type="submit"
-          disabled={selectedId === '' || isStreaming || draft.trim() === ''}
-          className={buttonClass('primary')}
-        >
-          {isStreaming ? 'Đang hỏi…' : 'Gửi'}
-        </button>
+        {isStreaming ? (
+          // Đang chạy thì nút chính là "Dừng", không phải một nút "Đang hỏi…" bị khoá: người dùng
+          // nhận ra mình hỏi nhầm thì phải có cách thôi chờ và thôi tốn quota.
+          <button
+            type="button"
+            onClick={() => void stop()}
+            className={buttonClass('dangerOutline')}
+          >
+            Dừng
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={selectedId === '' || draft.trim() === ''}
+            className={buttonClass('primary')}
+          >
+            Gửi
+          </button>
+        )}
       </form>
     </div>
   );

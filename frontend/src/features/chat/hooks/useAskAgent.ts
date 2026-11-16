@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { type ChatMessage, askAgent } from '@/features/chat/api/chatApi';
+import { type ChatMessage, askAgent, cancelTurn } from '@/features/chat/api/chatApi';
 import { chatKeys } from '@/features/chat/hooks/useConversation';
 
 /** Một dòng tiến trình hiện ra trong lúc chờ. */
@@ -24,13 +24,26 @@ export function useAskAgent(conversationId: string) {
   const [steps, setSteps] = useState<ProgressStep[]>([]);
   const [isStreaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stopped, setStopped] = useState(false);
   const nextId = useRef(0);
   const inFlight = useRef<AbortController | null>(null);
+  // Hội thoại của lượt đang bay — cleanup khi unmount chạy SAU render cuối, lúc đó
+  // `conversationId` trong closure có thể đã là hội thoại khác.
+  const inFlightConversation = useRef<string | null>(null);
 
-  // Huỷ lượt đang bay khi người dùng rời trang. Không huỷ thì `fetch` vẫn đọc stream trên một
-  // component đã unmount, và mọi `setState` sau đó là rò rỉ; tệ hơn là câu trả lời được ghi vào
-  // cache của một hội thoại người dùng đã bỏ đi.
-  useEffect(() => () => inFlight.current?.abort(), []);
+  // Rời trang = huỷ lượt đang bay ở CẢ server (đã chốt với người dùng: không tốn quota cho câu
+  // trả lời không ai đọc). Chỉ huỷ `fetch` thì core-backend chỉ biết khi nó thử ghi khung kế tiếp,
+  // có thể là sau cả một lượt gọi LLM. Gọi cancel là fire-and-forget: trang đã đi rồi, không còn
+  // chỗ nào hiện lỗi.
+  useEffect(
+    () => () => {
+      if (inFlight.current !== null && inFlightConversation.current !== null) {
+        inFlight.current.abort();
+        void cancelTurn(inFlightConversation.current).catch(() => undefined);
+      }
+    },
+    [],
+  );
 
   const addStep = useCallback((label: string, detail: string | null, failed = false) => {
     setSteps((current) => [...current, { id: nextId.current++, label, detail, failed }]);
@@ -49,12 +62,15 @@ export function useAskAgent(conversationId: string) {
   const ask = useCallback(
     async (question: string): Promise<void> => {
       // Một lượt mới huỷ lượt cũ: hai stream cùng ghi vào một cache sẽ trộn hai câu trả lời.
+      // Phía server, câu hỏi mới tự huỷ lượt cũ của cùng hội thoại (ConversationService.ask).
       inFlight.current?.abort();
       const controller = new AbortController();
       inFlight.current = controller;
+      inFlightConversation.current = conversationId;
 
       setSteps([]);
       setError(null);
+      setStopped(false);
       setStreaming(true);
 
       // Câu hỏi hiện ra NGAY, không đợi máy chủ: chờ tới lúc có câu trả lời mới thấy câu mình vừa
@@ -101,6 +117,7 @@ export function useAskAgent(conversationId: string) {
       } finally {
         if (inFlight.current === controller) {
           inFlight.current = null;
+          inFlightConversation.current = null;
           setStreaming(false);
         }
         // Đồng bộ lại với máy chủ: lượt hỏi tạm ở trên chưa có id thật, và một lượt hỏng có thể
@@ -111,7 +128,24 @@ export function useAskAgent(conversationId: string) {
     [addStep, appendMessage, conversationId, queryClient],
   );
 
-  return { ask, steps, isStreaming, error };
+  /** Nút "Dừng": huỷ ở trình duyệt NGAY (giao diện thôi chờ), rồi báo server huỷ phía nó. */
+  const stop = useCallback(async (): Promise<void> => {
+    const controller = inFlight.current;
+    if (controller === null) {
+      return;
+    }
+    controller.abort();
+    setSteps([]);
+    setStopped(true);
+    try {
+      await cancelTurn(conversationId);
+    } catch {
+      // Huỷ phía server hỏng thì lượt đó chạy nốt rồi tự kết thúc — không đáng một thông báo đỏ
+      // đè lên câu "Đã dừng" người dùng vừa thấy.
+    }
+  }, [conversationId]);
+
+  return { ask, stop, steps, isStreaming, stopped, error };
 }
 
 function describeArguments(args: Record<string, unknown>): string | null {

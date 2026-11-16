@@ -44,6 +44,7 @@ function run(overrides: Record<string, unknown> = {}) {
     linkCount: 120,
     codeContextCount: 30,
     unlinkedWarningCount: 0,
+    embeddingCount: 0,
     startedAt: '2026-08-01T00:00:00Z',
     ...overrides,
   };

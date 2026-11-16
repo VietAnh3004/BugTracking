@@ -21,6 +21,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis-runs/{runId}/evidence/{shortId}/ground-truth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Gán hoặc sửa nhãn ground truth của người gọi cho một cảnh báo */
+        put: operations["save"];
+        post?: never;
+        /** Xoá nhãn ground truth của người gọi trên một cảnh báo */
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tools/search_evidence": {
         parameters: {
             query?: never;
@@ -168,6 +186,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["members"];
+        put?: never;
+        post: operations["addMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conversations/{conversationId}/messages": {
         parameters: {
             query?: never;
@@ -180,6 +214,23 @@ export interface paths {
         put?: never;
         /** Hỏi Agent một câu, nhận tiến trình và câu trả lời qua SSE */
         post: operations["ask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{conversationId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dừng lượt hỏi Agent đang chạy của một phiên */
+        post: operations["cancel"];
         delete?: never;
         options?: never;
         head?: never;
@@ -267,6 +318,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis-runs/{runId}/ground-truth/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Nạp nhãn từ file YAML vào lần phân tích (chỉ chủ dự án) */
+        post: operations["importLabels"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis-runs/{runId}/embeddings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sinh lại vector tìm kiếm theo nghĩa cho một lần phân tích */
+        post: operations["rebuildEmbeddings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/analysis-runs/{runId}/conversations": {
         parameters: {
             query?: never;
@@ -343,7 +428,7 @@ export interface paths {
         get: operations["get_1"];
         put?: never;
         post?: never;
-        delete: operations["delete"];
+        delete: operations["delete_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -433,6 +518,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis-runs/{runId}/ground-truth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bảng gán nhãn ground truth của một lần phân tích, lọc theo vai trò người gọi */
+        get: operations["sheet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis-runs/{runId}/ground-truth/export.yaml": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Xuất mọi nhãn của lần phân tích ra YAML (chỉ chủ dự án) */
+        get: operations["export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/analysis-runs/{runId}/export.json": {
         parameters: {
             query?: never;
@@ -484,6 +603,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{id}/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -525,6 +660,20 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        SaveGroundTruthRequest: {
+            /** @enum {string} */
+            label: "TRUE_POSITIVE" | "FALSE_POSITIVE" | "UNCERTAIN";
+            /** @description Lý do 1-2 câu, sau khi đọc mã */
+            rationale: string;
+        };
+        GroundTruthLabelView: {
+            /** @enum {string} */
+            label: "TRUE_POSITIVE" | "FALSE_POSITIVE" | "UNCERTAIN";
+            rationale: string;
+            labeler: string;
+            /** Format: date-time */
+            labeledAt: string;
+        };
         SearchEvidenceRequest: {
             /** Format: uuid */
             analysis_run_id: string;
@@ -543,6 +692,7 @@ export interface components {
             /** Format: int32 */
             start_line?: number;
             symbol?: string;
+            matched_by?: string;
         };
         SearchEvidenceResult: {
             items?: components["schemas"]["EvidenceSummaryItem"][];
@@ -667,6 +817,13 @@ export interface components {
             /** @description NULL với run nạp tay: ở đó không có canary để kiểm, khác hẳn false */
             canaryOk?: boolean;
             analyzerImageDigest?: string;
+            /**
+             * Format: int32
+             * @description Số bằng chứng đã có vector để tìm theo nghĩa; 0 = chỉ tìm được bằng so chữ
+             */
+            embeddingCount: number;
+            /** @description Lý do sinh vector thất bại; vắng khi thành công hoặc chưa thử */
+            embeddingError?: string;
             /** Format: date-time */
             startedAt: string;
             /** Format: date-time */
@@ -685,6 +842,11 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /**
+             * @description Vai trò của NGƯỜI ĐANG GỌI với dự án này: OWNER (chủ) hoặc MEMBER (được chia sẻ)
+             * @enum {string}
+             */
+            role: "OWNER" | "MEMBER";
         };
         SnapshotResponse: {
             /** Format: uuid */
@@ -703,6 +865,18 @@ export interface components {
             errorMessage?: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        AddProjectMemberRequest: {
+            /** @description Email người đó đã dùng để đăng ký */
+            email: string;
+        };
+        ProjectMemberResponse: {
+            /** Format: uuid */
+            userId: string;
+            email: string;
+            displayName: string;
+            /** Format: date-time */
+            addedAt: string;
         };
         /** @description Câu hỏi gửi cho Agent */
         AskRequest: {
@@ -761,6 +935,20 @@ export interface components {
             countByMethod: {
                 [key: string]: Record<string, never>;
             };
+        };
+        GroundTruthImportResponse: {
+            /**
+             * Format: int32
+             * @description Số nhãn đã ghi (một mục có thể khớp nhiều cảnh báo)
+             */
+            labelsWritten: number;
+            /**
+             * Format: int32
+             * @description Số mục trong file khớp ít nhất một cảnh báo
+             */
+            entriesMatched: number;
+            /** @description Mục không khớp cảnh báo nào, dạng tool/luật@file:dòng */
+            unmatched: string[];
         };
         /** @description Mở một phiên hỏi đáp mới */
         CreateConversationRequest: {
@@ -1007,6 +1195,21 @@ export interface components {
              * @description Tỉ lệ quyết định của người khớp nhãn chuẩn; vắng khi chưa gán nhãn
              */
             humanAccuracy?: number;
+            /**
+             * Format: int64
+             * @description Số cảnh báo được CẢ người gán chính lẫn người gán thứ hai (mù) gán nhãn
+             */
+            doubleLabelledCount: number;
+            /**
+             * Format: double
+             * @description Tỉ lệ hai người gán cùng nhãn; vắng khi chưa có cảnh báo nào được gán hai lần
+             */
+            raterAgreement?: number;
+            /**
+             * Format: double
+             * @description Cohen's kappa giữa hai người gán; vắng khi chưa đủ dữ liệu hoặc khi kappa không xác định (mọi nhãn rơi vào một loại)
+             */
+            cohensKappa?: number;
         };
         /** @description Tiến độ review và mức khớp với Agent */
         ReviewProgress: {
@@ -1041,6 +1244,35 @@ export interface components {
             reviewProgress: components["schemas"]["ReviewProgress"];
             groundTruth: components["schemas"]["GroundTruthComparison"];
             agentCost: components["schemas"]["AgentCost"];
+        };
+        GroundTruthRow: {
+            shortId: string;
+            /** @enum {string} */
+            tool: "spotbugs" | "semgrep";
+            ruleId: string;
+            /** @enum {string} */
+            severity: "HIGH" | "MEDIUM" | "LOW" | "INFO";
+            filePath?: string;
+            /** Format: int32 */
+            startLine?: number;
+            summary: string;
+            /** @description Nhãn người gọi đã gán; vắng khi chưa gán */
+            label?: components["schemas"]["GroundTruthLabelView"];
+            /** @description Gợi ý từ nhãn SEEDED — chỉ chủ dự án nhận được */
+            seededHint?: components["schemas"]["GroundTruthLabelView"];
+        };
+        /** @description Bảng gán nhãn ground truth, đã lọc theo vai trò người gọi */
+        GroundTruthSheetResponse: {
+            /** Format: uuid */
+            runId: string;
+            /** @enum {string} */
+            role: "OWNER" | "MEMBER";
+            /**
+             * @description Nguồn nhãn người gọi đang gán: MANUAL (chủ) hoặc BLIND_SECOND_RATER (thành viên)
+             * @enum {string}
+             */
+            source: "SEEDED" | "MANUAL" | "BLIND_SECOND_RATER";
+            rows: components["schemas"]["GroundTruthRow"][];
         };
         EvidenceDetailResponse: {
             /** Format: uuid */
@@ -1190,6 +1422,54 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["ReviewResponse"];
                 };
+            };
+        };
+    };
+    save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+                shortId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveGroundTruthRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GroundTruthLabelView"];
+                };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+                shortId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1486,6 +1766,54 @@ export interface operations {
             };
         };
     };
+    members: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProjectMemberResponse"][];
+                };
+            };
+        };
+    };
+    addMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddProjectMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProjectMemberResponse"];
+                };
+            };
+        };
+    };
     messages: {
         parameters: {
             query?: never;
@@ -1531,6 +1859,26 @@ export interface operations {
                 content: {
                     "text/event-stream": components["schemas"]["SseEmitter"];
                 };
+            };
+        };
+    };
+    cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1652,6 +2000,57 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["LinkRebuildResponse"];
+                };
+            };
+        };
+    };
+    importLabels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GroundTruthImportResponse"];
+                };
+            };
+        };
+    };
+    rebuildEmbeddings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnalysisRunResponse"];
                 };
             };
         };
@@ -1796,7 +2195,7 @@ export interface operations {
             };
         };
     };
-    delete: {
+    delete_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1930,6 +2329,50 @@ export interface operations {
             };
         };
     };
+    sheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GroundTruthSheetResponse"];
+                };
+            };
+        };
+    };
+    export: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/yaml": string;
+                };
+            };
+        };
+    };
     exportJson: {
         parameters: {
             query?: never;
@@ -1997,6 +2440,27 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["EvidenceDetailResponse"];
                 };
+            };
+        };
+    };
+    removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -136,7 +136,7 @@ export function DashboardPage() {
 
         <MetricCard
           title="Ground truth"
-          note="Nhãn chuẩn do người gán sau khi đọc mã. Chưa nạp ở tuần 14 — đây là món nợ có chủ đích của tuần 15."
+          note="Nhãn chuẩn do chủ dự án gán sau khi đọc mã (trang Gán nhãn). Nhãn của người gán thứ hai chỉ dùng để tính độ đồng thuận, không tính vào độ chính xác."
         >
           <Metric label="Cảnh báo đã gán nhãn" value={formatCount(groundTruth.labelledCount)} />
           <Metric
@@ -148,6 +148,21 @@ export function DashboardPage() {
             label="Người đúng"
             value={formatRatio(groundTruth.humanAccuracy)}
             hint="Tỉ lệ quyết định của người khớp nhãn chuẩn."
+          />
+          <Metric
+            label="Gán bởi cả hai người"
+            value={formatCount(groundTruth.doubleLabelledCount)}
+            hint="Số cảnh báo được cả người gán chính lẫn người gán thứ hai (mù) gán nhãn."
+          />
+          <Metric
+            label="Hai người đồng ý"
+            value={formatRatio(groundTruth.raterAgreement)}
+            hint="Tỉ lệ cảnh báo hai người gán cùng một nhãn."
+          />
+          <Metric
+            label="Cohen's kappa"
+            value={formatDecimal(groundTruth.cohensKappa, '', 2)}
+            hint="Mức đồng thuận đã trừ phần trùng do ngẫu nhiên. Trên 0.6 thường coi là tốt. Để trống khi chưa đủ dữ liệu."
           />
         </MetricCard>
 

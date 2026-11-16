@@ -6,6 +6,7 @@
 
 import { useParams } from 'react-router-dom';
 
+import { MembersPanel } from '@/features/projects/components/MembersPanel';
 import { useProject } from '@/features/projects/hooks/useProjects';
 import { SnapshotList } from '@/features/snapshots/components/SnapshotList';
 import { UploadZone } from '@/features/snapshots/components/UploadZone';
@@ -51,14 +52,25 @@ function ProjectDetail({ projectId }: { projectId: string }) {
           <SnapshotList projectId={projectId} />
         </section>
 
-        <section className={`${CARD} p-5`}>
-          <h2 className="text-ink mt-0 mb-1 text-base font-semibold">Tải mã nguồn lên</h2>
-          <p className="text-ink-muted mt-0 mb-4 text-sm">
-            Nén thư mục dự án (có <code className="font-mono text-xs">pom.xml</code>) thành một file
-            zip.
-          </p>
-          <UploadZone projectId={projectId} />
-        </section>
+        {project.data?.role === 'OWNER' ? (
+          <div className="flex flex-col gap-6">
+            <section className={`${CARD} p-5`}>
+              <h2 className="text-ink mt-0 mb-1 text-base font-semibold">Tải mã nguồn lên</h2>
+              <p className="text-ink-muted mt-0 mb-4 text-sm">
+                Nén thư mục dự án (có <code className="font-mono text-xs">pom.xml</code>) thành một
+                file zip.
+              </p>
+              <UploadZone projectId={projectId} />
+            </section>
+            <MembersPanel projectId={projectId} />
+          </div>
+        ) : project.data?.role === 'MEMBER' ? (
+          <section className={`${CARD} text-ink-muted p-5 text-sm`}>
+            <h2 className="text-ink mt-0 mb-1 text-base font-semibold">Dự án được chia sẻ</h2>
+            Bạn là thành viên: xem mã và bằng chứng, hỏi Agent, đánh giá, và gán nhãn với vai trò
+            người gán thứ hai. Chỉ chủ dự án tải mã và chạy phân tích được.
+          </section>
+        ) : null}
       </div>
     </div>
   );

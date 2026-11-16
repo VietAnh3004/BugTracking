@@ -13,13 +13,16 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import { useSnapshotRole } from '@/features/projects/hooks/useProjectMembers';
 import { useReviews } from '@/features/review/hooks/useReview';
+import { EmbeddingNotice } from '@/features/warnings/components/EmbeddingNotice';
+import { RebuildLinksButton } from '@/features/warnings/components/RebuildLinksButton';
 import { WarningFilters } from '@/features/warnings/components/WarningFilters';
 import { WarningTable } from '@/features/warnings/components/WarningTable';
 import { useAnalysisRun, useWarnings } from '@/features/warnings/hooks/useWarnings';
 import { ApiError } from '@/shared/lib/apiClient';
 import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
-import { IconChart, IconChat } from '@/shared/ui/icons';
+import { IconChart, IconChat, IconCheck } from '@/shared/ui/icons';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
 import { buttonClass, CARD } from '@/shared/ui/styles';
@@ -38,6 +41,7 @@ export function WarningsPage() {
   // trạng thái là cách chắc chắn làm màn hình giật.
   const reviews = useReviews(runId);
   const reviewByShortId = new Map((reviews.data ?? []).map((r) => [r.shortId, r.decision]));
+  const isOwner = useSnapshotRole(snapshotId) === 'OWNER';
 
   if (run.isPending) {
     return <FullPageSpinner label="Đang tải kết quả phân tích…" />;
@@ -61,17 +65,28 @@ export function WarningsPage() {
               <IconChat className="size-4" />
               Hỏi Agent
             </Link>
+            <Link
+              to={`/snapshots/${snapshotId}/runs/${runId}/ground-truth`}
+              className={buttonClass('secondary')}
+            >
+              <IconCheck className="size-4" />
+              Gán nhãn
+            </Link>
             {/*
              * Lối vào dashboard đặt ngay đây vì đó là chỗ người dùng đang đứng khi muốn biết
              * "mình đã review được bao nhiêu rồi" — không ai đi tìm một mục menu riêng cho việc đó.
              */}
-            <Link
-              to={`/snapshots/${snapshotId}/runs/${runId}/dashboard`}
-              className={buttonClass('primary')}
-            >
-              <IconChart className="size-4" />
-              Xem chỉ số &amp; tải báo cáo →
-            </Link>
+            {/* Dashboard và báo cáo chỉ cho chủ dự án: file xuất chứa nhãn ground truth của chủ,
+                đưa cho thành viên là phá tính "mù" của người gán thứ hai. */}
+            {isOwner ? (
+              <Link
+                to={`/snapshots/${snapshotId}/runs/${runId}/dashboard`}
+                className={buttonClass('primary')}
+              >
+                <IconChart className="size-4" />
+                Xem chỉ số &amp; tải báo cáo →
+              </Link>
+            ) : null}
           </>
         }
       />
@@ -83,6 +98,15 @@ export function WarningsPage() {
         linkCount={run.data.linkCount}
         unlinkedWarningCount={run.data.unlinkedWarningCount}
       />
+
+      {/* Chỉ run đã xong mới có liên kết để dựng lại — backend trả 409 cho RUNNING/FAILED. */}
+      {isOwner && (run.data.status === 'SUCCEEDED' || run.data.status === 'SUCCEEDED_CLEAN') ? (
+        <div className="-mt-2 flex justify-end">
+          <RebuildLinksButton runId={runId} />
+        </div>
+      ) : null}
+
+      <EmbeddingNotice run={run.data} isOwner={isOwner} />
 
       {/* Run hỏng thì nói thẳng lý do — đây là chỗ duy nhất người dùng đọc được errorMessage. */}
       {run.data.status === 'FAILED' ? (

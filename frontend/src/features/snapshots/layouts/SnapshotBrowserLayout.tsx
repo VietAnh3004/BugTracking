@@ -10,6 +10,7 @@
 import { useState } from 'react';
 import { Link, Outlet, useParams } from 'react-router-dom';
 
+import { useProject } from '@/features/projects/hooks/useProjects';
 import { FileTree } from '@/features/snapshots/components/FileTree';
 import { useSnapshot, useSnapshotFiles } from '@/features/snapshots/hooks/useSnapshots';
 import { buildFileTree } from '@/features/snapshots/lib/buildFileTree';
@@ -33,6 +34,10 @@ export function SnapshotBrowserLayout() {
   const files = useSnapshotFiles(snapshotId);
   const [showIngest, setShowIngest] = useState(false);
   const sandbox = useSandboxRun(snapshotId);
+  // Nút chạy/nạp phân tích chỉ cho chủ dự án. Chưa biết vai trò thì coi như KHÔNG phải chủ: thành
+  // viên không được thấy nút hiện ra rồi biến mất.
+  const project = useProject(snapshot.data?.projectId ?? '');
+  const isOwner = project.data?.role === 'OWNER';
 
   if (snapshot.isPending || files.isPending) {
     return <FullPageSpinner label="Đang tải cây file…" />;
@@ -61,7 +66,7 @@ export function SnapshotBrowserLayout() {
         actions={
           <>
             <LatestRunLink snapshotId={snapshotId} />
-            {showIngest ? null : (
+            {!isOwner || showIngest ? null : (
               <button
                 type="button"
                 onClick={() => setShowIngest(true)}
@@ -71,7 +76,7 @@ export function SnapshotBrowserLayout() {
                 Nạp kết quả phân tích
               </button>
             )}
-            <SandboxRunButton sandbox={sandbox} />
+            {isOwner ? <SandboxRunButton sandbox={sandbox} /> : null}
           </>
         }
       />

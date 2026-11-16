@@ -48,6 +48,7 @@ function run(overrides: Partial<AnalysisRun>): AnalysisRun {
     linkCount: 210,
     codeContextCount: 30,
     unlinkedWarningCount: 0,
+    embeddingCount: 0,
     ...overrides,
   } as AnalysisRun;
 }

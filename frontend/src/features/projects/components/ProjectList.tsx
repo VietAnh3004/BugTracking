@@ -69,7 +69,11 @@ export function ProjectList() {
               </p>
             </div>
           </div>
-          <DeleteProjectButton projectId={project.id} projectName={project.name} />
+          {project.role === 'OWNER' ? (
+            <DeleteProjectButton projectId={project.id} projectName={project.name} />
+          ) : (
+            <StatusBadge tone="neutral" label="Được chia sẻ" />
+          )}
         </li>
       ))}
     </ul>

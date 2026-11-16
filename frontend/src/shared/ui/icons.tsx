@@ -139,6 +139,14 @@ export function IconCode(props: IconProps) {
   );
 }
 
+export function IconCheck(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4.5 12.5 9.5 17.5 19.5 6.5" />
+    </Icon>
+  );
+}
+
 export function IconBox(props: IconProps) {
   return (
     <Icon {...props}>

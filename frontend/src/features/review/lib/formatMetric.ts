@@ -32,11 +32,11 @@ export function formatRatio(value: number | null | undefined): string {
 }
 
 /** Số thực (mili giây, số vòng lặp) → một chữ số thập phân; `null`/`undefined` → dấu gạch. */
-export function formatDecimal(value: number | null | undefined, unit = ''): string {
+export function formatDecimal(value: number | null | undefined, unit = '', digits = 1): string {
   if (value == null) {
     return CHUA_CO;
   }
-  return `${value.toFixed(1)}${unit}`;
+  return `${value.toFixed(digits)}${unit}`;
 }
 
 /**

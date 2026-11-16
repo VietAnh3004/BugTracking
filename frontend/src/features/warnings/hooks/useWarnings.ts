@@ -42,6 +42,24 @@ export function useWarnings(runId: string, filters: WarningFilters, page = 0) {
   });
 }
 
+/**
+ * Chạy lại EvidenceLinker cho một run.
+ *
+ * Invalidate cả nhánh `['analysis-runs', runId]` (bộ đếm liên kết trên đầu trang cảnh báo) lẫn
+ * nhánh `['evidence', runId]`: chi tiết bằng chứng giữ `staleTime: Infinity` vì bình thường run là
+ * bất biến — đây chính là ngoại lệ mà Javadoc `useEvidenceDetail` nói phải invalidate tường minh.
+ */
+export function useRebuildLinks(runId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => warningApi.rebuildLinks(runId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: warningKeys.run(runId) });
+      void queryClient.invalidateQueries({ queryKey: ['evidence', runId] });
+    },
+  });
+}
+
 /** Nạp artifact analyzer — tiến trình giữ ở `useState`, cùng lý do với `useUploadSnapshot`. */
 export function useIngestArtifacts(snapshotId: string) {
   const queryClient = useQueryClient();

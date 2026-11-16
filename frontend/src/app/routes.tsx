@@ -113,6 +113,17 @@ export const routes: RouteObject[] = [
                 errorElement: <RouteErrorBoundary />,
               },
               {
+                // Gán nhãn ground truth đứng cạnh `warnings`/`dashboard`: nó cũng nói về CẢ lần phân
+                // tích. Vai trò (người gán chính hay thứ hai) do backend quyết theo người gọi.
+                path: 'snapshots/:snapshotId/runs/:runId/ground-truth',
+                lazy: async () => {
+                  const { GroundTruthPage } =
+                    await import('@/features/groundtruth/pages/GroundTruthPage');
+                  return { Component: GroundTruthPage };
+                },
+                errorElement: <RouteErrorBoundary />,
+              },
+              {
                 // Phiên hỏi đáp nằm trên query string (`?conversation=`), không phải trên path:
                 // nó là một BỘ LỌC của cùng một màn hình, không phải một tài nguyên khác. Nhờ vậy
                 // `?focus=EV-001A` — lối vào từ Evidence Explorer — ghép được vào cùng URL mà

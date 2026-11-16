@@ -31,5 +31,8 @@ export function useProject(projectId: string) {
   return useQuery({
     queryKey: ['projects', projectId],
     queryFn: () => apiClient.get<Project>(`/api/v1/projects/${projectId}`),
+    // Chưa biết dự án (ví dụ snapshot còn đang tải) thì không gọi: `/api/v1/projects/` rỗng id là
+    // endpoint DANH SÁCH, trả về một kiểu dữ liệu khác hẳn và không có lỗi nào báo.
+    enabled: projectId !== '',
   });
 }

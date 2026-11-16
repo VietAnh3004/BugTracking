@@ -58,6 +58,7 @@ function run(overrides: Partial<AnalysisRun>): AnalysisRun {
     linkCount: 0,
     codeContextCount: 0,
     unlinkedWarningCount: 0,
+    embeddingCount: 0,
     artifactSource: 'DOCKER_SANDBOX',
     startedAt: new Date().toISOString(),
     ...overrides,

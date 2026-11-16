@@ -29,6 +29,15 @@ export function getMessages(conversationId: string): Promise<ChatMessage[]> {
 }
 
 /**
+ * Dừng lượt hỏi đang chạy ở CẢ ba tầng: core-backend đóng kết nối tới agent-service, agent-service
+ * huỷ lượt gọi LLM đang bay. Chỉ huỷ `fetch` ở trình duyệt thì server vẫn chạy nốt và vẫn tốn
+ * quota cho một câu trả lời không ai đọc.
+ */
+export function cancelTurn(conversationId: string): Promise<void> {
+  return apiClient.post<void>(`/api/v1/conversations/${conversationId}/cancel`);
+}
+
+/**
  * Sự kiện tiến trình mà backend forward nguyên văn từ agent-service.
  *
  * Chỉ khai những trường giao diện thật sự dùng: khai đủ mọi trường ở đây nghĩa là mỗi lần
