@@ -36,8 +36,20 @@ public class User {
     @Column(nullable = false)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    /** {@code null} với tài khoản chỉ đăng nhập bằng Google (V13). */
+    @Column(name = "password_hash")
     private String passwordHash;
+
+    /** {@code null} = chưa xác thực email: chưa đăng nhập được bằng mật khẩu. */
+    @Column(name = "email_verified_at")
+    private OffsetDateTime emailVerifiedAt;
+
+    /** Claim {@code sub} của Google ID token — định danh bất biến, không phải email. */
+    @Column(name = "google_subject")
+    private String googleSubject;
+
+    @Column(name = "google_picture_url")
+    private String googlePictureUrl;
 
     @Column(name = "display_name", nullable = false)
     private String displayName;

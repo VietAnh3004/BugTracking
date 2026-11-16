@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import vn.hust.datn.evidence.AbstractWebIntegrationTest;
+import vn.hust.datn.evidence.testsupport.RecordingAccountMailer;
 
 /**
  * 3 endpoint auth qua request thật (không gọi {@code AuthService} trực tiếp) — kiểm cả tầng JSON,
@@ -26,8 +27,11 @@ class AuthControllerTest extends AbstractWebIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private RecordingAccountMailer mailer;
+
     @Test
-    void dangKyThanhCongTraVe201KemToken() throws Exception {
+    void dangKyThanhCongTraVe201KhongKemTokenVaGuiThuXacThuc() throws Exception {
         String email = "user-%d@test.local".formatted(System.nanoTime());
 
         getMockMvc()
@@ -35,11 +39,12 @@ class AuthControllerTest extends AbstractWebIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerBody(email, "mat-khau-du-dai-8", "Nguyen Van A")))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.accessToken").exists())
-                .andExpect(jsonPath("$.refreshToken").exists())
-                .andExpect(jsonPath("$.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.user.email").value(email))
-                .andExpect(jsonPath("$.user.role").value("USER"));
+                .andExpect(jsonPath("$.email").value(email))
+                // Chưa xác thực email thì chưa có phiên: KHÔNG được có token nào trong response.
+                .andExpect(jsonPath("$.accessToken").doesNotExist())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist());
+
+        assertThat(mailer.latestToken(email, "Xác thực")).isPresent();
     }
 
     @Test
@@ -127,20 +132,31 @@ class AuthControllerTest extends AbstractWebIntegrationTest {
     void meTraVeDungNguoiDungCuaToken() throws Exception {
         String email = "me-%d@test.local".formatted(System.nanoTime());
 
-        MvcResult registerResult = getMockMvc()
+        getMockMvc()
                 .perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerBody(email, "mat-khau-du-dai-8", "Chinh Chu")))
+                .andExpect(status().isCreated());
+
+        MvcResult verifyResult = getMockMvc()
+                .perform(post("/api/v1/auth/verify-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\": \"%s\"}".formatted(mailer.latestToken(email, "Xác thực").orElseThrow())))
+                .andExpect(status().isOk())
                 .andReturn();
 
-        JsonNode json = objectMapper.readTree(registerResult.getResponse().getContentAsString());
+        JsonNode json = objectMapper.readTree(verifyResult.getResponse().getContentAsString());
         String accessToken = json.get("accessToken").asText();
 
         getMockMvc()
                 .perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(email))
-                .andExpect(jsonPath("$.displayName").value("Chinh Chu"));
+                .andExpect(jsonPath("$.displayName").value("Chinh Chu"))
+                .andExpect(jsonPath("$.emailVerified").value(true))
+                .andExpect(jsonPath("$.hasPassword").value(true))
+                .andExpect(jsonPath("$.googleLinked").value(false))
+                .andExpect(jsonPath("$.avatarUrl").value(org.hamcrest.Matchers.startsWith("https://gravatar.com/avatar/")));
     }
 
     private String extractDetail(MvcResult result) throws Exception {

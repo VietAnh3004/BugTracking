@@ -50,6 +50,26 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: false
 
+  # SMTP cho email xác thực / quên mật khẩu — mặc định là Gmail (cổng 587 + STARTTLS), mật khẩu
+  # là App Password của Google, KHÔNG phải mật khẩu Gmail. MAIL_USERNAME rỗng = không gửi thư, chỉ
+  # ghi nội dung thư vào log (xem SmtpAccountMailer).
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          # Không có timeout thì một SMTP treo giữ luồng gửi thư mãi mãi.
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+
   servlet:
     multipart:
       max-file-size: ${MAX_UPLOAD_SIZE:100MB}
@@ -70,6 +90,13 @@ management:
     health:
       probes:
         enabled: true
+  # Có JavaMailSender thì Spring Boot tự thêm health indicator MỞ KẾT NỐI SMTP mỗi lần gọi
+  # /actuator/health: chưa điền Gmail (hay Gmail chậm) là health DOWN, docker compose coi
+  # core-backend hỏng và frontend báo mất backend — trong khi mọi API vẫn chạy. Mail chỉ là tính
+  # năng phụ, không phải điều kiện để backend sống.
+  health:
+    mail:
+      enabled: false
 
 springdoc:
   api-docs:
@@ -92,6 +119,16 @@ app:
     # Bí mật chia sẻ cho agent-service gọi /api/v1/tools/** — KHÔNG phải JWT (ADR 0005 điểm 2).
     service-token: ${SERVICE_TOKEN}
     bcrypt-strength: ${BCRYPT_STRENGTH:10}
+  account:
+    # URL frontend mà NGƯỜI DÙNG mở — link trong email trỏ về đây.
+    public-url: ${APP_PUBLIC_URL:http://localhost:3000}
+    verify-email-ttl: ${VERIFY_EMAIL_TTL:PT24H}
+    reset-password-ttl: ${RESET_PASSWORD_TTL:PT30M}
+    resend-cooldown: ${ACCOUNT_MAIL_COOLDOWN:PT60S}
+    mail-from: ${MAIL_FROM:}
+    mail-async: true
+    # Rỗng = tắt đăng nhập Google (frontend tự ẩn nút).
+    google-client-id: ${GOOGLE_CLIENT_ID:}
   storage:
     endpoint: ${STORAGE_ENDPOINT}
     access-key: ${STORAGE_ACCESS_KEY}

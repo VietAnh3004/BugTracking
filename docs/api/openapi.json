@@ -681,10 +681,10 @@
         }
       }
     },
-    "/api/v1/auth/register" : {
+    "/api/v1/auth/verify-email" : {
       "post" : {
         "tags" : [ "auth" ],
-        "operationId" : "register",
+        "operationId" : "verifyEmail",
         "parameters" : [ {
           "name" : "User-Agent",
           "in" : "header",
@@ -693,6 +693,79 @@
             "type" : "string"
           }
         } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VerifyEmailRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuthTokensResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ ]
+      }
+    },
+    "/api/v1/auth/reset-password" : {
+      "post" : {
+        "tags" : [ "auth" ],
+        "operationId" : "resetPassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "security" : [ ]
+      }
+    },
+    "/api/v1/auth/resend-verification" : {
+      "post" : {
+        "tags" : [ "auth" ],
+        "operationId" : "resendVerification",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EmailRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "security" : [ ]
+      }
+    },
+    "/api/v1/auth/register" : {
+      "post" : {
+        "tags" : [ "auth" ],
+        "operationId" : "register",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -709,7 +782,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/AuthTokensResponse"
+                  "$ref" : "#/components/schemas/RegisterResponse"
                 }
               }
             }
@@ -753,6 +826,42 @@
           }
         },
         "security" : [ ]
+      }
+    },
+    "/api/v1/auth/me/password" : {
+      "post" : {
+        "tags" : [ "auth" ],
+        "operationId" : "changePassword",
+        "parameters" : [ {
+          "name" : "User-Agent",
+          "in" : "header",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuthTokensResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/auth/logout" : {
@@ -808,6 +917,65 @@
                 }
               }
             }
+          }
+        },
+        "security" : [ ]
+      }
+    },
+    "/api/v1/auth/google" : {
+      "post" : {
+        "tags" : [ "auth" ],
+        "operationId" : "google",
+        "parameters" : [ {
+          "name" : "User-Agent",
+          "in" : "header",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GoogleLoginRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuthTokensResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ ]
+      }
+    },
+    "/api/v1/auth/forgot-password" : {
+      "post" : {
+        "tags" : [ "auth" ],
+        "operationId" : "forgotPassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EmailRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           }
         },
         "security" : [ ]
@@ -980,6 +1148,50 @@
         }
       }
     },
+    "/api/v1/auth/me" : {
+      "get" : {
+        "tags" : [ "auth" ],
+        "operationId" : "me",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "auth" ],
+        "operationId" : "updateMe",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/snapshots/{snapshotId}" : {
       "get" : {
         "tags" : [ "snapshots" ],
@@ -1132,22 +1344,23 @@
         }
       }
     },
-    "/api/v1/auth/me" : {
+    "/api/v1/auth/config" : {
       "get" : {
         "tags" : [ "auth" ],
-        "operationId" : "me",
+        "operationId" : "config",
         "responses" : {
           "200" : {
             "description" : "OK",
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/UserResponse"
+                  "$ref" : "#/components/schemas/AuthConfigResponse"
                 }
               }
             }
           }
-        }
+        },
+        "security" : [ ]
       }
     },
     "/api/v1/analysis-runs/{runId}" : {
@@ -2063,24 +2276,15 @@
           }
         }
       },
-      "RegisterRequest" : {
+      "VerifyEmailRequest" : {
         "type" : "object",
         "properties" : {
-          "email" : {
-            "type" : "string",
-            "minLength" : 1
-          },
-          "password" : {
-            "type" : "string",
-            "maxLength" : 2147483647,
-            "minLength" : 8
-          },
-          "displayName" : {
+          "token" : {
             "type" : "string",
             "minLength" : 1
           }
         },
-        "required" : [ "displayName", "email", "password" ]
+        "required" : [ "token" ]
       },
       "AuthTokensResponse" : {
         "type" : "object",
@@ -2124,9 +2328,74 @@
           "createdAt" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "emailVerified" : {
+            "type" : "boolean"
+          },
+          "hasPassword" : {
+            "type" : "boolean"
+          },
+          "googleLinked" : {
+            "type" : "boolean"
+          },
+          "avatarUrl" : {
+            "type" : "string"
           }
         },
-        "required" : [ "createdAt", "displayName", "email", "id", "role" ]
+        "required" : [ "avatarUrl", "createdAt", "displayName", "email", "emailVerified", "googleLinked", "hasPassword", "id", "role" ]
+      },
+      "ResetPasswordRequest" : {
+        "type" : "object",
+        "properties" : {
+          "token" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "newPassword" : {
+            "type" : "string",
+            "maxLength" : 2147483647,
+            "minLength" : 8
+          }
+        },
+        "required" : [ "newPassword", "token" ]
+      },
+      "EmailRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "email" ]
+      },
+      "RegisterRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "password" : {
+            "type" : "string",
+            "maxLength" : 2147483647,
+            "minLength" : 8
+          },
+          "displayName" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "displayName", "email", "password" ]
+      },
+      "RegisterResponse" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "email" ]
       },
       "RefreshRequest" : {
         "type" : "object",
@@ -2137,6 +2406,20 @@
           }
         },
         "required" : [ "refreshToken" ]
+      },
+      "ChangePasswordRequest" : {
+        "type" : "object",
+        "properties" : {
+          "currentPassword" : {
+            "type" : "string"
+          },
+          "newPassword" : {
+            "type" : "string",
+            "maxLength" : 2147483647,
+            "minLength" : 8
+          }
+        },
+        "required" : [ "newPassword" ]
       },
       "LoginRequest" : {
         "type" : "object",
@@ -2151,6 +2434,16 @@
           }
         },
         "required" : [ "email", "password" ]
+      },
+      "GoogleLoginRequest" : {
+        "type" : "object",
+        "properties" : {
+          "credential" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "credential" ]
       },
       "LinkRebuildResponse" : {
         "type" : "object",
@@ -2252,6 +2545,17 @@
           }
         },
         "required" : [ "analysisRunId", "createdAt", "id", "title", "updatedAt" ]
+      },
+      "UpdateProfileRequest" : {
+        "type" : "object",
+        "properties" : {
+          "displayName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "displayName" ]
       },
       "SnapshotFileResponse" : {
         "type" : "object",
@@ -2521,6 +2825,14 @@
           }
         },
         "required" : [ "citations", "ordinal", "text", "verdict" ]
+      },
+      "AuthConfigResponse" : {
+        "type" : "object",
+        "properties" : {
+          "googleClientId" : {
+            "type" : "string"
+          }
+        }
       },
       "PageResponseWarningView" : {
         "type" : "object",

@@ -43,6 +43,12 @@ class RefreshTokenRotationTest extends AbstractIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private vn.hust.datn.evidence.service.account.AccountService accountService;
+
+    @Autowired
+    private vn.hust.datn.evidence.testsupport.RecordingAccountMailer mailer;
+
     @Test
     void refreshTraVeCapTokenMoiVaTokenCuHetHieuLuc() {
         AuthTokensResponse initial = dangKyNguoiDungMoi();
@@ -117,8 +123,11 @@ class RefreshTokenRotationTest extends AbstractIntegrationTest {
         assertThat(rows).allMatch(row -> row.getTokenHash().length() == 64);
     }
 
+    /** Từ V13 đăng ký không phát token: phiên đầu tiên đến từ link xác thực trong email. */
     private AuthTokensResponse dangKyNguoiDungMoi() {
         String email = "refresh-%s@test.local".formatted(UUID.randomUUID());
-        return authService.register(new RegisterRequest(email, "mat-khau-du-dai-8", "Nguoi Dung Test"), "junit-test");
+        authService.register(new RegisterRequest(email, "mat-khau-du-dai-8", "Nguoi Dung Test"));
+        String token = mailer.latestToken(email, "Xác thực").orElseThrow();
+        return accountService.verifyEmail(token, "junit-test");
     }
 }

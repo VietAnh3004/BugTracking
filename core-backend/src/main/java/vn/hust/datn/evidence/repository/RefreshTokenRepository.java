@@ -34,4 +34,13 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     int revokeFamily(
             @Param("familyId") UUID familyId,
             @Param("reason") vn.hust.datn.evidence.domain.RefreshTokenRevokedReason reason);
+
+    /** Đóng MỌI phiên của một người — sau khi đổi/đặt lại mật khẩu, hay khi liên kết Google. */
+    @Modifying
+    @Query(
+            "UPDATE RefreshToken t SET t.revokedAt = CURRENT_TIMESTAMP, t.revokedReason = :reason "
+                    + "WHERE t.userId = :userId AND t.revokedAt IS NULL")
+    int revokeAllForUser(
+            @Param("userId") UUID userId,
+            @Param("reason") vn.hust.datn.evidence.domain.RefreshTokenRevokedReason reason);
 }

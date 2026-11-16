@@ -3,6 +3,7 @@ package vn.hust.datn.evidence.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -84,8 +85,19 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Đi cặp với @SecurityRequirements rỗng trong AuthController — xem Javadoc ở đó.
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
-                                "/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh")
+                                HttpMethod.POST,
+                                "/api/v1/auth/register",
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/refresh",
+                                "/api/v1/auth/verify-email",
+                                "/api/v1/auth/resend-verification",
+                                "/api/v1/auth/forgot-password",
+                                "/api/v1/auth/reset-password",
+                                "/api/v1/auth/google")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/config")
                         .permitAll()
                         .requestMatchers("/api/v1/openapi", "/api/v1/openapi/**", "/swagger-ui.html", "/swagger-ui/**")
                         .permitAll()

@@ -21,6 +21,13 @@ app:
     # dồn thành hàng chục giây. 4 vòng đủ chậm để chứng minh logic đúng, không đủ chậm để làm
     # người chạy test tưởng hạ tầng bị treo.
     bcrypt-strength: 4
+  account:
+    public-url: http://app.test.local
+    # Gửi ĐỒNG BỘ ngay sau commit: test đọc được thư vừa gửi mà không phải chờ luồng khác. Thư đi
+    # vào RecordingAccountMailer (TestStorageConfiguration), không bao giờ ra SMTP thật.
+    mail-async: false
+    # Bật Google với một Client ID giả — token do FakeGoogleIdTokenVerifier "kiểm", không gọi Google.
+    google-client-id: test-client-id.apps.googleusercontent.com
   storage:
     endpoint: http://localhost:9000
     access-key: test

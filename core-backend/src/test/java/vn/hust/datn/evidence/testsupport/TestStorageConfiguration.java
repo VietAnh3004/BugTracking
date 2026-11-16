@@ -20,4 +20,21 @@ public class TestStorageConfiguration {
     public ObjectStorageClient objectStorageClient() {
         return new InMemoryObjectStorageClient();
     }
+
+    /**
+     * Thư đi vào bộ nhớ, không ra SMTP. Đặt ở cấu hình DÙNG CHUNG (không {@code @MockitoBean} theo
+     * từng class): mọi test đăng ký tài khoản đều gửi thư, và thêm một biến thể context cho mỗi
+     * class là khởi động lại cả Spring lẫn Flyway.
+     */
+    @Bean
+    @Primary
+    public RecordingAccountMailer recordingAccountMailer() {
+        return new RecordingAccountMailer();
+    }
+
+    @Bean
+    @Primary
+    public FakeGoogleIdTokenVerifier fakeGoogleIdTokenVerifier() {
+        return new FakeGoogleIdTokenVerifier();
+    }
 }

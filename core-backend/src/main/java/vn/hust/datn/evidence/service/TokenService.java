@@ -91,6 +91,19 @@ public class TokenService {
 
     /** Dùng chung bởi {@code RefreshTokenService} (B5) để tra cứu theo hash khi xoay vòng. */
     public String hashRefreshToken(String plaintextToken) {
+        return sha256Hex(plaintextToken);
+    }
+
+    /**
+     * Token opaque mới: 32 byte ngẫu nhiên, Base64URL — dùng chung cho refresh token và token
+     * trong email (xác thực, đặt lại mật khẩu).
+     */
+    public String newOpaqueToken() {
+        return generateOpaqueToken();
+    }
+
+    /** SHA-256 hex — dạng lưu DB của mọi token opaque (refresh token, {@code account_token}). */
+    public String sha256Hex(String plaintextToken) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(plaintextToken.getBytes(StandardCharsets.UTF_8));

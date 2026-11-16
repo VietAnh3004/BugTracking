@@ -134,6 +134,44 @@ public class GlobalExceptionHandler {
         return problem(HttpStatus.UNAUTHORIZED, "invalid-credentials", "Đăng nhập thất bại", ex.getMessage(), request);
     }
 
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ProblemDetail handleEmailNotVerified(EmailNotVerifiedException ex, HttpServletRequest request) {
+        return problem(HttpStatus.FORBIDDEN, "email-not-verified", "Email chưa được xác thực", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidAccountTokenException.class)
+    public ProblemDetail handleInvalidAccountToken(InvalidAccountTokenException ex, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "invalid-account-token", "Liên kết không hợp lệ", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(WrongCurrentPasswordException.class)
+    public ProblemDetail handleWrongCurrentPassword(WrongCurrentPasswordException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.BAD_REQUEST, "wrong-current-password", "Mật khẩu hiện tại không đúng", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidGoogleTokenException.class)
+    public ProblemDetail handleInvalidGoogleToken(InvalidGoogleTokenException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.UNAUTHORIZED, "invalid-google-token", "Đăng nhập Google thất bại", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(GoogleLoginDisabledException.class)
+    public ProblemDetail handleGoogleLoginDisabled(GoogleLoginDisabledException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "google-login-disabled",
+                "Đăng nhập Google chưa bật",
+                ex.getMessage(),
+                request);
+    }
+
+    @ExceptionHandler(GoogleAccountConflictException.class)
+    public ProblemDetail handleGoogleAccountConflict(GoogleAccountConflictException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.CONFLICT, "google-account-conflict", "Email đã gắn với Google khác", ex.getMessage(), request);
+    }
+
     @ExceptionHandler(InvalidRefreshTokenException.class)
     public ProblemDetail handleInvalidRefreshToken(InvalidRefreshTokenException ex, HttpServletRequest request) {
         return problem(HttpStatus.UNAUTHORIZED, "invalid-refresh-token", "Refresh token không hợp lệ", null, request);

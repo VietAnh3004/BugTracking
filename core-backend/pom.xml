@@ -71,6 +71,14 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
     </dependency>
+    <!--
+        Gửi email xác thực / quên mật khẩu qua SMTP (Gmail). Kiểm ID token của Google KHÔNG cần
+        thêm thư viện: NimbusJwtDecoder của resource-server ở trên đọc được JWKS của Google.
+    -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-mail</artifactId>
+    </dependency>
 
     <!--
         SDK MinIO thay vì aws-sdk-v2: cấu hình 3 dòng (endpoint/credentials) thay vì
