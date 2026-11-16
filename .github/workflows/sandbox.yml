@@ -1,0 +1,43 @@
+name: Sandbox
+
+# Dựng hai image analyzer rồi chạy chúng trên vulnshop, đối chiếu với expected-analysis.json —
+# đúng những gì `./infra/analyzer/build.sh` làm khi chạy tay.
+#
+# Workflow RIÊNG chứ không phải một job trong ci.yml: bộ lọc `paths` của GitHub Actions chỉ khai
+# được ở cấp workflow, không ở cấp job. Job này tốn 5-10 phút (kéo JDK, Maven, Semgrep), nên chỉ
+# chạy khi thứ nó canh thay đổi — sửa frontend không phải chờ nó.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/analyzer/**'
+      - 'case-study/vulnshop/**'
+      - 'case-study/semgrep-rules/**'
+      - '.github/workflows/sandbox.yml'
+  pull_request:
+    paths:
+      - 'infra/analyzer/**'
+      - 'case-study/vulnshop/**'
+      - 'case-study/semgrep-rules/**'
+      - '.github/workflows/sandbox.yml'
+  # Chạy tay từ tab Actions — ví dụ trước buổi demo, khi image nền (JDK, Semgrep) có thể đã đổi
+  # dù repo không đổi dòng nào.
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyzer-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      # check_sandbox_output.py gọi bằng `python`, không phải `python3`.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Dựng image và đối chiếu trên vulnshop
+        # Script tự kiểm: analyzer ra 0 cảnh báo, thiếu test hay lệch số liệu đều làm nó exit khác 0.
+        run: ./infra/analyzer/build.sh

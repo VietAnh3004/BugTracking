@@ -10,8 +10,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Mỗi service chạy độc lập và chỉ khi thư mục của nó thay đổi: sửa frontend không phải
-  # chờ Maven build, và ngược lại.
+  # Mỗi service là một job riêng, chạy SONG SONG: sửa frontend không phải chờ Maven build xong
+  # mới biết kết quả. Cả năm job chạy ở MỌI lần push — không lọc theo thư mục, vì `paths` chỉ khai
+  # được ở cấp workflow. Job đắt nhất (dựng image sandbox) nằm riêng ở sandbox.yml, có lọc.
   core-backend:
     runs-on: ubuntu-latest
     defaults:
