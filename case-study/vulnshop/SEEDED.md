@@ -32,7 +32,7 @@ liễu không" — và câu hỏi đó hoàn toàn chính đáng.
 | TP-02 | `ProductRepository.searchByKeyword:31` | SQL injection trong LIKE | SpotBugs + Semgrep |
 | TP-03 | `FileStorageService.readUserFile:41` | Path traversal | SpotBugs `PATH_TRAVERSAL_IN` — **Semgrep bỏ sót** |
 | TP-04 | `FileStorageService.readFirstByte:72` | Rò rỉ tài nguyên (stream không đóng) | SpotBugs `OBL_UNSATISFIED_OBLIGATION` + `OS_OPEN_STREAM` |
-| TP-05 | `PasswordHasher.hashPassword:40` | MD5 để băm mật khẩu | SpotBugs `WEAK_MESSAGE_DIGEST_MD5` + Semgrep `use-of-md5` |
+| TP-05 | `PasswordHasher.md5Hex:53` (gọi từ `hashPassword`) | MD5 để băm mật khẩu | SpotBugs `WEAK_MESSAGE_DIGEST_MD5` + Semgrep `use-of-md5` |
 | TP-06 | `Product.equals:45` | equals() có, hashCode() không | SpotBugs `HE_EQUALS_USE_HASHCODE` |
 | TP-07 | `OrderStatusChecker.isShipped:18` | So sánh chuỗi bằng `==` | SpotBugs `ES_COMPARING_PARAMETER_STRING_WITH_EQ` |
 | TP-08 | `SessionRegistry.ACTIVE_SESSIONS:24` | HashMap tĩnh, không đồng bộ | SpotBugs `MS_MUTABLE_COLLECTION_PKGPROTECT` |
@@ -44,6 +44,15 @@ liễu không" — và câu hỏi đó hoàn toàn chính đáng.
 | TP-14 | `SecurityConstants.JWT_SIGNING_KEY:12` | Khoá bí mật nhúng trong mã | **KHÔNG công cụ nào bắt** (ngoài dự kiến) |
 | TP-15 | `SecurityConstants.DEFAULT_ADMIN_PASSWORD:19` | Mật khẩu mặc định trong mã | **KHÔNG công cụ nào bắt** (ngoài dự kiến) |
 | TP-16 | `UserService.displayNameOf:66` | NPE — cùng lỗi TP-11 nhưng kiểm null nằm trong cùng method | SpotBugs `NP_NULL_ON_SOME_PATH` **và** test hỏng trỏ đúng dòng |
+
+> **Sửa 16/11/2026 — TP-05 và FP-02 từng ghi ĐẢO số dòng** (TP-05 ghi `:40`, FP-02 ghi `:53`).
+> Đối chiếu mã thật: dòng 40 nằm trong `checksumForDeduplication` (MD5 khử trùng lặp → FP), dòng 53
+> nằm trong `md5Hex` mà `hashPassword` gọi (MD5 băm mật khẩu → TP). Lỗi này nằm im từ tuần 2 vì
+> không gì đối chiếu số dòng của file này với mã; nó chỉ lộ ra khi soi một cảnh báo cụ thể trên
+> giao diện. Nhãn ground truth và bộ cảnh báo user study (`docs/user-study/bo-canh-bao.md`) đã sửa
+> theo. Bản máy đọc được của các nhãn này: `case-study/ground-truth/vulnshop-seeded.yaml` — đặt NGOÀI
+> thư mục mã vulnshop có chủ đích: nén vulnshop để tải lên mà kéo theo file đáp án thì người gán mù
+> mở cây file là thấy.
 
 **Ba lỗi TP-11 → TP-13 là hạt nhân của đề tài.** Phân tích tĩnh im lặng hoàn toàn, chỉ có test
 hỏng kèm stack trace mới chứng minh được. Đây là bằng chứng thực nghiệm trực tiếp cho luận điểm
@@ -76,7 +85,7 @@ cụ trong báo cáo chứ không được lặng lẽ bỏ qua.
 | # | Vị trí | Cảnh báo sinh ra | Vì sao không phải lỗi |
 |---|---|---|---|
 | FP-01 | `ProductRepository.findAllSorted:50` | SpotBugs `SQL_INJECTION_SPRING_JDBC` | Giá trị nối vào ORDER BY đến từ `enum SortField`, người dùng không truyền chuỗi tuỳ ý được. ORDER BY không dùng được tham số ràng buộc nên whitelist bằng enum là cách xử lý đúng. **Semgrep không báo chỗ này** |
-| FP-02 | `PasswordHasher.checksumForDeduplication:53` | SpotBugs `WEAK_MESSAGE_DIGEST_MD5` + Semgrep `use-of-md5` | MD5 dùng để phát hiện tệp trùng, không đóng vai trò bảo mật. Tạo được va chạm cũng không thu lợi gì |
+| FP-02 | `PasswordHasher.checksumForDeduplication:40` | SpotBugs `WEAK_MESSAGE_DIGEST_MD5` + Semgrep `use-of-md5` | MD5 dùng để phát hiện tệp trùng, không đóng vai trò bảo mật. Tạo được va chạm cũng không thu lợi gì |
 | FP-03 | `ColorPicker.RANDOM:21` | SpotBugs `PREDICTABLE_RANDOM` | Giá trị chỉ dùng chọn màu nền avatar. Đoán trước được màu avatar không mang lại lợi thế nào |
 | FP-04 | `UserService.countByRole:42` | SpotBugs `RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE` | Kiểm tra null thừa vì repository luôn trả về danh sách. Rườm rà chứ không gây hại |
 | FP-05 | `TextNormalizer.normalizeStatusCode:24` | SpotBugs `DM_CONVERT_CASE` | Đầu vào là mã trạng thái ASCII nội bộ, không đến từ người dùng. Kết quả không đổi dù locale nào |
@@ -121,7 +130,7 @@ Ba trạng thái bằng chứng đều phải xuất hiện được, nếu khô
 |---|---|---|
 | Có cảnh báo + test hỏng trỏ đúng dòng | `UserService.displayNameOf:66` (TP-16) | Bằng chứng `SUPPORTS` → `LIKELY_TRUE_POSITIVE` |
 | **Không** cảnh báo + test hỏng trỏ đúng dòng | `UserService:30`, `PaginationHelper:21`, `CartService:25` | Chỉ test bắt được — không có cảnh báo nào để `SUPPORTS` |
-| Có cảnh báo + test phủ và pass | `PasswordHasher:53`, `TextNormalizer:24` | Bằng chứng có thể `CONTRADICTS` |
+| Có cảnh báo + test phủ và pass | `PasswordHasher:40`, `TextNormalizer:24` | Bằng chứng có thể `CONTRADICTS` |
 | Có cảnh báo + **không test nào phủ** | `SessionRegistry:24`, `ColorPicker:21`, `AuditLogger:24`, `AuthController:49` | → `INSUFFICIENT_EVIDENCE` |
 
 **Bẫy cố ý đặt ra cho AI Agent** — hai trường hợp mà "test xanh" *không* có nghĩa là an toàn:

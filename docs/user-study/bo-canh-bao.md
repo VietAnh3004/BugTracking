@@ -13,8 +13,8 @@ kín với người tham gia và với chính người điều phối trong lúc
 |---|---|---|---|---|
 | 1 | `UserRepository.findByUsername:35` | SpotBugs `SQL_INJECTION_SPRING_JDBC` + Semgrep | **TP-01** | **Bẫy trung tâm của đồ án**: có test đường đi bình thường XANH, và có một test xanh khác *chứng minh* lỗ hổng có thật. Ai kết luận "có test phủ + test xanh ⇒ báo nhầm" là sai |
 | 2 | `ProductRepository.findAllSorted:50` | SpotBugs `SQL_INJECTION_SPRING_JDBC`, **Semgrep không báo** | **FP-01** | Ca đắt giá nhất: hai công cụ trái ngược ở cùng một dòng. Phải đọc `enum SortField` ở file khác mới quyết được — đúng loại tình huống cần bằng chứng ngoài phạm vi dòng bị cảnh báo |
-| 3 | `PasswordHasher.hashPassword:40` | `WEAK_MESSAGE_DIGEST_MD5` + Semgrep | **TP-05** | MD5 dùng đúng chỗ nguy hiểm |
-| 4 | `PasswordHasher.checksumForDeduplication:53` | `WEAK_MESSAGE_DIGEST_MD5` + Semgrep | **FP-02** | **Cùng luật, cùng file, cùng lớp với #3** nhưng nhãn ngược lại. Cặp này đo được chính xác điều đang hỏi: người dùng có phân biệt được theo *ngữ cảnh sử dụng* hay chỉ phản xạ theo tên luật |
+| 3 | `PasswordHasher.md5Hex:53` (gọi từ `hashPassword`) | `WEAK_MESSAGE_DIGEST_MD5` + Semgrep | **TP-05** | MD5 dùng đúng chỗ nguy hiểm |
+| 4 | `PasswordHasher.checksumForDeduplication:40` | `WEAK_MESSAGE_DIGEST_MD5` + Semgrep | **FP-02** | **Cùng luật, cùng file, cùng lớp với #3** nhưng nhãn ngược lại. Cặp này đo được chính xác điều đang hỏi: người dùng có phân biệt được theo *ngữ cảnh sử dụng* hay chỉ phản xạ theo tên luật |
 | 5 | `UserService.displayNameOf:66` | `NP_NULL_ON_SOME_PATH` | **TP-16** | Ca **duy nhất** của vulnshop có liên kết `SUPPORTS` thật từ một test hỏng trỏ đúng dòng bị cảnh báo. Nếu Evidence Agent có ích ở đâu thì phải là ở đây |
 | 6 | `AuditLogger.logLogout:29` | `CRLF_INJECTION_LOGS` | **FP-06** | Đã dùng tham số hoá SLF4J — biện pháp phòng chống đúng, công cụ vẫn báo. Quyết được chỉ bằng cách đọc đúng một dòng mã |
 | 7 | `FileStorageService.readUserFile:41` | `PATH_TRAVERSAL_IN`, **Semgrep bỏ sót** | **TP-03** | Lỗ hổng thật mà chỉ một công cụ bắt được |
