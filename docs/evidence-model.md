@@ -446,6 +446,43 @@ ra một index vô dụng mà không báo gì. `EvidenceEmbeddingSchemaTest.chua
 canh đúng chỗ này: nó sẽ **đỏ** khi ai đó đổi sang `vector(N)`, nhắc tạo index thay vì để hệ thống
 lặng lẽ quét tuần tự.
 
+**Đã chốt mô hình (16/11/2026): `gemini-embedding-001`, 768 chiều, qua agent-service.** Cột vẫn
+**không** khai số chiều và **không** dựng HNSW — có chủ đích: mọi truy vấn tìm theo nghĩa đều lọc
+theo MỘT run (vulnshop ~124 bằng chứng), quét chính xác trên vài trăm hàng vừa nhanh vừa đúng; index
+gần đúng + lọc sau theo run có thể trả thiếu kết quả mà không báo gì.
+
+## 12quater. `analysis_run` — trạng thái embedding (V11)
+
+Sinh vector **ngay sau** mỗi lần phân tích. Gemini lỗi thì run vẫn `SUCCEEDED` và `search_evidence`
+lùi về so chữ — nhưng lý do phải được ghi, không im lặng:
+
+| Cột | Ý nghĩa |
+|---|---|
+| `embedding_model` | Mô hình đã sinh vector cho run; truy vấn tìm theo nghĩa dùng đúng mô hình này |
+| `embedding_count` | Số bằng chứng có vector. `0` ⇒ tìm kiếm của run chỉ so chữ |
+| `embedding_error` | Lý do lần sinh gần nhất thất bại; hiện ra màn hình cảnh báo kèm nút "Sinh lại vector" |
+
+Văn bản đưa vào mô hình: `<type>: <summary> | <symbol> | <file_path>`, cắt 2000 ký tự, lưu nguyên
+văn ở `evidence_embedding.text_chunk`.
+
+## 12quinquies. `test_line_coverage` — coverage theo từng test (V12)
+
+`jacoco.xml` chỉ cho độ phủ **gộp**, nên trước V12 linker nối test ↔ cảnh báo theo quy ước tên lớp.
+Analyzer sandbox nay ghi thêm `per-test-coverage.json` (listener JUnit + agent JaCoCo, xem
+`infra/analyzer/java/pertest/`). Không có bảng provenance và không nằm trong `DOCUMENTED_TABLES`:
+artifact này không có trong `docs/samples/vulnshop/` (bộ mẫu nạp tay), chỉ có ở
+`docs/samples/vulnshop-sandbox/`.
+
+| Cột | Nguồn | Ghi chú |
+|---|---|---|
+| `test_evidence_id` | `tests[].class` + `tests[].method` ghép với `test_case` | Test tham số hoá nhiều lần chạy cùng method được gộp |
+| `file_path` | khoá của `tests[].lines` (dạng `<package>/<File>.java` như jacoco.xml) | Chuẩn hoá về snapshot bằng **cùng** `SnapshotPathResolver` với coverage gộp |
+| `line_number` | phần tử của `tests[].lines[file]` | "Chạy qua" = FULLY hoặc PARTLY covered — cùng định nghĩa `ci > 0` của `coverage_line` |
+
+Run **có** dữ liệu này thì tầng 2b của linker nối theo dòng thật (`LINE_EXACT`, test hỏng 0.8 /
+test xanh 0.6) và **bỏ** liên kết theo tên (chốt với người dùng 16/11/2026); run nạp tay giữ cách
+cũ. File hỏng thì bỏ qua cả file và lùi về theo tên — đây là phần tăng cường, không phải điều kiện.
+
 ## 13. Kiểm chứng tự động
 
 ```bash

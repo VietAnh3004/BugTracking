@@ -30,6 +30,7 @@
 | **Tuần 10-11** — EvidenceLinker 3 tầng, CODE_CONTEXT, pgvector, Evidence Explorer | ✅ Xong (xem §I) |
 | **Tuần 12-13** — agent loop, 5 tool, CitationValidator, chat + SSE | ✅ Xong (xem §J) |
 | **Tuần 14** — Human Review, dashboard chỉ số, export CSV/JSON, chuẩn bị user study | ✅ Xong (xem §K) |
+| **Tuần 16** — trả nợ kỹ thuật: embedding, coverage từng test, chia sẻ dự án + gán nhãn ground truth, huỷ lượt hỏi | ✅ Xong (xem §L) |
 
 ### §G — Tuần 5-7: tiến độ chi tiết (đã xong)
 
@@ -720,6 +721,29 @@ cục cho gọn" là đủ để đảo nó về mà không ai nhận ra.
 | Chưa có màn hình gán nhãn ground truth | Tuần 15 gán bằng SQL/script là đủ cho 34 cảnh báo; dựng UI cho việc làm một lần là phí |
 | Dashboard chưa có biểu đồ | Số dạng bảng đủ để demo và để nghiệm thu; biểu đồ thuộc phần phân tích số liệu tuần 17-18 |
 | Chưa gộp nhiều người review trên cùng một run ở dashboard | `GET /reviews` trả review của **chính người gọi**. Số tổng hợp có trong `/metrics` và export; màn hình so từng người chỉ cần khi phân tích tuần 17-18 |
+
+### §L — Tuần 16: trả nợ "để sau" (16/11/2026)
+
+Các quyết định dưới đây do người dùng chốt trực tiếp; ghi lại để không bị "sửa lại cho gọn" về sau.
+
+| Món nợ (hẹn từ) | Đã làm | Quyết định đã chốt |
+|---|---|---|
+| Embedding (tuần 10-11) | `search_evidence` kết hợp so chữ + theo nghĩa; mỗi kết quả mang `matched_by` | Gemini `gemini-embedding-001`, 768 chiều, qua agent-service `/embed`; sinh **ngay sau mỗi lần phân tích**; lỗi thì run vẫn thành công, lý do ghi ở `analysis_run.embedding_error` |
+| Coverage theo từng test (kế hoạch gốc) | Listener JUnit + agent JaCoCo trong image analyzer → `per-test-coverage.json` → bảng `test_line_coverage` (V12) | Run có dữ liệu thì liên kết test ↔ cảnh báo **thay** liên kết theo tên lớp; chỉ có ở "Phân tích tự động" |
+| Màn hình gán nhãn ground truth (tuần 14) | Trang Gán nhãn + xuất/nạp YAML khoá theo `file + dòng` | Nhãn theo từng lần phân tích + nạp/xuất file; nhãn SEEDED **chỉ là gợi ý**, ground truth = MANUAL; kappa trên dashboard |
+| (mới) Người gán thứ hai | **Chia sẻ dự án** (V10 `project_member`) | Thành viên: xem, hỏi Agent, review, gán nhãn mù. Server không bao giờ trả nhãn của chủ cho thành viên. Dashboard + xuất báo cáo chỉ cho chủ |
+| Nút huỷ lượt hỏi (tuần 12-13) | Dừng cả 3 tầng: FE → `/cancel` → core đóng kết nối → agent-service huỷ lượt gọi LLM | Rời trang / hỏi câu mới cũng dừng hẳn |
+| Nút chạy lại liên kết (tuần 10-11) | Trên trang cảnh báo (chỉ chủ) | — |
+| Tô màu cú pháp (tuần 10-11) | `refractor` trả cây cú pháp, không HTML; tô cả file rồi chia dòng | — |
+| Job CI sandbox (tuần 8-9) | `.github/workflows/sandbox.yml`, chỉ chạy khi sửa analyzer/vulnshop | — |
+| `AnalyzerRegistry.adapterFor/collectorFor` | Đã xoá | Đúng hẹn "tới tuần 12 không ai gọi thì xoá" |
+
+Hai lỗi lộ ra khi làm: **SEEDED.md đảo dòng TP-05/FP-02** từ tuần 2 (đã sửa, có test canh), và chỉ
+số ground truth từng **đếm hai lần** cảnh báo có cả nhãn MANUAL lẫn SEEDED.
+
+Bài học đáng ghi: listener tách coverage từng test phải **reset** agent JaCoCo, và reset xoá luôn
+độ phủ gộp — `jacoco.xml` ra 0 dòng được phủ. `check_sandbox_output.py` bắt được ngay; cách chữa là
+ghi cả phần chạy giữa các test rồi **gộp** lại trước khi sinh báo cáo.
 
 ---
 

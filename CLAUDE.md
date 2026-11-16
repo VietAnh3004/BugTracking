@@ -170,6 +170,15 @@ hẳn: mặc định Vitest mở ~(số core − 1) tiến trình cùng lúc, m�
 để co giãn theo máy chạy CI, không hardcode số). Cách phân biệt nhanh hai nguyên nhân: chạy lại
 với `npx vitest run --maxWorkers=2` — xanh nghĩa là lỗi tải, vẫn đỏ nghĩa là lỗi environment.
 
+**Nguyên nhân THỨ BA, khác hẳn hai cái trên: ký tự ổ đĩa viết THƯỜNG (`d:\…`).** Triệu chứng:
+MỌI file test đỏ với `Vitest failed to find the current suite`, chỉ vào `afterEach` trong
+`src/test/setup.ts` — kể cả một test tối giản `expect(1).toBe(1)` không có setup nào. Dòng đầu log
+in `RUN v4.1.10 d:/Study/...` (chữ `d` thường). Vitest nạp CÙNG MỘT module hai lần dưới hai
+đường dẫn `d:/…` và `D:/…`, nên có hai bản `@vitest/runner` và test đăng ký vào bản không chạy.
+Gặp thật khi shell khởi động ở `d:\Study\...` (cwd của trình soạn thảo). Cách chạy đúng (PowerShell):
+`Set-Location 'D:\Study\DATN\Project\BugTracking\frontend'; [System.IO.Directory]::SetCurrentDirectory('D:\Study\DATN\Project\BugTracking\frontend'); npx vitest run`
+— kiểm dòng `RUN` phải in `D:/` hoa. Không phải lỗi code, không phải cache `.vite`.
+
 **`UrlBasedCorsConfigurationSource` chỉ áp cho ĐÚNG các mẫu đường dẫn đã đăng ký — endpoint ngoài
 mẫu không có header CORS nào.** Gặp thật: `CorsConfig` đăng ký `/api/**`, nhưng frontend gọi
 `/actuator/health` ngay ở màn hình đầu tiên (`useBackendHealth`) nên bị trình duyệt chặn với
