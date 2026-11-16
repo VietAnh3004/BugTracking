@@ -1,14 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
 
 import * as authApi from '@/features/auth/api/authApi';
-import { useAuth } from '@/features/auth/hooks/useAuth';
 
-/** Đăng ký xong là đăng nhập luôn — backend trả về cùng bộ token như `/auth/login`. */
+/**
+ * Đăng ký KHÔNG đăng nhập luôn: backend chỉ tạo tài khoản chưa xác thực và gửi link vào email.
+ * Phiên đầu tiên đến từ trang `/verify-email` khi người dùng mở link đó.
+ */
 export function useRegister() {
-  const { signIn } = useAuth();
-
   return useMutation({
     mutationFn: (body: authApi.RegisterRequest) => authApi.register(body),
-    onSuccess: signIn,
   });
 }

@@ -23,6 +23,8 @@ export interface AuthContextValue {
   user: CurrentUser | null;
   signIn: (tokens: AuthTokens) => void;
   signOut: () => Promise<void>;
+  /** Thay thông tin người dùng trong phiên hiện tại (sau khi sửa hồ sơ) mà không đổi token. */
+  updateUser: (user: CurrentUser) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

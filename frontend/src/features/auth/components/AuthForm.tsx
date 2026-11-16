@@ -1,6 +1,6 @@
 /**
- * Khung form dùng chung cho đăng nhập và đăng ký — hai trang khác nhau đúng ở tập trường và nhãn
- * nút, nên tách phần chung ra đây thay vì chép hai lần cách hiển thị lỗi và trạng thái đang gửi.
+ * Khung form dùng chung cho các màn hình tài khoản (đăng nhập, đăng ký, quên/đặt lại mật khẩu) —
+ * chúng khác nhau đúng ở tập trường và nhãn nút, nên tách phần chung ra đây thay vì chép hai lần cách hiển thị lỗi và trạng thái đang gửi.
  *
  * Thuần trình bày: không gọi API, không biết `useLogin`/`useRegister` tồn tại.
  */
@@ -19,7 +19,9 @@ interface AuthFormProps {
   errorMessage: string | null;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   children: ReactNode;
-  footer: ReactNode;
+  /** Nội dung dưới form, vẫn trong thẻ — vd khối "Đăng nhập bằng Google". */
+  after?: ReactNode;
+  footer?: ReactNode;
 }
 
 export function AuthForm({
@@ -30,6 +32,7 @@ export function AuthForm({
   errorMessage,
   onSubmit,
   children,
+  after,
   footer,
 }: AuthFormProps) {
   return (
@@ -66,9 +69,12 @@ export function AuthForm({
             {pending ? 'Đang xử lý…' : submitLabel}
           </button>
         </form>
+        {after}
       </div>
 
-      <p className="text-ink-muted mt-5 text-center text-sm">{footer}</p>
+      {footer === undefined ? null : (
+        <p className="text-ink-muted mt-5 text-center text-sm">{footer}</p>
+      )}
     </section>
   );
 }

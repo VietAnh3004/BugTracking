@@ -157,8 +157,10 @@ export function refreshAccessToken(): Promise<boolean> {
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
   /**
-   * Tắt cơ chế tự refresh cho request này. BẮT BUỘC dùng cho mọi endpoint `/api/v1/auth/**`:
-   * chính `/auth/refresh` mà nhận 401 lại đi gọi `/auth/refresh` là đệ quy vô hạn.
+   * Tắt cơ chế tự refresh cho request này. BẮT BUỘC dùng cho mọi endpoint CÔNG KHAI của
+   * `/api/v1/auth/**` (đăng nhập, refresh, quên mật khẩu…): chính `/auth/refresh` mà nhận 401 lại
+   * đi gọi `/auth/refresh` là đệ quy vô hạn. Các endpoint `/auth/me…` của người đã đăng nhập thì
+   * KHÔNG dùng — access token hết hạn giữa chừng vẫn phải được refresh như mọi API khác.
    */
   skipAuthRefresh?: boolean;
 }

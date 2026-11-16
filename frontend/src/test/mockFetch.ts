@@ -57,6 +57,10 @@ export function fakeAuthTokens(overrides: { displayName?: string } = {}) {
       displayName: overrides.displayName ?? 'Nguoi Dung Test',
       role: 'USER' as const,
       createdAt: '2026-01-01T00:00:00Z',
+      emailVerified: true,
+      hasPassword: true,
+      googleLinked: false,
+      avatarUrl: 'https://gravatar.com/avatar/abc?s=160&d=404',
     },
   };
 }

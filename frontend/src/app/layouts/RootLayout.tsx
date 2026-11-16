@@ -18,6 +18,7 @@ import { Link, Outlet } from 'react-router-dom';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { BackendStatus } from '@/features/system/components/BackendStatus';
+import { Avatar } from '@/shared/ui/Avatar';
 import { IconLogo } from '@/shared/ui/icons';
 import { buttonClass } from '@/shared/ui/styles';
 
@@ -44,17 +45,16 @@ export function RootLayout() {
 
           {status === 'authenticated' && user !== null ? (
             <div className="flex shrink-0 items-center gap-3">
-              <span className="flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className="bg-brand-subtle text-brand grid size-8 place-items-center rounded-full text-xs font-semibold"
-                >
-                  {initialsOf(user.displayName)}
-                </span>
+              <Link
+                to="/account"
+                title="Tài khoản"
+                className="hover:bg-surface-sunken flex items-center gap-2 rounded-full py-0.5 pr-2 pl-0.5 md:pr-3"
+              >
+                <Avatar displayName={user.displayName} avatarUrl={user.avatarUrl} />
                 <span className="text-ink hidden text-sm font-medium md:inline">
                   {user.displayName}
                 </span>
-              </span>
+              </Link>
               <button
                 type="button"
                 onClick={() => void signOut()}
@@ -78,17 +78,4 @@ export function RootLayout() {
       </footer>
     </div>
   );
-}
-
-/** "Nguyễn Việt Anh" → "VA": hai chữ cái cuối, đúng cách người Việt gọi tên nhau. */
-function initialsOf(displayName: string): string {
-  const words = displayName
-    .trim()
-    .split(/\s+/)
-    .filter((word) => word !== '');
-  const picked = words.length <= 2 ? words : words.slice(-2);
-  return picked
-    .map((word) => word.charAt(0).toUpperCase())
-    .join('')
-    .slice(0, 2);
 }

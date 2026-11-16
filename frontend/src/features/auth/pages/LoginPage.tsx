@@ -2,21 +2,30 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { AuthForm } from '@/features/auth/components/AuthForm';
+import { GoogleLoginSection } from '@/features/auth/components/GoogleLoginSection';
+import { useResendVerification } from '@/features/auth/hooks/useAccount';
 import { useLogin } from '@/features/auth/hooks/useLogin';
 import { ApiError } from '@/shared/lib/apiClient';
-import { TEXT_LINK } from '@/shared/ui/styles';
+import { buttonClass, TEXT_LINK } from '@/shared/ui/styles';
 import { TextField } from '@/shared/ui/TextField';
 
 import type { FormEvent } from 'react';
+
+const EMAIL_NOT_VERIFIED = 'https://datn.hust.vn/problems/email-not-verified';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
   const login = useLogin();
+  const resend = useResendVerification();
+
+  const notVerified =
+    login.error instanceof ApiError && login.error.problem.type === EMAIL_NOT_VERIFIED;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    resend.reset();
     login.mutate(
       { email, password },
       {
@@ -33,8 +42,36 @@ export function LoginPage() {
       subtitle="Tiếp tục phân tích cảnh báo dựa trên bằng chứng."
       submitLabel="Đăng nhập"
       pending={login.isPending}
-      errorMessage={login.isError ? describeLoginError(login.error) : null}
+      errorMessage={login.isError && !notVerified ? describeLoginError(login.error) : null}
       onSubmit={handleSubmit}
+      after={
+        <>
+          {notVerified ? (
+            <div
+              className="mt-4 flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900"
+              role="alert"
+            >
+              <p className="m-0">
+                Email này chưa được xác thực. Mở link trong email chúng tôi đã gửi tới{' '}
+                <strong>{email}</strong>, hoặc gửi lại email mới.
+              </p>
+              {resend.isSuccess ? (
+                <p className="m-0 font-medium">Đã gửi lại. Kiểm tra cả hộp thư Spam.</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => resend.mutate(email)}
+                  disabled={resend.isPending}
+                  className={`${buttonClass('secondary', 'sm')} self-start`}
+                >
+                  {resend.isPending ? 'Đang gửi…' : 'Gửi lại email xác thực'}
+                </button>
+              )}
+            </div>
+          ) : null}
+          <GoogleLoginSection />
+        </>
+      }
       footer={
         <>
           Chưa có tài khoản?{' '}
@@ -52,14 +89,19 @@ export function LoginPage() {
         onChange={setEmail}
         autoComplete="email"
       />
-      <TextField
-        id="password"
-        label="Mật khẩu"
-        type="password"
-        value={password}
-        onChange={setPassword}
-        autoComplete="current-password"
-      />
+      <div className="flex flex-col gap-1">
+        <TextField
+          id="password"
+          label="Mật khẩu"
+          type="password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="current-password"
+        />
+        <Link to="/forgot-password" className={`${TEXT_LINK} self-end text-xs`}>
+          Quên mật khẩu?
+        </Link>
+      </div>
     </AuthForm>
   );
 }

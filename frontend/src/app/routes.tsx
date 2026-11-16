@@ -26,8 +26,12 @@ import { RootLayout } from '@/app/layouts/RootLayout';
 import { WideContent } from '@/app/layouts/WideContent';
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
 import { PublicOnlyRoute } from '@/features/auth/components/PublicOnlyRoute';
+import { AccountPage } from '@/features/auth/pages/AccountPage';
+import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
+import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage';
+import { VerifyEmailPage } from '@/features/auth/pages/VerifyEmailPage';
 import { ProjectDetailPage } from '@/features/projects/pages/ProjectDetailPage';
 import { ProjectsPage } from '@/features/projects/pages/ProjectsPage';
 
@@ -51,8 +55,19 @@ export const routes: RouteObject[] = [
             children: [
               { path: 'login', element: <LoginPage /> },
               { path: 'register', element: <RegisterPage /> },
+              { path: 'forgot-password', element: <ForgotPasswordPage /> },
             ],
           },
+        ],
+      },
+      {
+        // Đích của link trong email: KHÔNG bọc guard nào. Người đang đăng nhập vẫn phải mở được
+        // link của một tài khoản khác (PublicOnlyRoute sẽ đá họ đi trước khi token kịp dùng), và
+        // người chưa đăng nhập dĩ nhiên phải mở được (ProtectedRoute sẽ đá về /login).
+        element: <NarrowContent />,
+        children: [
+          { path: 'verify-email', element: <VerifyEmailPage /> },
+          { path: 'reset-password', element: <ResetPasswordPage /> },
         ],
       },
       {
@@ -67,6 +82,7 @@ export const routes: RouteObject[] = [
             children: [
               { path: 'projects', element: <ProjectsPage /> },
               { path: 'projects/:projectId', element: <ProjectDetailPage /> },
+              { path: 'account', element: <AccountPage /> },
             ],
           },
           {
