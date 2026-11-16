@@ -30,6 +30,10 @@ import vn.hust.datn.evidence.domain.WarningTool;
  * Javadoc của ingestor ghi rõ "chỉ một implementation thì không cần cơ chế chọn lựa". Ở đây có
  * BỐN implementation thật ngay từ đầu (SpotBugs, Semgrep, Surefire, JaCoCo). Đây là thay đổi có
  * lý do, không phải quên quy ước.
+ *
+ * <p>Không có hàm "lấy parser theo tên tool": mã production chỉ chọn parser bằng {@link #detect}
+ * (theo nội dung). {@code adapterFor}/{@code collectorFor} từng tồn tại "phòng khi giai đoạn D cần"
+ * nhưng tới tuần 16 vẫn chỉ có test gọi, nên đã xoá — đúng hẹn ghi trong kế hoạch tuần 8-9.
  */
 @Component
 public class AnalyzerRegistry {
@@ -84,22 +88,6 @@ public class AnalyzerRegistry {
         if (!CANONICAL_ORDER.contains(toolKey)) {
             missing.add(toolKey);
         }
-    }
-
-    public StaticAnalysisAdapter adapterFor(WarningTool tool) {
-        StaticAnalysisAdapter adapter = adapters.get(tool);
-        if (adapter == null) {
-            throw new IllegalStateException("Khong co StaticAnalysisAdapter cho tool " + tool);
-        }
-        return adapter;
-    }
-
-    public TestEvidenceCollector collectorFor(EvidenceSource source) {
-        TestEvidenceCollector collector = collectors.get(source);
-        if (collector == null) {
-            throw new IllegalStateException("Khong co TestEvidenceCollector cho source " + source);
-        }
-        return collector;
     }
 
     /**

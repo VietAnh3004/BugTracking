@@ -9,7 +9,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import vn.hust.datn.evidence.domain.EvidenceSource;
-import vn.hust.datn.evidence.domain.WarningTool;
 import vn.hust.datn.evidence.testsupport.SampleArtifacts;
 
 /** Nhận dạng parser theo NỘI DUNG artifact, trên đúng bốn file thật của vulnshop. */
@@ -119,15 +118,6 @@ class AnalyzerRegistryTest {
         assertThatThrownBy(() -> new DetectedAnalyzer(new SpotbugsXmlAdapter(), new JacocoCoverageCollector()))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new DetectedAnalyzer(null, null)).isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void adapterFor_toolKhongDangKy_nem() {
-        AnalyzerRegistry chiCoSpotbugs = new AnalyzerRegistry(List.of(new SpotbugsXmlAdapter()), List.of());
-
-        assertThat(chiCoSpotbugs.adapterFor(WarningTool.spotbugs)).isInstanceOf(SpotbugsXmlAdapter.class);
-        assertThatThrownBy(() -> chiCoSpotbugs.adapterFor(WarningTool.semgrep)).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> chiCoSpotbugs.collectorFor(EvidenceSource.jacoco)).isInstanceOf(IllegalStateException.class);
     }
 
     /** {@code EvidenceSource.parser} cố tình không nằm trong thứ tự nạp — nó không phải analyzer. */
