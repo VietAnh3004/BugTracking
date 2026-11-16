@@ -5,15 +5,17 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Literal
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from agent_service.agent.events import AgentEvent
 from agent_service.agent.loop import AgentLoop
 from agent_service.config import Settings, get_settings
+from agent_service.embeddings.gemini import EmbeddingError, GeminiEmbedder
 from agent_service.providers.factory import build_provider
-from agent_service.schemas.api import AnalyzeRequest
+from agent_service.schemas.api import AnalyzeRequest, EmbedRequest, EmbedResponse
+from agent_service.streaming import stop_on_disconnect
 from agent_service.tools.evidence_client import EvidenceToolClient
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.settings = settings
     app.state.provider = build_provider(settings)
     app.state.tool_client = EvidenceToolClient(settings)
+    app.state.embedder = (
+        GeminiEmbedder(
+            api_key=settings.effective_embedding_api_key,
+            model=settings.embedding_model,
+            dimensions=settings.embedding_dimensions,
+            base_url=settings.embedding_base_url,
+            timeout_seconds=settings.request_timeout_seconds,
+        )
+        if settings.embedding_provider == "gemini"
+        else None
+    )
 
     logger.info(
         "agent-service khoi dong: provider=%s model=%s core_api=%s prompt=%s",
@@ -45,6 +58,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
     finally:
         await app.state.tool_client.aclose()
+        if app.state.embedder is not None:
+            await app.state.embedder.aclose()
 
 
 app = FastAPI(
@@ -84,6 +99,27 @@ def _sse(event: AgentEvent) -> str:
     return f"event: {event.type.value}\ndata: {event.model_dump_json()}\n\n"
 
 
+@app.post("/embed", response_model=EmbedResponse, tags=["embedding"])
+async def embed(request: EmbedRequest, http_request: Request) -> EmbedResponse:
+    """Nhúng văn bản thành vector — người gọi duy nhất là core-backend.
+
+    Embedding chưa bật thì 503 kèm lý do, KHÔNG trả vector rỗng: core-backend ghi lý do đó vào lần
+    phân tích để người dùng thấy vì sao tìm theo nghĩa không chạy, thay vì một tính năng câm lặng.
+    """
+    embedder: GeminiEmbedder | None = http_request.app.state.embedder
+    if embedder is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Embedding chua bat: dat EMBEDDING_PROVIDER=gemini cho agent-service.",
+        )
+    try:
+        vectors = await embedder.embed(request.texts, request.task)
+    except EmbeddingError as exc:
+        # 502: lỗi nằm ở nhà cung cấp phía sau, không phải ở yêu cầu của core-backend.
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return EmbedResponse(model=embedder.model, dimensions=embedder.dimensions, vectors=vectors)
+
+
 @app.post("/analyze", tags=["agent"])
 async def analyze(request: AnalyzeRequest, http_request: Request) -> StreamingResponse:
     """Chạy một lượt hỏi đáp và stream tiến trình.
@@ -106,8 +142,10 @@ async def analyze(request: AnalyzeRequest, http_request: Request) -> StreamingRe
         ):
             yield _sse(event)
 
+    # Bọc bằng stop_on_disconnect: core-backend đóng kết nối khi người dùng bấm "Dừng" hoặc rời
+    # trang, và lượt gọi LLM đang bay phải bị huỷ NGAY — không đợi tới khung SSE kế tiếp.
     return StreamingResponse(
-        stream(),
+        stop_on_disconnect(stream(), http_request.is_disconnected),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

@@ -29,3 +29,18 @@ class AnalyzeRequest(BaseModel):
     # Cảnh báo đang bàn tới. Không bắt buộc: người dùng hỏi được ở phạm vi cả run.
     focus_short_id: str | None = None
     history: list[HistoryTurn] = Field(default_factory=list)
+
+
+class EmbedRequest(BaseModel):
+    """Nhúng một lô văn bản. ``task`` quyết định chế độ của Gemini: bằng chứng hay câu hỏi."""
+
+    texts: list[str] = Field(..., min_length=1, max_length=500)
+    task: Literal["document", "query"]
+
+
+class EmbedResponse(BaseModel):
+    """Vector theo đúng thứ tự ``texts``. ``model`` đi kèm để core-backend lưu vào khoá chính."""
+
+    model: str
+    dimensions: int
+    vectors: list[list[float]]

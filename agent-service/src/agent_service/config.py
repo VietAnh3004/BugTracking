@@ -14,6 +14,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # nhờ vậy nghiệm thu end-to-end chạy được toàn bộ đường đi frontend → core-backend →
 # agent-service mà không cần khoá API thật, và test không bao giờ gọi LLM thật.
 LlmProviderName = Literal["anthropic", "openai", "ollama", "scripted"]
+EmbeddingProviderName = Literal["none", "gemini"]
 
 
 class Settings(BaseSettings):
@@ -62,6 +63,29 @@ class Settings(BaseSettings):
     # 2 lần cách nhau dưới 1 giây là quá ngắn, một lượt hỏi 5-9 vòng gọi gần như chắc hỏng.
     llm_max_retries: int = Field(default=2, ge=0, le=10)
     log_level: str = Field(default="INFO")
+
+    # Embedding cho search_evidence (tìm theo nghĩa). "none" = tắt: core-backend vẫn tìm bằng so
+    # chữ, và ghi rõ lý do vào lần phân tích để người dùng thấy — không hỏng im lặng.
+    embedding_provider: EmbeddingProviderName = Field(default="none")
+    embedding_model: str = Field(default="gemini-embedding-001", min_length=1)
+    # 768 chứ không 3072 mặc định của Gemini: pgvector chỉ dựng được index HNSW tới 2000 chiều,
+    # và Gemini khuyến nghị 768 là mức cân bằng chất lượng/dung lượng.
+    embedding_dimensions: int = Field(default=768, gt=0, le=3072)
+    # Bỏ trống thì dùng LLM_API_KEY — trường hợp thường gặp là cùng một key Gemini cho cả hai.
+    embedding_api_key: str | None = Field(default=None)
+    embedding_base_url: str = Field(default="https://generativelanguage.googleapis.com/v1beta")
+
+    @field_validator("embedding_api_key", mode="before")
+    @classmethod
+    def _blank_embedding_key_is_unset(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @property
+    def effective_embedding_api_key(self) -> str:
+        """Key cho embedding: EMBEDDING_API_KEY nếu có, không thì dùng chung LLM_API_KEY."""
+        return self.embedding_api_key or self.llm_api_key
 
     @field_validator("llm_base_url", mode="before")
     @classmethod

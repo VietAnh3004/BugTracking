@@ -102,9 +102,12 @@ GET_COVERAGE: Final[dict[str, Any]] = {
 SEARCH_EVIDENCE: Final[dict[str, Any]] = {
     "name": "search_evidence",
     "description": (
-        "Tìm bằng chứng trong run theo từ khoá (khớp trên câu tóm tắt, đường dẫn file và tên "
-        "symbol). Gọi khi chưa biết Evidence ID cần tra, hoặc khi muốn tìm cảnh báo tương tự ở "
-        "chỗ khác. Đây là tìm kiếm theo chuỗi, KHÔNG phải tìm theo ngữ nghĩa."
+        "Tìm bằng chứng trong run. Kết hợp hai cách: khớp TỪ KHOÁ (trên câu tóm tắt, đường dẫn "
+        "file và tên symbol) và — nếu run đã có vector — GẦN NGHĨA với câu hỏi, kể cả khi câu "
+        "hỏi viết tiếng Việt còn bằng chứng viết tiếng Anh. Mỗi kết quả có `matched_by`: "
+        "`keyword` là khớp chữ thật; `semantic` chỉ là GỢI Ý gần nghĩa — đọc lại bằng "
+        "get_warning hoặc get_code_context trước khi dựa vào nó. Gọi khi chưa biết Evidence ID "
+        "cần tra, hoặc khi muốn tìm cảnh báo tương tự ở chỗ khác."
     ),
     "input_schema": {
         "type": "object",
