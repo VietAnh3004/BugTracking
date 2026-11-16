@@ -63,7 +63,7 @@ public class SnapshotQueryService {
 
     @Transactional(readOnly = true)
     public Page<RepositorySnapshot> listByProject(UUID projectId, UUID ownerId, Pageable pageable) {
-        projectService.getOwned(projectId, ownerId);
+        projectService.getReadable(projectId, ownerId);
         return snapshotRepository.findByProjectIdOrderByCreatedAtDesc(projectId, pageable);
     }
 
@@ -73,8 +73,9 @@ public class SnapshotQueryService {
      */
     @Transactional(readOnly = true)
     public RepositorySnapshot get(UUID snapshotId, UUID ownerId) {
+        // Đọc: chủ dự án hoặc thành viên (V10).
         return snapshotRepository
-                .findByIdAndOwnerId(snapshotId, ownerId)
+                .findReadableById(snapshotId, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("snapshot", snapshotId));
     }
 
@@ -87,7 +88,15 @@ public class SnapshotQueryService {
      */
     @Transactional(readOnly = true)
     public RepositorySnapshot getReady(UUID snapshotId, UUID ownerId) {
-        return requireReady(snapshotId, ownerId);
+        // CHỈ chủ dự án: caller là nạp artifact và chạy sandbox — thao tác ghi thành viên không
+        // được làm. Snapshot của dự án người khác hay dự án mình chỉ là thành viên ⇒ 404.
+        RepositorySnapshot snapshot = snapshotRepository
+                .findByIdAndOwnerId(snapshotId, ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("snapshot", snapshotId));
+        if (snapshot.getStatus() != SnapshotStatus.READY) {
+            throw new SnapshotNotReadyException(snapshotId, snapshot.getStatus());
+        }
+        return snapshot;
     }
 
     @Transactional(readOnly = true)

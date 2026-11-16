@@ -59,6 +59,9 @@ class EvidenceLinkerVulnshopTest extends AbstractIntegrationTest {
     @Autowired
     private EvidenceLinker linker;
 
+    @Autowired
+    private vn.hust.datn.evidence.service.analysis.PerTestCoverageStore perTestCoverageStore;
+
     private AnalysisRun run;
 
     @BeforeEach
@@ -308,5 +311,49 @@ class EvidenceLinkerVulnshopTest extends AbstractIntegrationTest {
         assertThat(jdbcTemplate.queryForObject(
                         "SELECT count(*) FROM evidence_link WHERE analysis_run_id = ?", Integer.class, runId))
                 .isEqualTo(truoc);
+    }
+
+    /** Tên các test được nối tới cảnh báo ở một dòng của PasswordHasher. */
+    private List<String> testsLinkedTo(int line) {
+        return jdbcTemplate.queryForList(
+                """
+                SELECT DISTINCT tc.method_name FROM evidence_link l
+                JOIN evidence_record t ON t.id = l.to_evidence_id
+                JOIN test_case tc ON tc.evidence_record_id = l.from_evidence_id
+                WHERE l.analysis_run_id = ? AND t.type = 'STATIC_WARNING'
+                  AND t.file_path LIKE '%/auth/PasswordHasher.java' AND t.start_line = ?
+                ORDER BY tc.method_name
+                """,
+                String.class,
+                run.getId(),
+                line);
+    }
+
+    /**
+     * Coverage theo từng test THẬT của vulnshop (sandbox): cặp TP-05/FP-02 cùng luật, cùng file,
+     * cùng lớp test. Theo tên lớp, cả 5 test của PasswordHasherTest bị nối vào CẢ HAI cảnh báo —
+     * không phân biệt được gì. Theo dòng thật, mỗi cảnh báo chỉ nhận đúng test chạy qua nó.
+     */
+    @Test
+    void coverageTungTest_tachDungTestChoTp05VaFp02() {
+        List<String> theoTen40 = testsLinkedTo(40);
+        assertThat(theoTen40).hasSize(5);
+
+        perTestCoverageStore.store(
+                run.getId(),
+                SampleArtifacts.sandboxPerTestCoverage(),
+                vn.hust.datn.evidence.service.analysis.SnapshotPathResolver.of(SampleArtifacts.vulnshopSourcePaths()));
+        linker.link(run.getId());
+
+        // FP-02: MD5 khử trùng lặp — chỉ hai test checksum chạy qua dòng 40.
+        assertThat(testsLinkedTo(40))
+                .containsExactly("checksum_cungNoiDung_choCungMaBam", "checksum_khacNoiDung_choKhacMaBam");
+        // TP-05: MD5 băm mật khẩu (md5Hex, gọi từ hashPassword và matches).
+        assertThat(testsLinkedTo(53))
+                .containsExactly(
+                        "hashPassword_cungMatKhau_choCungGiaTri",
+                        "hashPassword_khacMatKhau_choKhacGiaTri",
+                        "matches_dungMatKhau_traVeDung");
+        assertThat(links("AND l.method = 'NAMING_CONVENTION'")).isEmpty();
     }
 }

@@ -286,6 +286,53 @@ class RunMetricsServiceTest extends AbstractIntegrationTest {
                 .isZero();
     }
 
+    /**
+     * Nhãn SEEDED chỉ là GỢI Ý cho người gán chính (chốt 16/11/2026), không phải đáp án. Trước đây
+     * chỉ số lấy cả MANUAL lẫn SEEDED, nên một cảnh báo có cả hai bị đếm hai lần.
+     */
+    @Test
+    void nhanSeededChiLaGoiY_khongTinhVaKhongDemHaiLan() {
+        for (String source : new String[] {"SEEDED", "MANUAL"}) {
+            jdbcTemplate.update(
+                    """
+                    INSERT INTO ground_truth_label (evidence_record_id, source, label, rationale, labeler)
+                    SELECT id, ?, 'TRUE_POSITIVE', 'ly do', 'toi'
+                    FROM evidence_record WHERE analysis_run_id = ? AND short_id = ?
+                    """,
+                    source,
+                    run.getId(),
+                    shortId);
+            long expected = source.equals("SEEDED") ? 0 : 1;
+            assertThat(metrics.compute(run.getId(), owner.getId()).groundTruth().labelledCount())
+                    .as("sau khi them nhan %s", source)
+                    .isEqualTo(expected);
+        }
+    }
+
+    /** Kappa đo trên đúng các cảnh báo CẢ HAI người đã gán. */
+    @Test
+    void kappaTinhTrenCanhBaoDuocCaHaiNguoiGan() {
+        for (String source : new String[] {"MANUAL", "BLIND_SECOND_RATER"}) {
+            jdbcTemplate.update(
+                    """
+                    INSERT INTO ground_truth_label (evidence_record_id, source, label, rationale, labeler)
+                    SELECT id, ?, 'TRUE_POSITIVE', 'ly do', 'ai do'
+                    FROM evidence_record WHERE analysis_run_id = ? AND short_id = ?
+                    """,
+                    source,
+                    run.getId(),
+                    shortId);
+        }
+
+        RunMetricsResponse.GroundTruthComparison truth =
+                metrics.compute(run.getId(), owner.getId()).groundTruth();
+
+        assertThat(truth.doubleLabelledCount()).isEqualTo(1);
+        assertThat(truth.raterAgreement()).isEqualTo(1.0);
+        // Cả hai chỉ dùng MỘT loại nhãn ⇒ p_e = 1 ⇒ kappa là 0/0: phải để trống, không bịa 0 hay 1.
+        assertThat(truth.cohensKappa()).isNull();
+    }
+
     @Test
     void chiPhiDocDuocTuLlmTrace() {
         UUID messageId = answer("LIKELY_TRUE_POSITIVE", null);

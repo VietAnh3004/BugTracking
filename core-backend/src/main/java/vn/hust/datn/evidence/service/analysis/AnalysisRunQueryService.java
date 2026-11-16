@@ -64,7 +64,7 @@ public class AnalysisRunQueryService {
      * người dùng thấy một màn hình trống không giải thích được gì.
      */
     public AnalysisRun get(UUID runId, UUID ownerId) {
-        evidenceQueryService.requireRunOwnedBy(runId, ownerId);
+        evidenceQueryService.requireRunReadableBy(runId, ownerId);
         return analysisRunRepository.findById(runId).orElseThrow(() -> new ResourceNotFoundException("analysis_run", runId));
     }
 
@@ -75,7 +75,7 @@ public class AnalysisRunQueryService {
      */
     public Page<WarningView> listWarnings(
             UUID runId, UUID ownerId, WarningTool tool, WarningSeverity severity, String filePath, Pageable pageable) {
-        evidenceQueryService.requireRunOwnedBy(runId, ownerId);
+        evidenceQueryService.requireRunReadableBy(runId, ownerId);
         evidenceQueryService.ensureRunQueryable(runId);
 
         // Bỏ Sort của client: thứ tự đã cố định theo severity_rank trong chính câu truy vấn. Cho

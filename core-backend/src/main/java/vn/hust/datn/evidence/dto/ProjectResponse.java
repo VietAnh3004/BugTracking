@@ -3,6 +3,8 @@ package vn.hust.datn.evidence.dto;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import vn.hust.datn.evidence.domain.ProjectRole;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -17,4 +19,8 @@ public record ProjectResponse(
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String name,
         @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) String description,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) OffsetDateTime createdAt,
-        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) OffsetDateTime updatedAt) {}
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) OffsetDateTime updatedAt,
+        @Schema(
+                        requiredMode = Schema.RequiredMode.REQUIRED,
+                        description = "Vai trò của NGƯỜI ĐANG GỌI với dự án này: OWNER (chủ) hoặc MEMBER (được chia sẻ)")
+                ProjectRole role) {}

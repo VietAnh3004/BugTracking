@@ -56,5 +56,10 @@ public record AnalysisRunResponse(
                         description = "NULL với run nạp tay: ở đó không có canary để kiểm, khác hẳn false")
                 Boolean canaryOk,
         @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) String analyzerImageDigest,
+        @Schema(
+                        requiredMode = Schema.RequiredMode.REQUIRED,
+                        description = "Số bằng chứng đã có vector để tìm theo nghĩa; 0 = chỉ tìm được bằng so chữ")
+                int embeddingCount,
+        @Schema(description = "Lý do sinh vector thất bại; vắng khi thành công hoặc chưa thử") String embeddingError,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) OffsetDateTime startedAt,
         @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) OffsetDateTime finishedAt) {}

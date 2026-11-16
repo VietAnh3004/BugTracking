@@ -1,6 +1,7 @@
 package vn.hust.datn.evidence.service.review;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -143,19 +144,24 @@ public class RunMetricsService {
     /**
      * So sánh với nhãn chuẩn — rỗng cho tới khi tuần 15 gán nhãn.
      *
-     * <p>Chỉ lấy {@code source = 'MANUAL'} và {@code 'SEEDED'}: nhãn của người gán mù thứ hai tồn
-     * tại để tính Cohen's kappa, đưa vào đây sẽ tính accuracy hai lần trên cùng một cảnh báo.
+     * <p>Chỉ lấy {@code source = 'MANUAL'}. Nhãn {@code SEEDED} chỉ là GỢI Ý cho người gán chính
+     * (chốt với người dùng 16/11/2026: "hiện làm gợi ý, bạn tự xác nhận") — đếm nó vào đây là để ý
+     * đồ gieo lỗi tự chấm thay người đọc mã, đúng cái bẫy circularity kế hoạch §5 cảnh báo. Trước
+     * đây truy vấn lấy cả hai nguồn, nên một cảnh báo có cả MANUAL lẫn SEEDED bị đếm HAI lần.
+     * Nhãn của người gán mù thứ hai chỉ dùng cho kappa, không cho accuracy.
      */
     private RunMetricsResponse.GroundTruthComparison groundTruth(UUID runId) {
         long labelled = count(
                 """
                 SELECT count(*) FROM ground_truth_label g
                 JOIN evidence_record e ON e.id = g.evidence_record_id
-                WHERE e.analysis_run_id = ? AND g.source IN ('MANUAL', 'SEEDED')
+                WHERE e.analysis_run_id = ? AND g.source = 'MANUAL'
                 """,
                 runId);
+        InterRater interRater = interRater(runId);
         if (labelled == 0) {
-            return new RunMetricsResponse.GroundTruthComparison(0, null, null);
+            return new RunMetricsResponse.GroundTruthComparison(
+                    0, null, null, interRater.pairs(), interRater.agreement(), interRater.kappa());
         }
 
         long agentTotal = count(agentVsTruth("SELECT count(*)"), runId);
@@ -179,7 +185,65 @@ public class RunMetricsService {
         return new RunMetricsResponse.GroundTruthComparison(
                 labelled,
                 RunMetricsResponse.ratio(agentMatched, agentTotal),
-                RunMetricsResponse.ratio(humanMatched, humanTotal));
+                RunMetricsResponse.ratio(humanMatched, humanTotal),
+                interRater.pairs(),
+                interRater.agreement(),
+                interRater.kappa());
+    }
+
+    /**
+     * Đồng thuận giữa người gán chính (MANUAL) và người gán thứ hai (BLIND_SECOND_RATER), trên đúng
+     * những cảnh báo CẢ HAI đã gán.
+     *
+     * <p>Cohen's kappa = (p_o − p_e) / (1 − p_e): p_o là tỉ lệ trùng nhãn quan sát được, p_e là tỉ
+     * lệ trùng do ngẫu nhiên suy từ phân bố nhãn của từng người. Tính ở Java chứ không SQL: công thức
+     * cần phân bố biên của cả hai người, viết bằng SQL thuần dài gấp mấy lần mà khó đối chiếu với
+     * sách hơn.
+     *
+     * <p>{@code kappa = null} khi p_e = 1 (cả hai người đều chỉ dùng MỘT loại nhãn): khi đó công
+     * thức là 0/0, và trả 0 hay 1 đều là bịa ra một con số cho báo cáo.
+     */
+    InterRater interRater(UUID runId) {
+        List<Map<String, Object>> pairs = jdbcTemplate.queryForList(
+                """
+                SELECT a.label AS primary_label, b.label AS second_label
+                FROM ground_truth_label a
+                JOIN ground_truth_label b ON b.evidence_record_id = a.evidence_record_id
+                JOIN evidence_record e ON e.id = a.evidence_record_id
+                WHERE e.analysis_run_id = ? AND a.source = 'MANUAL' AND b.source = 'BLIND_SECOND_RATER'
+                """,
+                runId);
+        return InterRater.of(pairs.stream()
+                .map(row -> new String[] {(String) row.get("primary_label"), (String) row.get("second_label")})
+                .toList());
+    }
+
+    /** Kết quả đồng thuận giữa hai người gán. Package-private để test công thức trực tiếp. */
+    record InterRater(long pairs, Double agreement, Double kappa) {
+
+        static InterRater of(List<String[]> labelPairs) {
+            int n = labelPairs.size();
+            if (n == 0) {
+                return new InterRater(0, null, null);
+            }
+            Map<String, Integer> first = new java.util.HashMap<>();
+            Map<String, Integer> second = new java.util.HashMap<>();
+            int agree = 0;
+            for (String[] pair : labelPairs) {
+                first.merge(pair[0], 1, Integer::sum);
+                second.merge(pair[1], 1, Integer::sum);
+                if (pair[0].equals(pair[1])) {
+                    agree++;
+                }
+            }
+            double observed = (double) agree / n;
+            double expected = 0;
+            for (Map.Entry<String, Integer> entry : first.entrySet()) {
+                expected += ((double) entry.getValue() / n) * ((double) second.getOrDefault(entry.getKey(), 0) / n);
+            }
+            Double kappa = Math.abs(1 - expected) < 1e-12 ? null : (observed - expected) / (1 - expected);
+            return new InterRater(n, observed, kappa);
+        }
     }
 
     private RunMetricsResponse.AgentCost agentCost(UUID runId) {
@@ -234,7 +298,7 @@ public class RunMetricsService {
                   JOIN evidence_record e ON e.id = g.evidence_record_id
                   JOIN conversation c ON c.analysis_run_id = e.analysis_run_id AND c.focus_short_id = e.short_id
                   JOIN message m ON m.conversation_id = c.id AND m.role = 'ASSISTANT'
-                  WHERE e.analysis_run_id = ? AND g.source IN ('MANUAL', 'SEEDED')
+                  WHERE e.analysis_run_id = ? AND g.source = 'MANUAL'
                   """;
     }
 
@@ -244,7 +308,7 @@ public class RunMetricsService {
                   FROM ground_truth_label g
                   JOIN evidence_record e ON e.id = g.evidence_record_id
                   JOIN human_review r ON r.evidence_record_id = e.id
-                  WHERE e.analysis_run_id = ? AND g.source IN ('MANUAL', 'SEEDED')
+                  WHERE e.analysis_run_id = ? AND g.source = 'MANUAL'
                   """;
     }
 

@@ -31,4 +31,9 @@ public interface RepositorySnapshotRepository extends JpaRepository<RepositorySn
     @Query("SELECT s FROM RepositorySnapshot s, Project p "
             + "WHERE s.id = :snapshotId AND s.projectId = p.id AND p.ownerId = :ownerId")
     Optional<RepositorySnapshot> findByIdAndOwnerId(@Param("snapshotId") UUID snapshotId, @Param("ownerId") UUID ownerId);
+
+    /** Như {@link #findByIdAndOwnerId}, nhưng thành viên dự án (V10) cũng đọc được. */
+    @Query("SELECT s FROM RepositorySnapshot s, Project p WHERE s.id = :snapshotId AND s.projectId = p.id AND "
+            + ProjectRepository.READABLE_BY)
+    Optional<RepositorySnapshot> findReadableById(@Param("snapshotId") UUID snapshotId, @Param("userId") UUID userId);
 }

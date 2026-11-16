@@ -65,6 +65,14 @@ public final class SampleArtifacts {
         return read(sandboxSamplesDir().resolve("semgrep.sarif"));
     }
 
+    /**
+     * Coverage theo từng test của vulnshop, do analyzer sandbox THẬT sinh ra — sinh lại bằng
+     * {@code ./infra/analyzer/build.sh --emit-samples}.
+     */
+    public static byte[] sandboxPerTestCoverage() {
+        return read(sandboxSamplesDir().resolve("per-test-coverage.json"));
+    }
+
     private static Path sandboxSamplesDir() {
         return repoRoot().resolve("docs").resolve("samples").resolve("vulnshop-sandbox");
     }

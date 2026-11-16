@@ -27,4 +27,8 @@ app:
     secret-key: test
     bucket: test-bucket
   agent:
-    base-url: http://localhost:8000
+    # Cổng 1: không có gì nghe ⇒ mọi lời gọi THẬT tới agent-service thất bại NGAY, giống nhau ở mọi
+    # máy. Trước đây là localhost:8000 — đúng cổng agent-service chạy trên máy dev, nên một test
+    # quên mock (từ khi có embedding: mọi test nạp artifact) sẽ gọi trúng agent thật và TIÊU QUOTA
+    # Gemini. Test nào cần agent thì mock AgentClient/EmbeddingClient tường minh.
+    base-url: http://127.0.0.1:1

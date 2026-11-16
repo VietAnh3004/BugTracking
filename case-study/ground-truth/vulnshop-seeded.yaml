@@ -1,0 +1,102 @@
+# Nhãn SEEDED của vulnshop — bản máy đọc được của SEEDED.md mục 2 (TP) và mục 3 (FP).
+#
+# Nằm NGOÀI case-study/vulnshop/ có chủ đích: nén vulnshop để tải lên mà kéo theo file này thì
+# đáp án nằm ngay trong snapshot, người gán mù mở cây file là thấy.
+#
+# Cách dùng: trang "Gán nhãn" của một lần phân tích vulnshop → "Nạp file nhãn" → chọn file này.
+# Nhãn nạp vào với nguồn SEEDED và CHỈ hiện làm GỢI Ý cho người gán chính; chúng KHÔNG được tính
+# vào độ chính xác (chốt 16/11/2026: ground truth = nhãn MANUAL người gán chính tự xác nhận sau khi
+# đọc mã). Người gán thứ hai (thành viên dự án) không bao giờ thấy các nhãn này.
+#
+# Khớp cảnh báo theo file + line. Bỏ trống tool/rule ⇒ khớp MỌI cảnh báo ở vị trí đó: TP-01 bị cả
+# SpotBugs lẫn Semgrep bắt, chỉ cần khai một lần.
+#
+# Không có TP-11..TP-15: không công cụ nào sinh cảnh báo ở đó (SEEDED.md mục 2), nên không có
+# cảnh báo nào để gắn nhãn — khai vào chỉ sinh ra mục "không khớp".
+version: 1
+labels:
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/user/UserRepository.java
+    line: 35
+    source: SEEDED
+    label: TRUE_POSITIVE
+    rationale: "TP-01: SQL injection qua nối chuỗi trong findByUsername."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java
+    line: 31
+    source: SEEDED
+    label: TRUE_POSITIVE
+    rationale: "TP-02: SQL injection trong mệnh đề LIKE của searchByKeyword."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java
+    line: 41
+    source: SEEDED
+    label: TRUE_POSITIVE
+    rationale: "TP-03: path traversal trong readUserFile."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/storage/FileStorageService.java
+    line: 72
+    source: SEEDED
+    label: TRUE_POSITIVE
+    rationale: "TP-04: stream không được đóng trong readFirstByte."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java
+    line: 53
+    source: SEEDED
+    label: TRUE_POSITIVE
+    rationale: "TP-05: MD5 dùng để băm mật khẩu (md5Hex, gọi từ hashPassword)."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/domain/Product.java
+    line: 45
+    source: SEEDED
+    label: TRUE_POSITIVE
+    rationale: "TP-06: có equals() nhưng không có hashCode()."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/order/OrderStatusChecker.java
+    line: 18
+    source: SEEDED
+    label: TRUE_POSITIVE
+    rationale: "TP-07: so sánh chuỗi bằng ==."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/auth/SessionRegistry.java
+    line: 24
+    source: SEEDED
+    label: TRUE_POSITIVE
+    rationale: "TP-08: HashMap tĩnh dùng chung, không đồng bộ."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/auth/AuthController.java
+    line: 49
+    source: SEEDED
+    label: TRUE_POSITIVE
+    rationale: "TP-09: chuyển hướng tới đích không được kiểm tra."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/util/AuditLogger.java
+    line: 24
+    source: SEEDED
+    label: TRUE_POSITIVE
+    rationale: "TP-10: chèn dữ liệu chưa lọc vào nhật ký (logLogin)."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/user/UserService.java
+    line: 66
+    source: SEEDED
+    label: TRUE_POSITIVE
+    rationale: "TP-16: NPE trong displayNameOf khi không tìm thấy người dùng."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/catalog/ProductRepository.java
+    line: 50
+    source: SEEDED
+    label: FALSE_POSITIVE
+    rationale: "FP-01: giá trị nối vào ORDER BY đến từ enum SortField, người dùng không truyền chuỗi tuỳ ý."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/auth/PasswordHasher.java
+    line: 40
+    source: SEEDED
+    label: FALSE_POSITIVE
+    rationale: "FP-02: MD5 chỉ dùng phát hiện tệp trùng (checksumForDeduplication), không đóng vai trò bảo mật."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/util/ColorPicker.java
+    line: 21
+    source: SEEDED
+    label: FALSE_POSITIVE
+    rationale: "FP-03: Random chỉ dùng chọn màu avatar, đoán trước được cũng không có lợi gì."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/user/UserService.java
+    line: 42
+    source: SEEDED
+    label: FALSE_POSITIVE
+    rationale: "FP-04: kiểm tra null thừa — rườm rà, không gây hại."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/util/TextNormalizer.java
+    line: 24
+    source: SEEDED
+    label: FALSE_POSITIVE
+    rationale: "FP-05: đầu vào là mã trạng thái ASCII nội bộ, kết quả không đổi theo locale."
+  - file: src/main/java/vn/hust/datn/casestudy/vulnshop/util/AuditLogger.java
+    line: 29
+    source: SEEDED
+    label: FALSE_POSITIVE
+    rationale: "FP-06: đã tham số hoá SLF4J — cách phòng chống đúng, công cụ vẫn báo."

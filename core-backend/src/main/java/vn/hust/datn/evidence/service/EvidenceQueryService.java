@@ -18,6 +18,7 @@ import vn.hust.datn.evidence.domain.EvidenceLink;
 import vn.hust.datn.evidence.domain.EvidenceLinkRelation;
 import vn.hust.datn.evidence.domain.EvidenceRecord;
 import vn.hust.datn.evidence.domain.EvidenceType;
+import vn.hust.datn.evidence.domain.ProjectRole;
 import vn.hust.datn.evidence.dto.WarningView;
 import vn.hust.datn.evidence.dto.tool.ToolEvidenceItem;
 import vn.hust.datn.evidence.exception.EvidenceNotAWarningException;
@@ -28,7 +29,9 @@ import vn.hust.datn.evidence.exception.RunNotQueryableException;
 import vn.hust.datn.evidence.repository.AnalysisRunRepository;
 import vn.hust.datn.evidence.repository.EvidenceLinkRepository;
 import vn.hust.datn.evidence.repository.EvidenceRecordRepository;
+import vn.hust.datn.evidence.repository.ProjectRepository;
 import vn.hust.datn.evidence.repository.WarningRepository;
+import vn.hust.datn.evidence.service.embedding.EmbeddingService;
 
 /**
  * Service trung tâm cho cả 5 evidence tool VÀ (sau này) endpoint UI — chúng khác nhau ở DTO đầu
@@ -63,16 +66,22 @@ public class EvidenceQueryService {
     private final EvidenceRecordRepository evidenceRecordRepository;
     private final WarningRepository warningRepository;
     private final EvidenceLinkRepository evidenceLinkRepository;
+    private final ProjectRepository projectRepository;
+    private final EmbeddingService embeddingService;
 
     public EvidenceQueryService(
             AnalysisRunRepository analysisRunRepository,
             EvidenceRecordRepository evidenceRecordRepository,
             WarningRepository warningRepository,
-            EvidenceLinkRepository evidenceLinkRepository) {
+            EvidenceLinkRepository evidenceLinkRepository,
+            ProjectRepository projectRepository,
+            EmbeddingService embeddingService) {
         this.analysisRunRepository = analysisRunRepository;
         this.evidenceRecordRepository = evidenceRecordRepository;
         this.warningRepository = warningRepository;
         this.evidenceLinkRepository = evidenceLinkRepository;
+        this.projectRepository = projectRepository;
+        this.embeddingService = embeddingService;
     }
 
     public WarningView getWarning(UUID runId, String shortId) {
@@ -141,6 +150,46 @@ public class EvidenceQueryService {
         // tìm thấy" là một câu trả lời sai mà nó tin ngay và không hỏi lại.
         Set<EvidenceType> effectiveTypes = types == null || types.isEmpty() ? null : types;
         return evidenceRecordRepository.search(runId, query, effectiveTypes, filePath, PageRequest.of(0, limit));
+    }
+
+    /**
+     * Tìm KẾT HỢP cho tool {@code search_evidence}: kết quả so chữ trước, rồi bù bằng kết quả gần
+     * nghĩa nhất (nếu run có vector) cho tới đủ {@code limit}.
+     *
+     * <p>So chữ đứng TRƯỚC vì nó chính xác: câu hỏi chứa đúng tên lớp hay mã luật thì khớp chữ là
+     * khớp thật. Tìm theo nghĩa lấp chỗ so chữ trượt — câu hỏi tự do ("chỗ nào lưu mật khẩu không
+     * an toàn?"), hỏi tiếng Việt mà bằng chứng viết tiếng Anh. Mỗi kết quả mang {@code matchedBy}
+     * để Agent biết cái nào chỉ là GỢI Ý gần nghĩa, phải tự kiểm lại trước khi trích dẫn.
+     */
+    public List<SearchHit> searchHybrid(UUID runId, String query, Set<EvidenceType> types, String filePath, int limit) {
+        List<EvidenceRecord> keyword = searchEvidence(runId, query, types, filePath, limit);
+        List<SearchHit> hits = new java.util.ArrayList<>(
+                keyword.stream().map(r -> new SearchHit(r, SearchHit.KEYWORD)).toList());
+        if (hits.size() >= limit) {
+            return hits;
+        }
+
+        Set<UUID> seen = keyword.stream().map(EvidenceRecord::getId).collect(Collectors.toSet());
+        List<UUID> semanticIds = embeddingService
+                .searchSemantic(runId, query, types == null || types.isEmpty() ? null : types, filePath, limit)
+                .stream()
+                .filter(id -> !seen.contains(id))
+                .limit(limit - hits.size())
+                .toList();
+        Map<UUID, EvidenceRecord> byId = evidenceRecordRepository.findAllById(semanticIds).stream()
+                .collect(Collectors.toMap(EvidenceRecord::getId, Function.identity()));
+        // findAllById không giữ thứ tự: xếp lại đúng thứ tự khoảng cách mà truy vấn vector trả về.
+        semanticIds.stream()
+                .map(byId::get)
+                .filter(java.util.Objects::nonNull)
+                .forEach(r -> hits.add(new SearchHit(r, SearchHit.SEMANTIC)));
+        return hits;
+    }
+
+    /** Một kết quả tìm kiếm kèm cách nó được tìm ra. */
+    public record SearchHit(EvidenceRecord record, String matchedBy) {
+        public static final String KEYWORD = "keyword";
+        public static final String SEMANTIC = "semantic";
     }
 
     /**
@@ -252,6 +301,28 @@ public class EvidenceQueryService {
         if (!actualOwnerId.equals(ownerId)) {
             throw new ResourceNotFoundException("analysis_run", runId);
         }
+    }
+
+    /**
+     * Như {@link #requireRunOwnedBy}, nhưng THÀNH VIÊN dự án (V10) cũng qua được. Dùng cho mọi thao
+     * tác ĐỌC và cho những thao tác ghi mà thành viên được phép (hỏi Agent, review, gán nhãn mù).
+     *
+     * <p>Thao tác chỉ chủ dự án được làm (chạy lại liên kết, dashboard, xuất báo cáo) vẫn gọi
+     * {@link #requireRunOwnedBy}. Hai method tách hẳn thay vì một method nhận cờ: đọc tên là biết
+     * điểm gọi đang cho phép ai, không phải lần theo giá trị của một tham số boolean.
+     *
+     * @return vai trò của người gọi — để service phía sau quyết định những gì được trả ra (ví dụ
+     *     thành viên không bao giờ thấy nhãn ground truth của chủ dự án)
+     */
+    public ProjectRole requireRunReadableBy(UUID runId, UUID userId) {
+        UUID projectId = analysisRunRepository
+                .findProjectIdByRunId(runId)
+                .orElseThrow(() -> new ResourceNotFoundException("analysis_run", runId));
+        return projectRepository
+                .findReadableById(projectId, userId)
+                .map(project -> project.getOwnerId().equals(userId) ? ProjectRole.OWNER : ProjectRole.MEMBER)
+                // Không đọc được ⇒ "run không tồn tại", không phải 403: không để lộ rằng run có thật.
+                .orElseThrow(() -> new ResourceNotFoundException("analysis_run", runId));
     }
 
     /**

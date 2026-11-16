@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import vn.hust.datn.evidence.domain.Project;
+import vn.hust.datn.evidence.domain.ProjectRole;
 import vn.hust.datn.evidence.dto.CreateProjectRequest;
 import vn.hust.datn.evidence.dto.ProjectResponse;
 
@@ -33,13 +34,14 @@ class ProjectMapperTest {
         project.setCreatedAt(OffsetDateTime.now());
         project.setUpdatedAt(OffsetDateTime.now());
 
-        ProjectResponse response = mapper.toResponse(project);
+        ProjectResponse response = mapper.toResponse(project, ProjectRole.MEMBER);
 
         assertThat(response.id()).isEqualTo(project.getId());
         assertThat(response.name()).isEqualTo("vulnshop");
         assertThat(response.description()).isEqualTo("Case study có gieo lỗi chủ đích");
         assertThat(response.createdAt()).isEqualTo(project.getCreatedAt());
         assertThat(response.updatedAt()).isEqualTo(project.getUpdatedAt());
+        assertThat(response.role()).isEqualTo(ProjectRole.MEMBER);
     }
 
     @Test

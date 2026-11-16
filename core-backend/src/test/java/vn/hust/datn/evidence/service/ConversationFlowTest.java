@@ -6,10 +6,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 
+import java.io.Closeable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -85,7 +88,7 @@ class ConversationFlowTest extends AbstractIntegrationTest {
                     return null;
                 })
                 .when(agentClient)
-                .analyze(any(), any());
+                .analyze(any(), any(), any());
     }
 
     private String answerCiting(String verdict, String... citedIds) {
@@ -236,7 +239,7 @@ class ConversationFlowTest extends AbstractIntegrationTest {
     void agentChet_vanGhiLaiDauVet() {
         doThrow(new vn.hust.datn.evidence.exception.AgentUnavailableException("connection refused"))
                 .when(agentClient)
-                .analyze(any(), any());
+                .analyze(any(), any(), any());
         ConversationResponse conversation = openConversation();
 
         conversationService.ask(conversation.id(), owner.getId(), "Hoi khi agent chet");
@@ -284,7 +287,7 @@ class ConversationFlowTest extends AbstractIntegrationTest {
                     return null;
                 })
                 .when(agentClient)
-                .analyze(any(), any());
+                .analyze(any(), any(), any());
         ConversationResponse conversation = openConversation();
 
         conversationService.ask(conversation.id(), owner.getId(), "Hoi luc model qua tai");
@@ -325,8 +328,67 @@ class ConversationFlowTest extends AbstractIntegrationTest {
 
         org.mockito.ArgumentCaptor<AgentClient.AnalyzeRequest> captor =
                 org.mockito.ArgumentCaptor.forClass(AgentClient.AnalyzeRequest.class);
-        org.mockito.Mockito.verify(agentClient, org.mockito.Mockito.times(2)).analyze(captor.capture(), any());
+        org.mockito.Mockito.verify(agentClient, org.mockito.Mockito.times(2)).analyze(captor.capture(), any(), any());
         assertThat(captor.getAllValues().getFirst().history()).isEmpty();
         assertThat(captor.getAllValues().get(1).history()).hasSize(2);
+    }
+
+    /**
+     * Bấm "Dừng": kết nối tới agent-service phải bị ĐÓNG — đó là thứ duy nhất làm agent-service
+     * thôi gọi LLM. Lượt huỷ không được ghi thành lượt hỏng (không có trace lỗi), và câu hỏi vẫn
+     * còn trong lịch sử.
+     */
+    @Test
+    void huyLuotDangChay_dongKetNoiToiAgent_khongGhiLaLuotHong() throws Exception {
+        CountDownLatch connected = new CountDownLatch(1);
+        CountDownLatch closed = new CountDownLatch(1);
+        doAnswer(invocation -> {
+                    Consumer<Closeable> onConnected = invocation.getArgument(2);
+                    onConnected.accept(closed::countDown);
+                    connected.countDown();
+                    // Giả lập luồng đang chặn ở readLine: chỉ thoát khi kết nối bị đóng, và thoát
+                    // bằng đúng ngoại lệ mà AgentClient.readStream ném ra trong tình huống đó.
+                    if (!closed.await(20, TimeUnit.SECONDS)) {
+                        throw new AssertionError("ket noi khong bao gio bi dong");
+                    }
+                    throw new vn.hust.datn.evidence.exception.AgentUnavailableException(
+                            "dut ket noi toi agent-service: closed");
+                })
+                .when(agentClient)
+                .analyze(any(), any(), any());
+        ConversationResponse conversation = openConversation();
+
+        conversationService.ask(conversation.id(), owner.getId(), "Hoi roi huy");
+        assertThat(connected.await(20, TimeUnit.SECONDS)).isTrue();
+
+        conversationService.cancel(conversation.id(), owner.getId());
+
+        assertThat(closed.await(5, TimeUnit.SECONDS)).isTrue();
+        // Chờ luồng nền xử lý xong ngoại lệ rồi mới đếm trace — tránh xanh giả vì đếm quá sớm.
+        Thread.sleep(300);
+        Integer traceCount = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM llm_trace WHERE conversation_id = ?", Integer.class, conversation.id());
+        assertThat(traceCount).isZero();
+        assertThat(conversationService.messages(conversation.id(), owner.getId()))
+                .extracting(ChatMessageResponse::role)
+                .containsExactly(MessageRole.USER);
+    }
+
+    /** Huỷ khi không có lượt nào đang chạy là thao tác bình thường, không phải lỗi. */
+    @Test
+    void huyKhiKhongCoLuotNao_khongNem() {
+        ConversationResponse conversation = openConversation();
+
+        conversationService.cancel(conversation.id(), owner.getId());
+    }
+
+    /** Người khác không huỷ được lượt hỏi của mình — và cũng không biết hội thoại đó tồn tại. */
+    @Test
+    void nguoiKhacHuy_404() {
+        ConversationResponse conversation = openConversation();
+        User stranger = fixtures.user("la-" + System.nanoTime() + "@x.test");
+
+        assertThatThrownBy(() -> conversationService.cancel(conversation.id(), stranger.getId()))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 }

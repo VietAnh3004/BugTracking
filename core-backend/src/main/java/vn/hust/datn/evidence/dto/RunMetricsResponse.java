@@ -72,7 +72,17 @@ public record RunMetricsResponse(
             @Schema(description = "Tỉ lệ verdict Agent khớp nhãn chuẩn; vắng khi chưa gán nhãn")
                     Double agentAccuracy,
             @Schema(description = "Tỉ lệ quyết định của người khớp nhãn chuẩn; vắng khi chưa gán nhãn")
-                    Double humanAccuracy) {}
+                    Double humanAccuracy,
+            @Schema(
+                            requiredMode = Schema.RequiredMode.REQUIRED,
+                            description = "Số cảnh báo được CẢ người gán chính lẫn người gán thứ hai (mù) gán nhãn")
+                    long doubleLabelledCount,
+            @Schema(description = "Tỉ lệ hai người gán cùng nhãn; vắng khi chưa có cảnh báo nào được gán hai lần")
+                    Double raterAgreement,
+            @Schema(
+                            description =
+                                    "Cohen's kappa giữa hai người gán; vắng khi chưa đủ dữ liệu hoặc khi kappa không xác định (mọi nhãn rơi vào một loại)")
+                    Double cohensKappa) {}
 
     /** Chi phí đọc từ {@code llm_trace} — nguồn số liệu chương 4 của báo cáo. */
     @Schema(description = "Chi phí gọi model")

@@ -178,7 +178,7 @@ public class RunExportService {
                         LIMIT 1
                   ) hr ON true
                   LEFT JOIN ground_truth_label gt
-                         ON gt.evidence_record_id = e.id AND gt.source IN ('MANUAL', 'SEEDED')
+                         ON gt.evidence_record_id = e.id AND gt.source = 'MANUAL'
                  WHERE e.analysis_run_id = ?
                  ORDER BY w.severity_rank, e.short_id
                 """,

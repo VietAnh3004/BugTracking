@@ -143,4 +143,16 @@ public class AnalysisRun {
 
     @Column(name = "sandbox_duration_ms")
     private Long sandboxDurationMs;
+
+    /** Mô hình đã sinh vector cho run này (V11); NULL khi chưa sinh. */
+    @Column(name = "embedding_model")
+    private String embeddingModel;
+
+    /** Số bằng chứng đã có vector; 0 ⇒ search_evidence của run này chỉ so chữ. */
+    @Column(name = "embedding_count", nullable = false)
+    private int embeddingCount = 0;
+
+    /** Lý do lần sinh vector gần nhất thất bại — hiện ra giao diện, không nuốt. */
+    @Column(name = "embedding_error")
+    private String embeddingError;
 }

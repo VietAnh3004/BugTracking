@@ -1,11 +1,14 @@
 package vn.hust.datn.evidence.service;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -61,6 +64,12 @@ public class ConversationService {
     private final CitationValidator citationValidator;
     private final Executor agentExecutor;
 
+    /**
+     * Lượt hỏi đang chạy, theo hội thoại. Trong bộ nhớ là đủ: một lượt chỉ sống trong một tiến
+     * trình JVM, và JVM chết thì kết nối tới agent-service cũng chết theo.
+     */
+    private final ConcurrentMap<UUID, ActiveTurn> activeTurns = new ConcurrentHashMap<>();
+
     // Constructor viết tay chứ không dùng @RequiredArgsConstructor: Lombok KHÔNG chép
     // @Qualifier sang tham số constructor, nên với hai bean Executor trong context
     // (agentExecutor và sandboxExecutor) việc tiêm sẽ phụ thuộc vào trùng tên trường — một
@@ -88,7 +97,7 @@ public class ConversationService {
 
     @Transactional
     public ConversationResponse create(UUID runId, UUID ownerId, CreateConversationRequest request) {
-        evidenceQueryService.requireRunOwnedBy(runId, ownerId);
+        evidenceQueryService.requireRunReadableBy(runId, ownerId);
         // Bắt run phải truy vấn được NGAY khi mở phiên, không đợi tới câu hỏi đầu tiên: hỏi về
         // một run đang chạy thì mọi Evidence ID còn chưa tồn tại.
         evidenceQueryService.ensureRunQueryable(runId);
@@ -115,7 +124,7 @@ public class ConversationService {
 
     @Transactional(readOnly = true)
     public List<ConversationResponse> list(UUID runId, UUID ownerId) {
-        evidenceQueryService.requireRunOwnedBy(runId, ownerId);
+        evidenceQueryService.requireRunReadableBy(runId, ownerId);
         return conversationRepository.findByAnalysisRunIdAndOwnerIdOrderByUpdatedAtDesc(runId, ownerId).stream()
                 .map(ConversationResponse::from)
                 .toList();
@@ -143,20 +152,56 @@ public class ConversationService {
         // Timeout của emitter phải DÀI HƠN timeout gọi agent, nếu không trình duyệt bị ngắt
         // trước khi câu trả lời kịp tới và người dùng thấy lượt hỏi biến mất không dấu vết.
         SseEmitter emitter = new SseEmitter(0L);
-        agentExecutor.execute(() -> stream(emitter, conversation, question, history));
+
+        // Hỏi câu mới trong cùng hội thoại thì huỷ lượt cũ — hai lượt cùng ghi vào một hội thoại
+        // sẽ xen kẽ câu trả lời, và lượt cũ người dùng đã bỏ đi thì không đáng tốn thêm quota.
+        ActiveTurn turn = new ActiveTurn();
+        ActiveTurn previous = activeTurns.put(conversation.getId(), turn);
+        if (previous != null) {
+            previous.cancel();
+        }
+        // Trình duyệt ngắt kết nối (đóng tab, rời trang) mà container phát hiện được: huỷ luôn.
+        emitter.onError(error -> turn.cancel());
+
+        agentExecutor.execute(() -> stream(emitter, conversation, question, history, turn));
         return emitter;
     }
 
+    /**
+     * Huỷ lượt hỏi đang chạy của một hội thoại, nếu có. Không có lượt nào thì không làm gì —
+     * huỷ hai lần, hay huỷ đúng lúc lượt vừa xong, đều không phải lỗi.
+     */
+    public void cancel(UUID conversationId, UUID ownerId) {
+        requireOwned(conversationId, ownerId);
+        ActiveTurn turn = activeTurns.get(conversationId);
+        if (turn != null) {
+            log.info("nguoi dung huy luot hoi cua hoi thoai {}", conversationId);
+            turn.cancel();
+        }
+    }
+
     private void stream(
-            SseEmitter emitter, Conversation conversation, String question, List<Map<String, String>> history) {
+            SseEmitter emitter,
+            Conversation conversation,
+            String question,
+            List<Map<String, String>> history,
+            ActiveTurn turn) {
         List<AgentAnswer.Trace> traces = new ArrayList<>();
         try {
             agentClient.analyze(
                     AgentClient.AnalyzeRequest.of(
                             conversation.getAnalysisRunId(), question, conversation.getFocusShortId(), history),
-                    event -> handle(emitter, conversation, traces, event));
+                    event -> handle(emitter, conversation, traces, event, turn),
+                    turn::attach);
             emitter.complete();
         } catch (AgentUnavailableException e) {
+            if (turn.isCancelled()) {
+                // Huỷ có chủ đích: kết nối bị chính ta đóng nên readLine ném — không phải sự cố
+                // của agent-service, không ghi trace hỏng, không hiện thông báo đỏ.
+                send(emitter, "cancelled", Map.of("message", "Đã dừng lượt hỏi."), turn);
+                emitter.complete();
+                return;
+            }
             log.warn("agent-service khong dung duoc cho hoi thoai {}: {}", conversation.getId(), e.getMessage());
             persistence.persistFailedTraces(conversation.getId(), traces, e.getMessage());
             sendError(emitter, e.getMessage());
@@ -164,6 +209,8 @@ public class ConversationService {
             log.error("loi khong luong truoc khi tra loi hoi thoai {}", conversation.getId(), e);
             persistence.persistFailedTraces(conversation.getId(), traces, e.toString());
             sendError(emitter, "Loi noi bo khi goi Agent");
+        } finally {
+            activeTurns.remove(conversation.getId(), turn);
         }
     }
 
@@ -171,7 +218,8 @@ public class ConversationService {
             SseEmitter emitter,
             Conversation conversation,
             List<AgentAnswer.Trace> traces,
-            AgentClient.AgentEvent event) {
+            AgentClient.AgentEvent event,
+            ActiveTurn turn) {
 
         switch (event.name()) {
             case AgentClient.AgentEvent.ANSWER -> {
@@ -182,7 +230,7 @@ public class ConversationService {
                 ValidatedAnswer validated =
                         citationValidator.validate(conversation.getAnalysisRunId(), toDraft(raw.answer()));
                 ChatMessageResponse saved = persistence.persistAnswer(conversation, validated, raw.tracesOrEmpty());
-                send(emitter, "answer", saved);
+                send(emitter, "answer", saved, turn);
             }
             case AgentClient.AgentEvent.ERROR -> {
                 // Lượt hỏng: agent-service đã kèm trace tới thời điểm chết trong payload.
@@ -195,7 +243,7 @@ public class ConversationService {
             }
             // status/tool_call/tool_result forward nguyên văn: chúng chỉ là tiến trình, không
             // chứa kết luận nào cần hậu kiểm.
-            default -> sendRaw(emitter, event.name(), event.data());
+            default -> sendRaw(emitter, event.name(), event.data(), turn);
         }
     }
 
@@ -227,19 +275,36 @@ public class ConversationService {
     }
 
     private void send(SseEmitter emitter, String name, Object payload) {
+        send(emitter, name, payload, null);
+    }
+
+    /**
+     * Gửi một sự kiện; trình duyệt đã ngắt thì HUỶ lượt đang chạy (nếu có {@code turn}).
+     *
+     * <p>Đây là chỗ phát hiện "người dùng đã bỏ đi" chắc chắn nhất: servlet container thường chỉ
+     * biết client ngắt khi thử GHI. Huỷ ngay thay vì đọc tiếp từ agent-service — đọc tiếp nghĩa
+     * là tiếp tục gọi LLM, tốn quota cho một câu trả lời không ai nhận.
+     */
+    private void send(SseEmitter emitter, String name, Object payload, ActiveTurn turn) {
         try {
             emitter.send(SseEmitter.event().name(name).data(payload));
-        } catch (IOException e) {
-            // Trình duyệt đóng tab giữa chừng. Không phải lỗi: dữ liệu đã ghi xong vào DB rồi.
-            log.debug("client dong ket noi SSE truoc khi nhan {}", name);
+        } catch (IOException | IllegalStateException e) {
+            clientGone(name, turn);
         }
     }
 
-    private void sendRaw(SseEmitter emitter, String name, String json) {
+    private void sendRaw(SseEmitter emitter, String name, String json, ActiveTurn turn) {
         try {
             emitter.send(SseEmitter.event().name(name).data(json, org.springframework.http.MediaType.APPLICATION_JSON));
-        } catch (IOException e) {
-            log.debug("client dong ket noi SSE truoc khi nhan {}", name);
+        } catch (IOException | IllegalStateException e) {
+            clientGone(name, turn);
+        }
+    }
+
+    private static void clientGone(String eventName, ActiveTurn turn) {
+        log.debug("client dong ket noi SSE truoc khi nhan {}", eventName);
+        if (turn != null) {
+            turn.cancel();
         }
     }
 
@@ -248,6 +313,42 @@ public class ConversationService {
         // hay xuống dòng — lỗi trong lúc báo lỗi, người dùng thấy một luồng SSE câm.
         send(emitter, "error", Map.of("message", message));
         emitter.complete();
+    }
+
+    /**
+     * Một lượt hỏi đang chạy. {@link #cancel} có thể tới TRƯỚC khi kết nối mở (bấm Dừng ngay sau
+     * khi gửi) — khi đó {@link #attach} đóng kết nối ngay lúc nó vừa tới.
+     */
+    static final class ActiveTurn {
+        private volatile boolean cancelled;
+        private volatile Closeable connection;
+
+        void attach(Closeable newConnection) {
+            this.connection = newConnection;
+            if (cancelled) {
+                closeQuietly(newConnection);
+            }
+        }
+
+        void cancel() {
+            cancelled = true;
+            Closeable current = connection;
+            if (current != null) {
+                closeQuietly(current);
+            }
+        }
+
+        boolean isCancelled() {
+            return cancelled;
+        }
+
+        private static void closeQuietly(Closeable closeable) {
+            try {
+                closeable.close();
+            } catch (IOException | RuntimeException e) {
+                log.debug("dong ket noi agent-service khi huy: {}", e.toString());
+            }
+        }
     }
 
     private Conversation requireOwned(UUID conversationId, UUID ownerId) {

@@ -101,6 +101,24 @@ public class GlobalExceptionHandler {
      * <p>400 kèm lý do đọc được chứ không lặng lẽ bỏ qua trường đó: {@code messageId} là biến
      * thực nghiệm của user study, ghi sai thì bảng so sánh hai nhóm ở tuần 16 sai theo.
      */
+    @ExceptionHandler(vn.hust.datn.evidence.service.embedding.EmbeddingUnavailableException.class)
+    public ProblemDetail handleEmbeddingUnavailable(
+            vn.hust.datn.evidence.service.embedding.EmbeddingUnavailableException ex, HttpServletRequest request) {
+        // 503 kèm lý do thật (chưa bật, hết quota…): người bấm "Sinh vector" cần biết sửa ở đâu.
+        return problem(
+                HttpStatus.SERVICE_UNAVAILABLE, "embedding-unavailable", "Không sinh được vector", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidGroundTruthException.class)
+    public ProblemDetail handleInvalidGroundTruth(InvalidGroundTruthException ex, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "invalid-ground-truth", "File nhãn không hợp lệ", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidMemberException.class)
+    public ProblemDetail handleInvalidMember(InvalidMemberException ex, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "invalid-member", "Không thêm được thành viên", ex.getMessage(), request);
+    }
+
     @ExceptionHandler(InvalidReviewException.class)
     public ProblemDetail handleInvalidReview(InvalidReviewException ex, HttpServletRequest request) {
         return problem(HttpStatus.BAD_REQUEST, "invalid-review", "Quyết định không hợp lệ", ex.getMessage(), request);

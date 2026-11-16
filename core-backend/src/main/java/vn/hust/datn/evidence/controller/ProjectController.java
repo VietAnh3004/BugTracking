@@ -1,6 +1,7 @@
 package vn.hust.datn.evidence.controller;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.Valid;
@@ -20,8 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import vn.hust.datn.evidence.config.security.CurrentUser;
 import vn.hust.datn.evidence.domain.Project;
+import vn.hust.datn.evidence.domain.ProjectRole;
+import vn.hust.datn.evidence.dto.AddProjectMemberRequest;
 import vn.hust.datn.evidence.dto.CreateProjectRequest;
 import vn.hust.datn.evidence.dto.PageResponse;
+import vn.hust.datn.evidence.dto.ProjectMemberResponse;
 import vn.hust.datn.evidence.dto.ProjectResponse;
 import vn.hust.datn.evidence.mapper.ProjectMapper;
 import vn.hust.datn.evidence.service.ProjectService;
@@ -49,23 +53,53 @@ public class ProjectController {
     public ResponseEntity<ProjectResponse> create(
             @Valid @RequestBody CreateProjectRequest request, @AuthenticationPrincipal CurrentUser currentUser) {
         Project project = projectService.create(request, currentUser.id());
-        ProjectResponse response = projectMapper.toResponse(project);
+        ProjectResponse response = projectMapper.toResponse(project, ProjectRole.OWNER);
         return ResponseEntity.created(URI.create("/api/v1/projects/" + project.getId())).body(response);
     }
 
     @GetMapping
     public PageResponse<ProjectResponse> list(Pageable pageable, @AuthenticationPrincipal CurrentUser currentUser) {
-        return PageResponse.from(projectService.list(pageable, currentUser.id()).map(projectMapper::toResponse));
+        return PageResponse.from(projectService
+                .list(pageable, currentUser.id())
+                .map(project -> projectMapper.toResponse(project, ProjectService.roleOf(project, currentUser.id()))));
     }
 
     @GetMapping("/{id}")
     public ProjectResponse get(@PathVariable UUID id, @AuthenticationPrincipal CurrentUser currentUser) {
-        return projectMapper.toResponse(projectService.get(id, currentUser.id()));
+        Project project = projectService.get(id, currentUser.id());
+        return projectMapper.toResponse(project, ProjectService.roleOf(project, currentUser.id()));
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable UUID id, @AuthenticationPrincipal CurrentUser currentUser) {
         projectService.delete(id, currentUser.id());
+    }
+
+    /** Thành viên của dự án. Chỉ chủ dự án — thành viên gọi nhận 404 như người lạ. */
+    @GetMapping("/{id}/members")
+    public List<ProjectMemberResponse> members(@PathVariable UUID id, @AuthenticationPrincipal CurrentUser currentUser) {
+        return projectService.listMembers(id, currentUser.id()).stream()
+                .map(ProjectMemberResponse::from)
+                .toList();
+    }
+
+    /**
+     * Mời một người (đã có tài khoản) vào dự án. Idempotent: mời lại người đã là thành viên trả về
+     * đúng hàng đó. Email chưa đăng ký ⇒ 400 kèm lý do.
+     */
+    @PostMapping("/{id}/members")
+    public ProjectMemberResponse addMember(
+            @PathVariable UUID id,
+            @Valid @RequestBody AddProjectMemberRequest request,
+            @AuthenticationPrincipal CurrentUser currentUser) {
+        return ProjectMemberResponse.from(projectService.addMember(id, currentUser.id(), request.email()));
+    }
+
+    @DeleteMapping("/{id}/members/{userId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeMember(
+            @PathVariable UUID id, @PathVariable UUID userId, @AuthenticationPrincipal CurrentUser currentUser) {
+        projectService.removeMember(id, currentUser.id(), userId);
     }
 }

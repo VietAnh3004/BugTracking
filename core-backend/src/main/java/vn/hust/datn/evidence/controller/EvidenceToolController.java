@@ -75,10 +75,20 @@ public class EvidenceToolController {
         Set<EvidenceType> types = request.types() == null || request.types().isEmpty() ? null : Set.copyOf(request.types());
         int limit = request.limitOrDefault();
 
-        var records = evidenceQueryService.searchEvidence(request.analysisRunId(), request.query(), types, request.filePath(), limit);
+        var hits = evidenceQueryService.searchHybrid(request.analysisRunId(), request.query(), types, request.filePath(), limit);
 
-        var items = records.stream()
-                .map(e -> new EvidenceSummaryItem(e.getShortId(), e.getType(), e.getSummary(), e.getFilePath(), e.getStartLine(), e.getSymbol()))
+        var items = hits.stream()
+                .map(hit -> {
+                    var e = hit.record();
+                    return new EvidenceSummaryItem(
+                            e.getShortId(),
+                            e.getType(),
+                            e.getSummary(),
+                            e.getFilePath(),
+                            e.getStartLine(),
+                            e.getSymbol(),
+                            hit.matchedBy());
+                })
                 .toList();
         return new SearchEvidenceResult(items, items.size(), items.size() >= limit);
     }

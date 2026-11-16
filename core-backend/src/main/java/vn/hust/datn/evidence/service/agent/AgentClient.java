@@ -1,6 +1,7 @@
 package vn.hust.datn.evidence.service.agent;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -83,6 +84,19 @@ public class AgentClient {
      * request của servlet container.
      */
     public void analyze(AnalyzeRequest request, Consumer<AgentEvent> onEvent) {
+        analyze(request, onEvent, connection -> {});
+    }
+
+    /**
+     * Như {@link #analyze(AnalyzeRequest, Consumer)}, kèm {@code onConnected} nhận về KẾT NỐI tới
+     * agent-service ngay khi nó mở — để luồng khác đóng được nó khi người dùng huỷ lượt hỏi.
+     *
+     * <p>Đóng kết nối là cách huỷ DUY NHẤT có tác dụng tới tận agent-service: phía đó thấy client
+     * ngắt và thôi gọi LLM (xem {@code stop_on_disconnect} trong agent-service). Luồng đang chặn ở
+     * {@code readLine} sẽ nhận {@code IOException} và thoát ra dưới dạng
+     * {@link AgentUnavailableException} — người gọi tự phân biệt huỷ có chủ đích với lỗi thật.
+     */
+    public void analyze(AnalyzeRequest request, Consumer<AgentEvent> onEvent, Consumer<Closeable> onConnected) {
         restClient
                 .post()
                 .uri("/analyze")
@@ -98,6 +112,7 @@ public class AgentClient {
                                 throw new AgentUnavailableException("agent-service tra ve %s: %s"
                                         .formatted(response.getStatusCode(), readBody(response)));
                             }
+                            onConnected.accept(response);
                             readStream(response.getBody(), onEvent);
                             return null;
                         },

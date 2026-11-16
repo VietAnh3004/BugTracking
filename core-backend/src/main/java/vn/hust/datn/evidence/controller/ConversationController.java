@@ -90,4 +90,18 @@ public class ConversationController {
             @AuthenticationPrincipal CurrentUser currentUser) {
         return conversationService.ask(conversationId, currentUser.id(), request.question());
     }
+
+    /**
+     * Dừng lượt hỏi đang chạy: đóng kết nối tới agent-service, phía đó thôi gọi LLM. Luồng SSE
+     * đang mở nhận sự kiện {@code cancelled} rồi đóng.
+     *
+     * <p>Luôn 204 khi hội thoại thuộc người gọi — không có lượt nào đang chạy cũng là 204, vì
+     * "huỷ đúng lúc lượt vừa xong" là chuyện bình thường chứ không phải lỗi của người dùng.
+     */
+    @PostMapping("/conversations/{conversationId}/cancel")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Dừng lượt hỏi Agent đang chạy của một phiên")
+    public void cancel(@PathVariable UUID conversationId, @AuthenticationPrincipal CurrentUser currentUser) {
+        conversationService.cancel(conversationId, currentUser.id());
+    }
 }

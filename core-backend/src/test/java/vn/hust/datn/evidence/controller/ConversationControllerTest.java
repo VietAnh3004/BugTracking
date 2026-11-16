@@ -175,4 +175,29 @@ class ConversationControllerTest extends AbstractWebIntegrationTest {
                         .content("{\"question\":\"   \"}"))
                 .andExpect(status().isBadRequest());
     }
+
+    /** Dừng lượt hỏi: chủ hội thoại nhận 204 kể cả khi không có lượt nào đang chạy. */
+    @Test
+    void huyLuotHoi_chuHoiThoai_204_nguoiLa_404() throws Exception {
+        String conversationId = getMockMvc()
+                .perform(post("/api/v1/analysis-runs/{runId}/conversations", run.getId())
+                        .with(authenticatedAs(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString()
+                .replaceAll(".*\"id\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+        User nguoiLa = fixtures.user("nguoi-la-huy-" + System.nanoTime() + "@x.test");
+
+        getMockMvc()
+                .perform(post("/api/v1/conversations/{id}/cancel", conversationId).with(authenticatedAs(owner)))
+                .andExpect(status().isNoContent());
+        getMockMvc()
+                .perform(post("/api/v1/conversations/{id}/cancel", conversationId).with(authenticatedAs(nguoiLa)))
+                .andExpect(status().isNotFound());
+        getMockMvc()
+                .perform(post("/api/v1/conversations/{id}/cancel", conversationId))
+                .andExpect(status().isUnauthorized());
+    }
 }

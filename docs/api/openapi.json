@@ -67,6 +67,77 @@
         }
       }
     },
+    "/api/v1/analysis-runs/{runId}/evidence/{shortId}/ground-truth" : {
+      "put" : {
+        "tags" : [ "ground-truth" ],
+        "summary" : "Gán hoặc sửa nhãn ground truth của người gọi cho một cảnh báo",
+        "operationId" : "save",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "shortId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveGroundTruthRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GroundTruthLabelView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "ground-truth" ],
+        "summary" : "Xoá nhãn ground truth của người gọi trên một cảnh báo",
+        "operationId" : "delete",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "shortId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
     "/api/v1/tools/search_evidence" : {
       "post" : {
         "tags" : [ "evidence-tools" ],
@@ -457,6 +528,71 @@
         }
       }
     },
+    "/api/v1/projects/{id}/members" : {
+      "get" : {
+        "tags" : [ "projects" ],
+        "operationId" : "members",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ProjectMemberResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "projects" ],
+        "operationId" : "addMember",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AddProjectMemberRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProjectMemberResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/conversations/{conversationId}/messages" : {
       "get" : {
         "tags" : [ "conversations" ],
@@ -520,6 +656,27 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{conversationId}/cancel" : {
+      "post" : {
+        "tags" : [ "conversations" ],
+        "summary" : "Dừng lượt hỏi Agent đang chạy của một phiên",
+        "operationId" : "cancel",
+        "parameters" : [ {
+          "name" : "conversationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           }
         }
       }
@@ -677,6 +834,78 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/LinkRebuildResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-runs/{runId}/ground-truth/import" : {
+      "post" : {
+        "tags" : [ "ground-truth" ],
+        "summary" : "Nạp nhãn từ file YAML vào lần phân tích (chỉ chủ dự án)",
+        "operationId" : "importLabels",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "file" : {
+                    "type" : "string",
+                    "format" : "binary"
+                  }
+                },
+                "required" : [ "file" ]
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GroundTruthImportResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-runs/{runId}/embeddings" : {
+      "post" : {
+        "tags" : [ "evidence" ],
+        "summary" : "Sinh lại vector tìm kiếm theo nghĩa cho một lần phân tích",
+        "operationId" : "rebuildEmbeddings",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnalysisRunResponse"
                 }
               }
             }
@@ -886,7 +1115,7 @@
       },
       "delete" : {
         "tags" : [ "projects" ],
-        "operationId" : "delete",
+        "operationId" : "delete_1",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -1067,6 +1296,63 @@
         }
       }
     },
+    "/api/v1/analysis-runs/{runId}/ground-truth" : {
+      "get" : {
+        "tags" : [ "ground-truth" ],
+        "summary" : "Bảng gán nhãn ground truth của một lần phân tích, lọc theo vai trò người gọi",
+        "operationId" : "sheet",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GroundTruthSheetResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-runs/{runId}/ground-truth/export.yaml" : {
+      "get" : {
+        "tags" : [ "ground-truth" ],
+        "summary" : "Xuất mọi nhãn của lần phân tích ra YAML (chỉ chủ dự án)",
+        "operationId" : "export",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/yaml" : {
+                "schema" : {
+                  "type" : "string",
+                  "format" : "byte"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/analysis-runs/{runId}/export.json" : {
       "get" : {
         "tags" : [ "human-review" ],
@@ -1167,6 +1453,34 @@
           }
         }
       }
+    },
+    "/api/v1/projects/{id}/members/{userId}" : {
+      "delete" : {
+        "tags" : [ "projects" ],
+        "operationId" : "removeMember",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
     }
   },
   "components" : {
@@ -1236,6 +1550,42 @@
         },
         "required" : [ "createdAt", "decision", "id", "shortId", "updatedAt" ]
       },
+      "SaveGroundTruthRequest" : {
+        "type" : "object",
+        "properties" : {
+          "label" : {
+            "type" : "string",
+            "enum" : [ "TRUE_POSITIVE", "FALSE_POSITIVE", "UNCERTAIN" ]
+          },
+          "rationale" : {
+            "type" : "string",
+            "description" : "Lý do 1-2 câu, sau khi đọc mã",
+            "maxLength" : 2000,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "label", "rationale" ]
+      },
+      "GroundTruthLabelView" : {
+        "type" : "object",
+        "properties" : {
+          "label" : {
+            "type" : "string",
+            "enum" : [ "TRUE_POSITIVE", "FALSE_POSITIVE", "UNCERTAIN" ]
+          },
+          "rationale" : {
+            "type" : "string"
+          },
+          "labeler" : {
+            "type" : "string"
+          },
+          "labeledAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "label", "labeledAt", "labeler", "rationale" ]
+      },
       "SearchEvidenceRequest" : {
         "type" : "object",
         "properties" : {
@@ -1287,6 +1637,9 @@
             "format" : "int32"
           },
           "symbol" : {
+            "type" : "string"
+          },
+          "matched_by" : {
             "type" : "string"
           }
         }
@@ -1556,6 +1909,15 @@
           "analyzerImageDigest" : {
             "type" : "string"
           },
+          "embeddingCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số bằng chứng đã có vector để tìm theo nghĩa; 0 = chỉ tìm được bằng so chữ"
+          },
+          "embeddingError" : {
+            "type" : "string",
+            "description" : "Lý do sinh vector thất bại; vắng khi thành công hoặc chưa thử"
+          },
           "startedAt" : {
             "type" : "string",
             "format" : "date-time"
@@ -1565,7 +1927,7 @@
             "format" : "date-time"
           }
         },
-        "required" : [ "artifactSource", "codeContextCount", "findingCount", "id", "linkCount", "locationCount", "snapshotId", "startedAt", "status", "unlinkedWarningCount", "unresolvedLocationCount" ]
+        "required" : [ "artifactSource", "codeContextCount", "embeddingCount", "findingCount", "id", "linkCount", "locationCount", "snapshotId", "startedAt", "status", "unlinkedWarningCount", "unresolvedLocationCount" ]
       },
       "CreateProjectRequest" : {
         "type" : "object",
@@ -1600,9 +1962,14 @@
           "updatedAt" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "role" : {
+            "type" : "string",
+            "description" : "Vai trò của NGƯỜI ĐANG GỌI với dự án này: OWNER (chủ) hoặc MEMBER (được chia sẻ)",
+            "enum" : [ "OWNER", "MEMBER" ]
           }
         },
-        "required" : [ "createdAt", "id", "name", "updatedAt" ]
+        "required" : [ "createdAt", "id", "name", "role", "updatedAt" ]
       },
       "SnapshotResponse" : {
         "type" : "object",
@@ -1643,6 +2010,37 @@
           }
         },
         "required" : [ "createdAt", "fileCount", "id", "projectId", "sourceType", "status", "totalSizeBytes" ]
+      },
+      "AddProjectMemberRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "description" : "Email người đó đã dùng để đăng ký",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "email" ]
+      },
+      "ProjectMemberResponse" : {
+        "type" : "object",
+        "properties" : {
+          "userId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "addedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "addedAt", "displayName", "email", "userId" ]
       },
       "AskRequest" : {
         "type" : "object",
@@ -1784,6 +2182,29 @@
           }
         },
         "required" : [ "countByMethod", "deletedCount", "linkCount", "runId", "unlinkedWarningCount" ]
+      },
+      "GroundTruthImportResponse" : {
+        "type" : "object",
+        "properties" : {
+          "labelsWritten" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số nhãn đã ghi (một mục có thể khớp nhiều cảnh báo)"
+          },
+          "entriesMatched" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số mục trong file khớp ít nhất một cảnh báo"
+          },
+          "unmatched" : {
+            "type" : "array",
+            "description" : "Mục không khớp cảnh báo nào, dạng tool/luật@file:dòng",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        },
+        "required" : [ "entriesMatched", "labelsWritten", "unmatched" ]
       },
       "CreateConversationRequest" : {
         "type" : "object",
@@ -2282,9 +2703,24 @@
             "type" : "number",
             "format" : "double",
             "description" : "Tỉ lệ quyết định của người khớp nhãn chuẩn; vắng khi chưa gán nhãn"
+          },
+          "doubleLabelledCount" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Số cảnh báo được CẢ người gán chính lẫn người gán thứ hai (mù) gán nhãn"
+          },
+          "raterAgreement" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Tỉ lệ hai người gán cùng nhãn; vắng khi chưa có cảnh báo nào được gán hai lần"
+          },
+          "cohensKappa" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Cohen's kappa giữa hai người gán; vắng khi chưa đủ dữ liệu hoặc khi kappa không xác định (mọi nhãn rơi vào một loại)"
           }
         },
-        "required" : [ "labelledCount" ]
+        "required" : [ "doubleLabelledCount", "labelledCount" ]
       },
       "ReviewProgress" : {
         "type" : "object",
@@ -2345,6 +2781,70 @@
           }
         },
         "required" : [ "agentCost", "analysisRunId", "citationQuality", "groundTruth", "reviewProgress" ]
+      },
+      "GroundTruthRow" : {
+        "type" : "object",
+        "properties" : {
+          "shortId" : {
+            "type" : "string"
+          },
+          "tool" : {
+            "type" : "string",
+            "enum" : [ "spotbugs", "semgrep" ]
+          },
+          "ruleId" : {
+            "type" : "string"
+          },
+          "severity" : {
+            "type" : "string",
+            "enum" : [ "HIGH", "MEDIUM", "LOW", "INFO" ]
+          },
+          "filePath" : {
+            "type" : "string"
+          },
+          "startLine" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "summary" : {
+            "type" : "string"
+          },
+          "label" : {
+            "$ref" : "#/components/schemas/GroundTruthLabelView",
+            "description" : "Nhãn người gọi đã gán; vắng khi chưa gán"
+          },
+          "seededHint" : {
+            "$ref" : "#/components/schemas/GroundTruthLabelView",
+            "description" : "Gợi ý từ nhãn SEEDED — chỉ chủ dự án nhận được"
+          }
+        },
+        "required" : [ "ruleId", "severity", "shortId", "summary", "tool" ]
+      },
+      "GroundTruthSheetResponse" : {
+        "type" : "object",
+        "description" : "Bảng gán nhãn ground truth, đã lọc theo vai trò người gọi",
+        "properties" : {
+          "runId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "role" : {
+            "type" : "string",
+            "enum" : [ "OWNER", "MEMBER" ]
+          },
+          "source" : {
+            "type" : "string",
+            "description" : "Nguồn nhãn người gọi đang gán: MANUAL (chủ) hoặc BLIND_SECOND_RATER (thành viên)",
+            "enum" : [ "SEEDED", "MANUAL", "BLIND_SECOND_RATER" ]
+          },
+          "rows" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/GroundTruthRow"
+            }
+          }
+        },
+        "required" : [ "role", "rows", "runId", "source" ]
       },
       "EvidenceDetailResponse" : {
         "type" : "object",

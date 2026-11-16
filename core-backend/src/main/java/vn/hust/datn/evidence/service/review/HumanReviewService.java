@@ -52,7 +52,7 @@ public class HumanReviewService {
      */
     @Transactional
     public ReviewResponse submit(UUID runId, String shortId, UUID reviewerId, SubmitReviewRequest request) {
-        evidenceQueryService.requireRunOwnedBy(runId, reviewerId);
+        evidenceQueryService.requireRunReadableBy(runId, reviewerId);
         EvidenceRecord evidence = evidenceQueryService.getEvidence(runId, shortId);
 
         UUID messageId = validateMessage(request.messageId(), runId, reviewerId);
@@ -88,7 +88,7 @@ public class HumanReviewService {
 
     @Transactional(readOnly = true)
     public List<ReviewResponse> listMine(UUID runId, UUID reviewerId) {
-        evidenceQueryService.requireRunOwnedBy(runId, reviewerId);
+        evidenceQueryService.requireRunReadableBy(runId, reviewerId);
 
         List<HumanReview> reviews =
                 humanReviewRepository.findByAnalysisRunIdAndReviewerIdOrderByUpdatedAtDesc(runId, reviewerId);

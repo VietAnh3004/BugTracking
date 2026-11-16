@@ -29,6 +29,10 @@ public interface AnalysisRunRepository extends JpaRepository<AnalysisRun, UUID> 
                     + "WHERE r.id = :runId AND r.snapshotId = s.id AND s.projectId = p.id")
     Optional<UUID> findOwnerIdByRunId(@Param("runId") UUID runId);
 
+    /** Dự án chứa một run — để kiểm quyền thành viên (V10) đi qua đúng một chỗ: ProjectRepository. */
+    @Query("SELECT s.projectId FROM AnalysisRun r, RepositorySnapshot s WHERE r.id = :runId AND r.snapshotId = s.id")
+    Optional<UUID> findProjectIdByRunId(@Param("runId") UUID runId);
+
     /**
      * Hạ mọi run còn {@code RUNNING} bắt đầu TRƯỚC {@code cutoff} xuống {@code FAILED} — xem
      * {@code OrphanedRunRecovery}. Điều kiện {@code status} nằm ngay trong WHERE nên một run vừa

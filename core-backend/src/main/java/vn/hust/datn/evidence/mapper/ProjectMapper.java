@@ -5,6 +5,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 
 import vn.hust.datn.evidence.domain.Project;
+import vn.hust.datn.evidence.domain.ProjectRole;
 import vn.hust.datn.evidence.dto.CreateProjectRequest;
 import vn.hust.datn.evidence.dto.ProjectResponse;
 
@@ -26,7 +27,8 @@ import vn.hust.datn.evidence.dto.ProjectResponse;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface ProjectMapper {
 
-    ProjectResponse toResponse(Project project);
+    /** {@code role} không nằm trong entity: nó là quan hệ giữa dự án và NGƯỜI ĐANG GỌI. */
+    ProjectResponse toResponse(Project project, ProjectRole role);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "ownerId", ignore = true)

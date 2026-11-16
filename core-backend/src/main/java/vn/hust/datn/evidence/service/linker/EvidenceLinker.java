@@ -131,6 +131,122 @@ public class EvidenceLinker {
     }
 
     /**
+     * Coverage theo từng test của các file có cảnh báo: test → tập {@code "file:dòng"} nó chạy qua.
+     * Rỗng khi run không có dữ liệu này (run nạp tay, hoặc analyzer không thu được).
+     */
+    private Map<UUID, Set<String>> readPerTestLines(UUID runId, Set<String> filePaths) {
+        Map<UUID, Set<String>> byTest = new LinkedHashMap<>();
+        if (filePaths.isEmpty()) {
+            return byTest;
+        }
+        List<String> paths = List.copyOf(filePaths);
+        for (int from = 0; from < paths.size(); from += BATCH_CHUNK) {
+            List<String> chunk = paths.subList(from, Math.min(from + BATCH_CHUNK, paths.size()));
+            String placeholders = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
+            List<Object> args = new ArrayList<>();
+            args.add(runId);
+            args.addAll(chunk);
+            jdbcTemplate.query(
+                    "SELECT t.test_evidence_id, t.file_path, t.line_number FROM test_line_coverage t"
+                            + " JOIN evidence_record e ON e.id = t.test_evidence_id"
+                            + " WHERE e.analysis_run_id = ? AND t.file_path IN (" + placeholders + ")",
+                    rs -> {
+                        byTest.computeIfAbsent(rs.getObject("test_evidence_id", UUID.class), id -> new HashSet<>())
+                                .add(rs.getString("file_path") + ":" + rs.getInt("line_number"));
+                    },
+                    args.toArray());
+        }
+        return byTest;
+    }
+
+    /**
+     * Tầng 2b bản CHÍNH XÁC — nối test ↔ cảnh báo theo coverage RIÊNG của từng test: test thật sự
+     * chạy qua dòng bị cảnh báo thì nối, bất kể tên lớp. Thay cho {@link #byTestNaming} khi run có
+     * dữ liệu này.
+     *
+     * <p>Method {@code LINE_EXACT}: liên kết dựa trên đo đạc trực tiếp dòng đó, cùng mức với các liên
+     * kết khớp-đúng-dòng khác. Cùng quy tắc với bản theo tên ở mọi chỗ còn lại:
+     * <ul>
+     *   <li>test HỎNG chạy qua dòng ⇒ {@code SUPPORTS};
+     *   <li>test XANH chạy qua dòng ⇒ {@code CONTRADICTS}, chỉ khi cảnh báo chưa có SUPPORTS nào,
+     *       và weight LUÔN thấp hơn SUPPORTS — test xanh không chứng minh cảnh báo sai.
+     * </ul>
+     *
+     * <p>Cảnh báo trải nhiều dòng: test chạy qua BẤT KỲ dòng nào trong khoảng đều tính — dòng đầu
+     * của một khai báo nhiều dòng thường không phải dòng executable.
+     */
+    private List<LinkCandidate> byPerTestCoverage(
+            List<WarningLocationRow> locations,
+            List<TestCaseRow> testCases,
+            Map<UUID, Set<String>> perTestLines,
+            List<LinkCandidate> soFar) {
+        Map<UUID, TestCaseRow> testsById = testCases.stream()
+                .collect(Collectors.toMap(TestCaseRow::evidenceRecordId, t -> t, (first, second) -> first));
+        Set<UUID> warningsWithSupports = soFar.stream()
+                .filter(candidate -> candidate.relation() == EvidenceLinkRelation.SUPPORTS)
+                .map(LinkCandidate::toEvidenceId)
+                .collect(Collectors.toCollection(HashSet::new));
+
+        List<LinkCandidate> failedLinks = new ArrayList<>();
+        List<Map.Entry<WarningLocationRow, Map.Entry<TestCaseRow, Integer>>> passedHits = new ArrayList<>();
+        for (WarningLocationRow location : locations) {
+            if (location.startLine() == null) {
+                continue;
+            }
+            int last = location.endLine() == null ? location.startLine() : Math.max(location.startLine(), location.endLine());
+            for (Map.Entry<UUID, Set<String>> entry : perTestLines.entrySet()) {
+                TestCaseRow test = testsById.get(entry.getKey());
+                if (test == null || test.status() == TestCaseStatus.SKIPPED) {
+                    continue;
+                }
+                Integer hitLine = null;
+                for (int line = location.startLine(); line <= last && hitLine == null; line++) {
+                    if (entry.getValue().contains(location.filePath() + ":" + line)) {
+                        hitLine = line;
+                    }
+                }
+                if (hitLine == null) {
+                    continue;
+                }
+                if (test.status() == TestCaseStatus.FAILED) {
+                    failedLinks.add(new LinkCandidate(
+                            test.evidenceRecordId(),
+                            location.evidenceRecordId(),
+                            EvidenceLinkRelation.SUPPORTS,
+                            EvidenceLinkMethod.LINE_EXACT,
+                            0.8,
+                            "Test hỏng %s#%s chạy qua đúng dòng %d (đo bằng coverage riêng của test này)"
+                                    .formatted(test.className(), test.methodName(), hitLine)));
+                    warningsWithSupports.add(location.evidenceRecordId());
+                } else {
+                    passedHits.add(Map.entry(location, Map.entry(test, hitLine)));
+                }
+            }
+        }
+
+        // CONTRADICTS xét SAU khi đã biết mọi SUPPORTS của pass này: một test hỏng chạy qua dòng
+        // đó thì test xanh khác không lật ngược được.
+        List<LinkCandidate> candidates = new ArrayList<>(failedLinks);
+        for (var hit : passedHits) {
+            WarningLocationRow location = hit.getKey();
+            if (warningsWithSupports.contains(location.evidenceRecordId())) {
+                continue;
+            }
+            TestCaseRow test = hit.getValue().getKey();
+            candidates.add(new LinkCandidate(
+                    test.evidenceRecordId(),
+                    location.evidenceRecordId(),
+                    EvidenceLinkRelation.CONTRADICTS,
+                    EvidenceLinkMethod.LINE_EXACT,
+                    0.6,
+                    ("Test xanh %s#%s chạy qua đúng dòng %d (đo bằng coverage riêng của test này). KHÔNG chứng"
+                                    + " minh cảnh báo sai: test đi đường bình thường vẫn có thể xanh trên mã có lỗ hổng.")
+                            .formatted(test.className(), test.methodName(), hit.getValue().getValue())));
+        }
+        return candidates;
+    }
+
+    /**
      * Chạy lại toàn bộ liên kết cho một run ĐÃ XONG, rồi tự ghi bộ đếm.
      *
      * <p>Khác {@link #link(UUID)} ở hai chỗ, và cả hai đều bắt buộc:
@@ -203,7 +319,14 @@ public class EvidenceLinker {
         // Pass cuối CẦN biết những tầng trước đã sinh SUPPORTS cho cảnh báo nào, nên nó chạy trên
         // KẾT QUẢ ĐÃ DEDUP chứ không song song với các tầng.
         List<LinkCandidate> soFar = accumulator.candidates();
-        accumulator.addAll(byTestNaming(locations, contexts, testCases, coverageMethods, coverageLines, soFar));
+        // Run có coverage THEO TỪNG TEST (sandbox) thì nối test ↔ cảnh báo theo dòng THẬT, thay cho
+        // quy ước tên lớp (chốt với người dùng 16/11/2026). Run nạp tay không có dữ liệu này.
+        Map<UUID, Set<String>> perTestLines = readPerTestLines(runId, filesWithWarnings);
+        if (perTestLines.isEmpty()) {
+            accumulator.addAll(byTestNaming(locations, contexts, testCases, coverageMethods, coverageLines, soFar));
+        } else {
+            accumulator.addAll(byPerTestCoverage(locations, testCases, perTestLines, soFar));
+        }
 
         List<LinkCandidate> candidates = accumulator.candidates();
         write(runId, candidates);

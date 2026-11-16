@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import vn.hust.datn.evidence.domain.AnalysisRun;
+import vn.hust.datn.evidence.domain.AnalysisRunStatus;
 import vn.hust.datn.evidence.domain.ArtifactSource;
 import vn.hust.datn.evidence.domain.WarningTool;
 import vn.hust.datn.evidence.exception.SandboxUnavailableException;
@@ -25,6 +26,7 @@ import vn.hust.datn.evidence.service.analysis.sandbox.SandboxRunner;
 import vn.hust.datn.evidence.service.analysis.sandbox.SanityVerdict;
 import vn.hust.datn.evidence.service.analysis.sandbox.SourceTree;
 import vn.hust.datn.evidence.service.analysis.sandbox.SourceTreeBuilder;
+import vn.hust.datn.evidence.service.embedding.EmbeddingService;
 import vn.hust.datn.evidence.service.linker.EvidenceLinker;
 import vn.hust.datn.evidence.service.linker.LinkResult;
 
@@ -71,6 +73,8 @@ public class AnalysisRunService {
     private final SourceTreeBuilder sourceTreeBuilder;
     private final AnalyzerSanityChecker sanityChecker;
     private final Executor sandboxExecutor;
+    private final EmbeddingService embeddingService;
+    private final PerTestCoverageStore perTestCoverageStore;
 
     public AnalysisRunService(
             SnapshotQueryService snapshotQueryService,
@@ -84,7 +88,9 @@ public class AnalysisRunService {
             SandboxRunner sandboxRunner,
             SourceTreeBuilder sourceTreeBuilder,
             AnalyzerSanityChecker sanityChecker,
-            @Qualifier("sandboxExecutor") Executor sandboxExecutor) {
+            @Qualifier("sandboxExecutor") Executor sandboxExecutor,
+            EmbeddingService embeddingService,
+            PerTestCoverageStore perTestCoverageStore) {
         this.snapshotQueryService = snapshotQueryService;
         this.snapshotFileRepository = snapshotFileRepository;
         this.registry = registry;
@@ -97,6 +103,8 @@ public class AnalysisRunService {
         this.sourceTreeBuilder = sourceTreeBuilder;
         this.sanityChecker = sanityChecker;
         this.sandboxExecutor = sandboxExecutor;
+        this.embeddingService = embeddingService;
+        this.perTestCoverageStore = perTestCoverageStore;
     }
 
     /**
@@ -158,11 +166,33 @@ public class AnalysisRunService {
             }
 
             List<DetectedArtifact> detected = detectAll(toNamedArtifacts(sandboxResult.artifacts()));
-            persistence.finalizeRun(runId, analyze(snapshotId, runId, detected).withSandbox(info));
+            // Coverage theo từng test: không phải artifact cho parser nào (không sinh bằng chứng),
+            // mà là đầu vào phụ cho linker — tách riêng, không đi qua AnalyzerRegistry.
+            byte[] perTest = sandboxResult.artifacts().entrySet().stream()
+                    .filter(entry -> entry.getKey().endsWith(PerTestCoverageStore.ARTIFACT_NAME))
+                    .map(Map.Entry::getValue)
+                    .findFirst()
+                    .orElse(null);
+            embedIfSucceeded(persistence.finalizeRun(
+                    runId, analyze(snapshotId, runId, detected, perTest).withSandbox(info)));
         } catch (RuntimeException e) {
             log.error("Sandbox run {} hong", runId, e);
             persistence.finalizeRun(runId, RunOutcome.failed(shorten(messageOf(e)), null, null));
         }
+    }
+
+    /**
+     * Sinh vector cho run vừa xong (chốt với người dùng: NGAY sau mỗi lần phân tích). Không bao giờ
+     * làm hỏng run — lỗi được ghi vào {@code embedding_error}, xem {@link EmbeddingService}.
+     *
+     * @return {@code true} nếu đã thử sinh (run thành công), để người gọi biết phải đọc lại run
+     */
+    private boolean embedIfSucceeded(AnalysisRun run) {
+        if (run.getStatus() != AnalysisRunStatus.SUCCEEDED && run.getStatus() != AnalysisRunStatus.SUCCEEDED_CLEAN) {
+            return false;
+        }
+        embeddingService.embedRunQuietly(run.getId());
+        return true;
     }
 
     private List<NamedArtifact> toNamedArtifacts(Map<String, byte[]> artifacts) {
@@ -170,7 +200,10 @@ public class AnalysisRunService {
         artifacts.forEach((name, content) -> {
             // Bỏ log và file phụ trợ mà analyze.sh ghi cạnh artifact: chúng không phải đầu vào của
             // parser nào, và AnalyzerRegistry sẽ từ chối chúng (đúng, nhưng làm hỏng cả run).
-            if (name.endsWith(".log") || name.endsWith(".txt") || name.equals("effective-pom.xml")) {
+            if (name.endsWith(".log")
+                    || name.endsWith(".txt")
+                    || name.equals("effective-pom.xml")
+                    || name.endsWith(PerTestCoverageStore.ARTIFACT_NAME)) {
                 return;
             }
             named.add(new NamedArtifact(name, content));
@@ -190,7 +223,12 @@ public class AnalysisRunService {
         AnalysisRun run = persistence.createRunning(snapshotId);
         UUID runId = run.getId();
         try {
-            return persistence.finalizeRun(runId, analyze(snapshotId, runId, detected));
+            AnalysisRun finished = persistence.finalizeRun(runId, analyze(snapshotId, runId, detected, null));
+            if (!embedIfSucceeded(finished)) {
+                return finished;
+            }
+            // Đọc lại: bộ đếm embedding vừa được ghi SAU finalizeRun, bản trong tay đã cũ.
+            return persistence.get(runId);
         } catch (RuntimeException e) {
             // Nhánh này chỉ còn lỗi ngoài dự kiến (DB hỏng, hết bộ nhớ...): mọi thất bại đã lường
             // trước đều đi qua RunOutcome.failed(...) bên trong analyze().
@@ -225,7 +263,11 @@ public class AnalysisRunService {
         return detected;
     }
 
-    private RunOutcome analyze(UUID snapshotId, UUID runId, List<DetectedArtifact> detected) {
+    /**
+     * @param perTestCoverage {@code per-test-coverage.json} của sandbox, {@code null} với run nạp
+     *     tay — khi đó linker nối test ↔ cảnh báo theo quy ước tên lớp như trước
+     */
+    private RunOutcome analyze(UUID snapshotId, UUID runId, List<DetectedArtifact> detected, byte[] perTestCoverage) {
         Map<String, String> toolVersions = new LinkedHashMap<>();
         List<EvidenceDraft> drafts = new ArrayList<>();
 
@@ -267,6 +309,12 @@ public class AnalysisRunService {
         drafts.addAll(contexts.drafts());
 
         MaterializationResult result = materializer.materialize(runId, drafts, pathResolver);
+
+        // SAU materialize (cần evidence_record của từng test) và TRƯỚC link (linker đọc bảng này).
+        if (perTestCoverage != null) {
+            int rows = perTestCoverageStore.store(runId, perTestCoverage, pathResolver);
+            log.info("Run {}: {} dong coverage theo tung test", runId, rows);
+        }
 
         // Liên kết NGAY sau materialize và TRƯỚC finalizeRun: lúc này run vẫn RUNNING, mà
         // ensureRunQueryable từ chối RUNNING — nên trạng thái "có evidence, chưa có liên kết"

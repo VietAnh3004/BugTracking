@@ -78,7 +78,7 @@ public class EvidenceDetailService {
      *     (ADR 0005 quyết định 2). Không thuộc về bạn ⇒ 404, không phải 403 — không rò rỉ sự tồn tại
      */
     public EvidenceDetailResponse detail(UUID runId, String shortId, UUID ownerId) {
-        evidenceQueryService.requireRunOwnedBy(runId, ownerId);
+        evidenceQueryService.requireRunReadableBy(runId, ownerId);
         AnalysisRun run = evidenceQueryService.ensureRunQueryable(runId);
         EvidenceRecord anchor = evidenceQueryService.getEvidence(runId, shortId);
 

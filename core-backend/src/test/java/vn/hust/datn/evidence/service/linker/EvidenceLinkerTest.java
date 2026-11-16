@@ -70,6 +70,9 @@ class EvidenceLinkerTest extends AbstractIntegrationTest {
     private EvidenceMaterializer materializer;
 
     @Autowired
+    private vn.hust.datn.evidence.service.analysis.PerTestCoverageStore perTestCoverageStore;
+
+    @Autowired
     private TestFixtures fixtures;
 
     @Autowired
@@ -539,5 +542,125 @@ class EvidenceLinkerTest extends AbstractIntegrationTest {
                 .anyMatch(link -> EvidenceLinkMethod.STACK_FRAME.name().equals(link.get("method")));
         assertThat(linksOf(run.getId()))
                 .noneMatch(link -> EvidenceLinkRelation.CONTRADICTS.name().equals(link.get("relation")));
+    }
+
+    // ----------------------------------------------------------------------------------------
+    // Tầng 2b bản chính xác — coverage THEO TỪNG TEST (sandbox)
+    // ----------------------------------------------------------------------------------------
+
+    private TestCaseDraft failedTest(String className, String methodName) {
+        return new TestCaseDraft(
+                EvidenceType.FAILED_TEST,
+                EvidenceSource.surefire,
+                TEST_FILE,
+                1,
+                1,
+                className + "#" + methodName,
+                "Test hong " + className + "#" + methodName,
+                Map.of(),
+                className,
+                methodName,
+                methodName,
+                TestCaseStatus.FAILED,
+                TestFailureKind.FAILURE,
+                "org.opentest4j.AssertionFailedError",
+                "expected: <1> but was: <2>",
+                "at app.FooTest." + methodName + "(FooTest.java:9)",
+                1,
+                "TEST-" + className + ".xml",
+                null);
+    }
+
+    /** JSON đúng định dạng analyzer ghi ra: đường dẫn kiểu jacoco.xml ({@code app/Foo.java}). */
+    private void perTest(String json) {
+        perTestCoverageStore.store(run.getId(), json.getBytes(java.nio.charset.StandardCharsets.UTF_8), pathResolver);
+    }
+
+    /**
+     * Ca cốt lõi: test của lớp KHÁC tên (một test controller gọi xuống) thật sự chạy qua dòng cảnh
+     * báo ⇒ được nối; test TRÙNG tên lớp nhưng không chạy qua dòng đó ⇒ KHÔNG được nối. Liên kết
+     * theo tên làm sai cả hai chiều.
+     */
+    @Test
+    void perTest_noiTheoDongThat_khongTheoTenLop() {
+        materializer.materialize(
+                run.getId(),
+                List.of(
+                        warning(10),
+                        codeContext(5, 20),
+                        coverage(Map.of(10, new int[] {0, 7, 0, 0}, 11, new int[] {0, 3, 0, 0}), "app.Foo", "doThing", 10),
+                        passedTest("app.FooTest", "chiChayDong11"),
+                        passedTest("app.web.FooControllerTest", "goiXuongService")),
+                pathResolver);
+        perTest(
+                """
+                {"format":"evidence-per-test-coverage","version":1,"tests":[
+                  {"class":"app.FooTest","method":"chiChayDong11","status":"PASSED","lines":{"app/Foo.java":[11]}},
+                  {"class":"app.web.FooControllerTest","method":"goiXuongService","status":"PASSED",
+                   "lines":{"app/Foo.java":[10,11]}}]}
+                """);
+
+        linker.link(run.getId());
+
+        List<Map<String, Object>> testLinks = linksOf(run.getId()).stream()
+                .filter(link -> "TEST_RESULT".equals(link.get("from_type")))
+                .toList();
+        assertThat(testLinks).singleElement().satisfies(link -> {
+            assertThat(link.get("relation")).isEqualTo("CONTRADICTS");
+            assertThat(link.get("method")).isEqualTo("LINE_EXACT");
+            assertThat(((Number) link.get("weight")).doubleValue()).isEqualTo(0.6);
+            assertThat((String) link.get("rationale"))
+                    .contains("app.web.FooControllerTest#goiXuongService")
+                    .contains("KHÔNG chứng minh cảnh báo sai");
+        });
+        assertThat(linksOf(run.getId())).noneMatch(link -> "NAMING_CONVENTION".equals(link.get("method")));
+    }
+
+    /** Test hỏng chạy qua dòng ⇒ SUPPORTS; khi đó test xanh khác không lật ngược được (không CONTRADICTS). */
+    @Test
+    void perTest_testHongChayQuaDong_supports_vaChanContradicts() {
+        materializer.materialize(
+                run.getId(),
+                List.of(
+                        warning(10),
+                        coverage(Map.of(10, new int[] {0, 7, 0, 0}), "app.Foo", "doThing", 10),
+                        failedTest("app.FooTest", "hong"),
+                        passedTest("app.FooTest", "xanh")),
+                pathResolver);
+        perTest(
+                """
+                {"format":"evidence-per-test-coverage","version":1,"tests":[
+                  {"class":"app.FooTest","method":"hong","status":"FAILED","lines":{"app/Foo.java":[10]}},
+                  {"class":"app.FooTest","method":"xanh","status":"PASSED","lines":{"app/Foo.java":[10]}}]}
+                """);
+
+        linker.link(run.getId());
+
+        List<Map<String, Object>> testLinks = linksOf(run.getId()).stream()
+                .filter(link -> String.valueOf(link.get("from_type")).endsWith("TEST")
+                        || "TEST_RESULT".equals(link.get("from_type")))
+                .toList();
+        assertThat(testLinks).singleElement().satisfies(link -> {
+            assertThat(link.get("relation")).isEqualTo("SUPPORTS");
+            assertThat(link.get("method")).isEqualTo("LINE_EXACT");
+            assertThat(((Number) link.get("weight")).doubleValue()).isEqualTo(0.8);
+        });
+    }
+
+    /** File per-test hỏng: không làm hỏng gì, linker lùi về quy ước tên như run nạp tay. */
+    @Test
+    void perTest_fileHong_luiVeTheoTenLop() {
+        materializer.materialize(
+                run.getId(),
+                List.of(
+                        warning(10),
+                        coverage(Map.of(10, new int[] {0, 7, 0, 0}), "app.Foo", "doThing", 10),
+                        passedTest("app.FooTest", "xanh")),
+                pathResolver);
+        perTest("{khong phai json");
+
+        linker.link(run.getId());
+
+        assertThat(linksOf(run.getId())).anyMatch(link -> "CONTRADICTS".equals(link.get("relation")));
     }
 }

@@ -131,6 +131,8 @@ services:
       # Chỉ LLM_PROVIDER=openai đọc: trỏ sang API tương thích OpenAI (Gemini, Groq, Ollama…).
       LLM_BASE_URL: ${LLM_BASE_URL:-}
       LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-2}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-none}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
       # Đi thẳng vào llm_trace.prompt_version. Đổi prompt mà quên tăng số này thì kết quả của
       # hai phiên bản prompt nằm lẫn vào nhau và không tách lại được (kế hoạch §6).
       PROMPT_VERSION: ${PROMPT_VERSION:-v1}
