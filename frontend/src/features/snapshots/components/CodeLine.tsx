@@ -8,22 +8,25 @@
  * React tự escape khi render text node, nên chỉ cần không mở cửa bằng `dangerouslySetInnerHTML` là
  * bề mặt này đóng. Xem ADR 0006, mục "Bề mặt XSS thật của dự án này".
  *
- * Prop `render` dưới đây là đường ráp cho tuần 10-11 (tô màu vùng bằng chứng): nó phải trả về CÂY
- * REACT ELEMENT, không phải chuỗi HTML. Thư viện highlight nào chỉ sinh ra chuỗi HTML đều bị loại
- * vì dùng được nó bắt buộc phải phá quy tắc trên.
+ * Tô màu cú pháp đi qua prop `segments` — các đoạn CHỮ kèm loại token do `lib/highlight.ts` tách
+ * sẵn, render thành `<span>` chứa text node. Thư viện highlight nào chỉ sinh ra chuỗi HTML đều bị
+ * loại vì dùng được nó bắt buộc phải phá quy tắc trên.
  * =============================================================================
  */
 
-import type { ReactNode } from 'react';
+import { classForTokenTypes } from '@/features/snapshots/lib/tokenClasses';
+
+import type { Segment } from '@/features/snapshots/lib/highlight';
 
 interface CodeLineProps {
   lineNumber: number;
   text: string;
   highlighted: boolean;
-  render?: (text: string) => ReactNode;
+  /** Các đoạn đã tô màu của chính dòng này; vắng thì hiện chữ trơn. */
+  segments?: Segment[];
 }
 
-export function CodeLine({ lineNumber, text, highlighted, render }: CodeLineProps) {
+export function CodeLine({ lineNumber, text, highlighted, segments }: CodeLineProps) {
   return (
     <div
       id={`L${String(lineNumber)}`}
@@ -39,7 +42,14 @@ export function CodeLine({ lineNumber, text, highlighted, render }: CodeLineProp
       </span>
       {/* `whitespace-pre` giữ nguyên thụt lề của mã nguồn; `break-words` để dòng dài không tràn ngang. */}
       <code className="text-ink min-w-0 flex-1 pr-4 whitespace-pre">
-        {render === undefined ? text : render(text)}
+        {segments === undefined
+          ? text
+          : segments.map((segment, index) => (
+              // Chỉ số làm khoá là đúng ở đây: các đoạn của một dòng không bao giờ đổi thứ tự.
+              <span key={index} className={classForTokenTypes(segment.types)}>
+                {segment.text}
+              </span>
+            ))}
       </code>
     </div>
   );

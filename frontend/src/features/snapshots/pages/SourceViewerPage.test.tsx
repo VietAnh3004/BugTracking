@@ -35,6 +35,19 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+/**
+ * Tìm phần tử `<code>` của một dòng theo TOÀN BỘ chữ của dòng đó.
+ *
+ * File có ngôn ngữ được tô màu thì một dòng bị chia thành nhiều `<span>` (từ khoá, tên lớp, dấu
+ * câu…), nên `findByText('class App {')` — vốn chỉ so chữ nằm TRỰC TIẾP trong một phần tử — không
+ * còn thấy. So `textContent` của cả `<code>` vẫn kiểm đúng điều cần kiểm: người đọc thấy nguyên
+ * văn dòng mã.
+ */
+function codeLine(text: string) {
+  return (_content: string, element: Element | null) =>
+    element?.tagName === 'CODE' && element.textContent === text;
+}
+
 describe('SourceViewerPage', () => {
   it('hiển thị nội dung file kèm số dòng bắt đầu từ 1', async () => {
     readFileContentMock.mockResolvedValue({
@@ -48,7 +61,7 @@ describe('SourceViewerPage', () => {
 
     renderViewer('/snapshots/s1/files/src/App.java');
 
-    expect(await screen.findByText('class App {')).toBeInTheDocument();
+    expect(await screen.findByText(codeLine('class App {'))).toBeInTheDocument();
     expect(screen.getByText('1')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
   });
@@ -135,8 +148,9 @@ describe('SourceViewerPage', () => {
    * hiện thực trong chính luồng nghiệp vụ (ADR 0006).
    *
    * React tự escape khi render text node, nên test này canh việc KHÔNG ai mở cửa bằng
-   * `dangerouslySetInnerHTML` — kể cả khi sau này thêm tô màu cú pháp qua prop `render` của
-   * `CodeLine`.
+   * `dangerouslySetInnerHTML`. Từ khi có tô màu cú pháp, file `.html` đi qua bộ tách token
+   * (`lib/highlight.ts`) — chính chỗ một thư viện trả chuỗi HTML sẽ mở lỗ hổng — nên test này giờ
+   * canh luôn cả đường đó.
    */
   it('render nội dung file như TEXT, không diễn giải thành HTML', async () => {
     readFileContentMock.mockResolvedValue({
@@ -150,9 +164,34 @@ describe('SourceViewerPage', () => {
 
     const { container } = renderViewer('/snapshots/s1/files/evil.html');
 
-    expect(await screen.findByText('<img src=x onerror="alert(1)">')).toBeInTheDocument();
+    expect(await screen.findByText(codeLine('<img src=x onerror="alert(1)">'))).toBeInTheDocument();
     expect(container.querySelector('img')).toBeNull();
     expect(container.querySelector('script')).toBeNull();
+  });
+
+  /**
+   * Comment khối trải nhiều dòng là ca dễ tô sai nhất: tô từng dòng độc lập thì dòng giữa
+   * Javadoc bị hiểu là code. vulnshop có Javadoc ở gần như mọi method.
+   */
+  it('tô màu Java, kể cả dòng GIỮA một comment khối', async () => {
+    readFileContentMock.mockResolvedValue({
+      path: 'src/A.java',
+      fromLine: 1,
+      toLine: 4,
+      totalLines: 4,
+      truncated: false,
+      lines: ['/**', ' * class khong phai tu khoa o day', ' */', 'public class A {}'],
+    });
+
+    const { container } = renderViewer('/snapshots/s1/files/src/A.java');
+
+    await screen.findByText(codeLine('public class A {}'));
+    const giuaComment = container.querySelector('#L2 code span');
+    expect(giuaComment?.className).toContain('italic');
+    const tuKhoa = Array.from(container.querySelectorAll('#L4 code span')).find(
+      (span) => span.textContent === 'public',
+    );
+    expect(tuKhoa?.className).toContain('text-rose-700');
   });
 
   it('file nhị phân hiện thông báo thay vì rác đã ép sang UTF-8', async () => {

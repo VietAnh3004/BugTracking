@@ -13,11 +13,13 @@
  * ================================================================================
  */
 
+import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { CodeLine } from '@/features/snapshots/components/CodeLine';
 import { useFileContent } from '@/features/snapshots/hooks/useSnapshots';
 import { useLineTarget } from '@/features/snapshots/hooks/useLineTarget';
+import { highlightLines, languageOf } from '@/features/snapshots/lib/highlight';
 import { fromRouteParam } from '@/features/snapshots/lib/filePathUrl';
 import { ApiError } from '@/shared/lib/apiClient';
 import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
@@ -34,6 +36,12 @@ export function SourceViewerPage() {
   // Khoảng, không phải một dòng: một bằng chứng thường trải trên cả method (`#L37-L44`), và tô
   // đúng một dòng trong đó thì người đọc không thấy được phạm vi mà cảnh báo nói tới.
   const targetRange = useLineTarget(data !== undefined);
+  // Tô màu CẢ lát một lần rồi chia dòng (comment khối trải nhiều dòng), và chỉ tính lại khi đổi
+  // file — không tính lại mỗi lần render vì cuộn hay đổi dòng đang tô.
+  const segmentsByLine = useMemo(
+    () => (data === undefined ? [] : highlightLines(data.lines, languageOf(path))),
+    [data, path],
+  );
 
   if (path === '') {
     return (
@@ -82,6 +90,7 @@ export function SourceViewerPage() {
               key={lineNumber}
               lineNumber={lineNumber}
               text={text}
+              segments={segmentsByLine[index]}
               highlighted={
                 targetRange !== null &&
                 lineNumber >= targetRange.fromLine &&
