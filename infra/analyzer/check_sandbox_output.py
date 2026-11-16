@@ -187,6 +187,45 @@ def check_coverage(out_dir: Path, expected: dict) -> None:
     print(f"  OK  jacoco    {phu}/{tong} dong duoc phu")
 
 
+def check_per_test_coverage(out_dir: Path, expected: dict) -> None:
+    """Coverage theo tung test: du so test, va moi dong no bao "chay qua" phai la dong JaCoCo gop
+    cung bao duoc phu.
+
+    Hop cua cac dong theo tung test co the IT HON so dong gop (code chay GIUA hai test — khoi tao
+    lop, @BeforeAll — khong thuoc ve test nao), nhung KHONG BAO GIO duoc nhieu hon: nhieu hon nghia
+    la ghep nham du lieu giua cac test hoac lech duong dan.
+    """
+    path = out_dir / "per-test-coverage.json"
+    if not path.exists():
+        raise Failure("thieu per-test-coverage.json — listener khong gan duoc vao luot chay test? "
+                      "(xem pertest.log, maven-test.log)")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    tests = data.get("tests", [])
+    if len(tests) != expected["tests"]["total"]:
+        raise Failure(f"per-test-coverage co {len(tests)} test, mong doi {expected['tests']['total']}")
+
+    hop = set()
+    for test in tests:
+        for file_path, lines in test["lines"].items():
+            hop.update((file_path, line) for line in lines)
+    if not hop:
+        raise Failure("per-test-coverage co 0 dong duoc chay — du lieu tung test rong, KHONG phai "
+                      "'khong test nao chay qua gi'")
+
+    gop = set()
+    root = ET.parse(out_dir / "jacoco.xml").getroot()
+    for package in root.iter("package"):
+        for source_file in _direct_children(package, "sourcefile"):
+            for line in _direct_children(source_file, "line"):
+                if int(line.get("ci") or 0) > 0:
+                    gop.add((f"{package.get('name')}/{source_file.get('name')}", int(line.get("nr"))))
+    thua = hop - gop
+    if thua:
+        raise Failure(f"{len(thua)} dong per-test bao chay qua nhung jacoco.xml bao KHONG — vd {sorted(thua)[:3]}")
+
+    print(f"  OK  per-test  {len(tests)} test, hop {len(hop)}/{len(gop)} dong duoc phu")
+
+
 def main() -> int:
     if len(sys.argv) != 3:
         print(__doc__, file=sys.stderr)
@@ -201,6 +240,7 @@ def main() -> int:
         check_semgrep(out_dir, expected)
         check_tests(out_dir, expected)
         check_coverage(out_dir, expected)
+        check_per_test_coverage(out_dir, expected)
     except Failure as exc:
         print(f"\nLECH: {exc}", file=sys.stderr)
         return 1

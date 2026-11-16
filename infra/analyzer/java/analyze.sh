@@ -141,11 +141,27 @@ do_analyze() {
     # thầm bỏ qua. `-fn` để 5 test hỏng của vulnshop KHÔNG làm dừng pipeline — test hỏng là DỮ
     # LIỆU ĐẦU VÀO của đồ án, không phải lỗi build.
     echo "==> [analyze 1/3] Chay test + do phu"
-    mvn "${MVN_COMMON[@]}" -o -fn \
+    # EVIDENCE_PERTEST_DIR + listener trong additionalClasspath: ghi coverage RIENG tung test (xem
+    # /opt/pertest/src). Bien moi truong chu khong -DargLine: argLine da do prepare-agent cua JaCoCo
+    # dat, truyen -DargLine o day se GHI DE va lam mat luon agent.
+    PERTEST_DIR="$OUT_DIR/pertest"
+    rm -rf "$PERTEST_DIR"
+    EVIDENCE_PERTEST_DIR="$PERTEST_DIR" mvn "${MVN_COMMON[@]}" -o -fn \
+        -Dmaven.test.additionalClasspath=/opt/pertest/pertest-listener.jar \
         org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent \
         test \
-        org.jacoco:jacoco-maven-plugin:0.8.12:report \
         > "$OUT_DIR/maven-test.log" 2>&1 || true
+
+    # Listener RESET agent sau moi test de tach du lieu tung test, nen target/jacoco.exec chi con
+    # phan chay sau test cuoi. GOP lai MOI phan truoc khi sinh bao cao gop — thieu buoc nay
+    # jacoco.xml ra 0 dong duoc phu (da gap that khi dung lan dau).
+    if [ -d "$PERTEST_DIR" ]; then
+        java -cp "/opt/pertest/lib/*:/opt/pertest/converter-classes" evidence.pertest.PerTestCoverage \
+            merge "$PERTEST_DIR" target/jacoco.exec >> "$OUT_DIR/maven-test.log" 2>&1 \
+            || fail "khong gop duoc du lieu JaCoCo tung test vao jacoco.exec (xem maven-test.log)"
+    fi
+    mvn "${MVN_COMMON[@]}" -o -fn org.jacoco:jacoco-maven-plugin:0.8.12:report \
+        >> "$OUT_DIR/maven-test.log" 2>&1 || true
 
     [ -d target/classes ] || fail "khong co target/classes sau khi build — ma nguon khong bien dich duoc (xem maven-test.log)"
 
@@ -181,6 +197,20 @@ do_analyze() {
     [ -f target/site/jacoco/jacoco.xml ] \
         || fail "khong co jacoco.xml — agent JaCoCo khong attach duoc (argLine bi pom ghi de?)"
     cp target/site/jacoco/jacoco.xml "$OUT_DIR/jacoco.xml"
+
+    # Coverage theo tung test: phan TANG CUONG, khong phai dieu kien. Hong thi CANH BAO va bo qua —
+    # backend lui ve lien ket test <-> canh bao theo quy uoc ten lop, nhu run nap tay. KHONG duoc
+    # lam hong ca lan phan tich vi mot tinh nang phu.
+    echo "==> Coverage theo tung test"
+    if java -cp "/opt/pertest/lib/*:/opt/pertest/converter-classes" evidence.pertest.PerTestCoverage \
+        "$PERTEST_DIR" target/classes "$OUT_DIR/per-test-coverage.json" > "$OUT_DIR/pertest.log" 2>&1; then
+        cat "$OUT_DIR/pertest.log"
+    else
+        echo "CANH BAO: khong thu duoc coverage theo tung test (xem pertest.log) — backend se lien ket theo ten lop" >&2
+        rm -f "$OUT_DIR/per-test-coverage.json"
+    fi
+    # Cac file .exec tho KHONG phai artifact: xoa de chung khong bi gui ve backend.
+    rm -rf "$PERTEST_DIR"
 
     echo "analyze xong:"
     echo "  spotbugs.xml      $(wc -c < "$OUT_DIR/spotbugs.xml") byte"

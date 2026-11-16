@@ -165,5 +165,7 @@ if [ "$EMIT_SAMPLES" = "1" ]; then
     mkdir -p "$SAMPLES_DIR"
     cp "$OUT/spotbugs.xml" "$SAMPLES_DIR/spotbugs.xml"
     cp "$OUT/semgrep.sarif" "$SAMPLES_DIR/semgrep.sarif"
-    echo "Da cap nhat docs/samples/vulnshop-sandbox/ (spotbugs.xml, semgrep.sarif)."
+    # Coverage theo tung test: fixture cho test linker tren du lieu that (EvidenceLinkerPerTestTest).
+    cp "$OUT/per-test-coverage.json" "$SAMPLES_DIR/per-test-coverage.json"
+    echo "Da cap nhat docs/samples/vulnshop-sandbox/ (spotbugs.xml, semgrep.sarif, per-test-coverage.json)."
 fi
