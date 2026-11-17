@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import vn.hust.datn.evidence.domain.WarningSeverity;
 import vn.hust.datn.evidence.domain.WarningTool;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 import vn.hust.datn.evidence.testsupport.SampleArtifacts;
 
 /** Chạy trên SARIF THẬT ({@code docs/samples/vulnshop/semgrep.sarif}, 5 result / 60 rule). */

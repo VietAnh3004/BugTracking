@@ -20,6 +20,7 @@ import vn.hust.datn.evidence.domain.AnalysisRunStatus;
 import vn.hust.datn.evidence.domain.Project;
 import vn.hust.datn.evidence.domain.RepositorySnapshot;
 import vn.hust.datn.evidence.domain.User;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 import vn.hust.datn.evidence.exception.ResourceNotFoundException;
 import vn.hust.datn.evidence.exception.SnapshotNotReadyException;
 import vn.hust.datn.evidence.testsupport.SampleArtifacts;

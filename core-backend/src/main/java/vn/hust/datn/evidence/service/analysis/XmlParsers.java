@@ -12,6 +12,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
+
 /**
  * Hai cấu hình đọc XML an toàn, và các tiện ích duyệt DOM cho parser artifact.
  *

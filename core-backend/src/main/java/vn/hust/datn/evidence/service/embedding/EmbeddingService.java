@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import vn.hust.datn.evidence.domain.EvidenceType;
+import vn.hust.datn.evidence.exception.EmbeddingUnavailableException;
 
 /**
  * Vector embedding của bằng chứng: sinh sau mỗi lần phân tích, và tìm theo nghĩa cho
@@ -65,8 +66,24 @@ public class EmbeddingService {
         }
     }
 
+    /**
+     * Như {@link #embedRun} nhưng GHI lý do lên run trước khi ném lại — cho nút "Sinh lại vector"
+     * mà người dùng bấm tay. Ném chứ không nuốt như {@link #embedRunQuietly}: ở đây có người đang
+     * chờ kết quả, nhưng màn hình cảnh báo vẫn phải hiện đúng trạng thái sau khi họ tải lại.
+     *
+     * @throws EmbeddingUnavailableException kèm lý do đọc được; thành 503 ở {@code GlobalExceptionHandler}
+     */
+    public void embedRunRecordingFailure(UUID runId) {
+        try {
+            embedRun(runId);
+        } catch (EmbeddingUnavailableException e) {
+            recordFailure(runId, e);
+            throw e;
+        }
+    }
+
     /** Ghi lý do thất bại lên run, để màn hình cảnh báo hiện ra thay vì im lặng. */
-    public void recordFailure(UUID runId, RuntimeException cause) {
+    private void recordFailure(UUID runId, RuntimeException cause) {
         String reason = cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage();
         jdbcTemplate.update(
                 "UPDATE analysis_run SET embedding_error = ? WHERE id = ?",

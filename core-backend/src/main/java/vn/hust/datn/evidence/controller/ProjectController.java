@@ -79,9 +79,7 @@ public class ProjectController {
     /** Thành viên của dự án. Chỉ chủ dự án — thành viên gọi nhận 404 như người lạ. */
     @GetMapping("/{id}/members")
     public List<ProjectMemberResponse> members(@PathVariable UUID id, @AuthenticationPrincipal CurrentUser currentUser) {
-        return projectService.listMembers(id, currentUser.id()).stream()
-                .map(ProjectMemberResponse::from)
-                .toList();
+        return projectService.listMembers(id, currentUser.id());
     }
 
     /**
@@ -93,7 +91,7 @@ public class ProjectController {
             @PathVariable UUID id,
             @Valid @RequestBody AddProjectMemberRequest request,
             @AuthenticationPrincipal CurrentUser currentUser) {
-        return ProjectMemberResponse.from(projectService.addMember(id, currentUser.id(), request.email()));
+        return projectService.addMember(id, currentUser.id(), request.email());
     }
 
     @DeleteMapping("/{id}/members/{userId}")

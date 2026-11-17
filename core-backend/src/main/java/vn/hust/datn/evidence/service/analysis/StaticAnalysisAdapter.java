@@ -3,6 +3,7 @@ package vn.hust.datn.evidence.service.analysis;
 import java.util.List;
 
 import vn.hust.datn.evidence.domain.WarningTool;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 
 /**
  * Adapter cho một công cụ phân tích tĩnh. Điểm mở rộng mà §1bis của kế hoạch gọi tên

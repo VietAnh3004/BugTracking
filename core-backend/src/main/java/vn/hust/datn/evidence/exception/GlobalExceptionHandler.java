@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-import vn.hust.datn.evidence.service.analysis.InvalidArtifactException;
-
 /**
  * Điểm xử lý lỗi duy nhất của toàn bộ API.
  *
@@ -95,16 +93,9 @@ public class GlobalExceptionHandler {
                 HttpStatus.SERVICE_UNAVAILABLE, "agent-unavailable", "Agent không khả dụng", ex.getMessage(), request);
     }
 
-    /**
-     * Quyết định review không hợp lệ về nghiệp vụ — hầu như luôn là {@code messageId} sai.
-     *
-     * <p>400 kèm lý do đọc được chứ không lặng lẽ bỏ qua trường đó: {@code messageId} là biến
-     * thực nghiệm của user study, ghi sai thì bảng so sánh hai nhóm ở tuần 16 sai theo.
-     */
-    @ExceptionHandler(vn.hust.datn.evidence.service.embedding.EmbeddingUnavailableException.class)
-    public ProblemDetail handleEmbeddingUnavailable(
-            vn.hust.datn.evidence.service.embedding.EmbeddingUnavailableException ex, HttpServletRequest request) {
-        // 503 kèm lý do thật (chưa bật, hết quota…): người bấm "Sinh vector" cần biết sửa ở đâu.
+    /** 503 kèm lý do thật (chưa bật, hết quota…): người bấm "Sinh vector" cần biết sửa ở đâu. */
+    @ExceptionHandler(EmbeddingUnavailableException.class)
+    public ProblemDetail handleEmbeddingUnavailable(EmbeddingUnavailableException ex, HttpServletRequest request) {
         return problem(
                 HttpStatus.SERVICE_UNAVAILABLE, "embedding-unavailable", "Không sinh được vector", ex.getMessage(), request);
     }
@@ -119,6 +110,12 @@ public class GlobalExceptionHandler {
         return problem(HttpStatus.BAD_REQUEST, "invalid-member", "Không thêm được thành viên", ex.getMessage(), request);
     }
 
+    /**
+     * Quyết định review không hợp lệ về nghiệp vụ — hầu như luôn là {@code messageId} sai.
+     *
+     * <p>400 kèm lý do đọc được chứ không lặng lẽ bỏ qua trường đó: {@code messageId} là biến
+     * thực nghiệm của user study, ghi sai thì bảng so sánh hai nhóm ở tuần 16 sai theo.
+     */
     @ExceptionHandler(InvalidReviewException.class)
     public ProblemDetail handleInvalidReview(InvalidReviewException ex, HttpServletRequest request) {
         return problem(HttpStatus.BAD_REQUEST, "invalid-review", "Quyết định không hợp lệ", ex.getMessage(), request);

@@ -14,6 +14,7 @@ import vn.hust.datn.evidence.domain.EvidenceType;
 import vn.hust.datn.evidence.domain.StackFrameKind;
 import vn.hust.datn.evidence.domain.TestCaseStatus;
 import vn.hust.datn.evidence.domain.TestFailureKind;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 
 /**
  * Đọc MỘT file {@code TEST-*.xml} của Maven Surefire.

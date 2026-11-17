@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import vn.hust.datn.evidence.config.properties.UploadProperties;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 import vn.hust.datn.evidence.testsupport.ZipBuilder;
 
 class SurefireArchiveReaderTest {

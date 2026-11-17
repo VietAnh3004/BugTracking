@@ -1,4 +1,4 @@
-package vn.hust.datn.evidence.service.embedding;
+package vn.hust.datn.evidence.exception;
 
 /**
  * Không sinh được vector — embedding chưa bật, nhà cung cấp hết quota, hay mất mạng. Không bao

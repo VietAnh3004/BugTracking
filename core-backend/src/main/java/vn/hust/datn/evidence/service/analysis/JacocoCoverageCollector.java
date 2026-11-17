@@ -12,6 +12,7 @@ import org.w3c.dom.Element;
 import vn.hust.datn.evidence.domain.CoverageStatus;
 import vn.hust.datn.evidence.domain.EvidenceSource;
 import vn.hust.datn.evidence.domain.EvidenceType;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 
 /**
  * Đọc {@code jacoco.xml}.

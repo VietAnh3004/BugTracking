@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import vn.hust.datn.evidence.domain.CoverageStatus;
 import vn.hust.datn.evidence.domain.EvidenceType;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 import vn.hust.datn.evidence.testsupport.SampleArtifacts;
 
 /** Chạy trên {@code jacoco.xml} THẬT (171 dòng, 20 sourcefile, 73 method). */

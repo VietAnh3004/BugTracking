@@ -19,6 +19,7 @@ import vn.hust.datn.evidence.domain.EvidenceSource;
 import vn.hust.datn.evidence.domain.EvidenceType;
 import vn.hust.datn.evidence.domain.WarningSeverity;
 import vn.hust.datn.evidence.domain.WarningTool;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 
 /**
  * Đọc báo cáo SARIF 2.1.0 của Semgrep.

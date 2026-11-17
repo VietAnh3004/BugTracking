@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import vn.hust.datn.evidence.domain.EvidenceType;
 import vn.hust.datn.evidence.domain.TestCaseStatus;
 import vn.hust.datn.evidence.domain.TestFailureKind;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 import vn.hust.datn.evidence.testsupport.SampleArtifacts;
 
 /** Chạy trên 9 file {@code TEST-*.xml} THẬT của vulnshop (33 test, 3 failure + 2 error). */

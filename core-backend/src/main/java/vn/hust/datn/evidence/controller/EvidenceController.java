@@ -14,9 +14,9 @@ import vn.hust.datn.evidence.dto.AnalysisRunResponse;
 import vn.hust.datn.evidence.dto.EvidenceDetailResponse;
 import vn.hust.datn.evidence.dto.LinkRebuildResponse;
 import vn.hust.datn.evidence.mapper.AnalysisRunMapper;
-import vn.hust.datn.evidence.repository.AnalysisRunRepository;
 import vn.hust.datn.evidence.service.EvidenceDetailService;
 import vn.hust.datn.evidence.service.EvidenceQueryService;
+import vn.hust.datn.evidence.service.analysis.AnalysisRunQueryService;
 import vn.hust.datn.evidence.service.embedding.EmbeddingService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,7 +46,7 @@ public class EvidenceController {
     private final EvidenceQueryService evidenceQueryService;
     private final EmbeddingService embeddingService;
     private final AnalysisRunMapper analysisRunMapper;
-    private final AnalysisRunRepository analysisRunRepository;
+    private final AnalysisRunQueryService analysisRunQueryService;
 
     /**
      * Một bằng chứng kèm TOÀN BỘ liên kết của nó — nguồn dữ liệu duy nhất của Evidence Explorer.
@@ -70,6 +70,24 @@ public class EvidenceController {
     }
 
     /**
+     * Sinh (lại) vector tìm-theo-nghĩa cho một run — cho run nạp TRƯỚC khi có embedding, hoặc khi
+     * lần sinh tự động sau phân tích đã lỗi (hết quota…). Chỉ chủ dự án: gọi API trả phí/giới hạn
+     * quota là quyết định của người sở hữu dự án.
+     *
+     * <p>Lỗi thì 503 kèm lý do, KHÔNG nuốt như đường tự động: ở đây có người đang bấm và chờ kết quả.
+     * Lý do vẫn được ghi lên run trước khi báo lỗi (xem {@code EmbeddingService.embedRunRecordingFailure}).
+     */
+    @PostMapping("/analysis-runs/{runId}/embeddings")
+    @Operation(summary = "Sinh lại vector tìm kiếm theo nghĩa cho một lần phân tích")
+    public AnalysisRunResponse rebuildEmbeddings(
+            @PathVariable UUID runId, @AuthenticationPrincipal CurrentUser currentUser) {
+        evidenceQueryService.requireRunOwnedBy(runId, currentUser.id());
+        evidenceQueryService.ensureRunQueryable(runId);
+        embeddingService.embedRunRecordingFailure(runId);
+        return analysisRunMapper.toResponse(analysisRunQueryService.get(runId, currentUser.id()));
+    }
+
+    /**
      * Tính lại toàn bộ liên kết của một lần phân tích, không cần chạy lại analyzer.
      *
      * <p>Tồn tại vì heuristic của linker (khớp dòng, quy ước tên, phân loại frame) CHẮC CHẮN phải
@@ -86,29 +104,6 @@ public class EvidenceController {
      * <p>Là thao tác GHI nên đi đường JWT của người dùng, KHÔNG mở cho service token: năm tool
      * theo ADR 0005 đều là tool ĐỌC.
      */
-    /**
-     * Sinh (lại) vector tìm-theo-nghĩa cho một run — cho run nạp TRƯỚC khi có embedding, hoặc khi
-     * lần sinh tự động sau phân tích đã lỗi (hết quota…). Chỉ chủ dự án: gọi API trả phí/giới hạn
-     * quota là quyết định của người sở hữu dự án.
-     *
-     * <p>Lỗi thì 503 kèm lý do, KHÔNG nuốt như đường tự động: ở đây có người đang bấm và chờ kết quả.
-     */
-    @PostMapping("/analysis-runs/{runId}/embeddings")
-    @Operation(summary = "Sinh lại vector tìm kiếm theo nghĩa cho một lần phân tích")
-    public AnalysisRunResponse rebuildEmbeddings(
-            @PathVariable UUID runId, @AuthenticationPrincipal CurrentUser currentUser) {
-        evidenceQueryService.requireRunOwnedBy(runId, currentUser.id());
-        evidenceQueryService.ensureRunQueryable(runId);
-        try {
-            embeddingService.embedRun(runId);
-        } catch (vn.hust.datn.evidence.service.embedding.EmbeddingUnavailableException e) {
-            // Vẫn GHI lý do lên run trước khi báo lỗi, để màn hình cảnh báo hiện đúng trạng thái.
-            embeddingService.recordFailure(runId, e);
-            throw e;
-        }
-        return analysisRunMapper.toResponse(analysisRunRepository.findById(runId).orElseThrow());
-    }
-
     @PostMapping("/analysis-runs/{runId}/links/rebuild")
     @Operation(summary = "Tính lại liên kết bằng chứng của một lần phân tích")
     public LinkRebuildResponse rebuildLinks(@PathVariable UUID runId, @AuthenticationPrincipal CurrentUser currentUser) {

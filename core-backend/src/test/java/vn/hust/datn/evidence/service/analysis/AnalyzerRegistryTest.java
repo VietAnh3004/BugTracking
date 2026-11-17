@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import vn.hust.datn.evidence.domain.EvidenceSource;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 import vn.hust.datn.evidence.testsupport.SampleArtifacts;
 
 /** Nhận dạng parser theo NỘI DUNG artifact, trên đúng bốn file thật của vulnshop. */

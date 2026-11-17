@@ -1,6 +1,7 @@
 package vn.hust.datn.evidence.service.embedding;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -23,6 +24,7 @@ import vn.hust.datn.evidence.domain.EvidenceType;
 import vn.hust.datn.evidence.domain.Project;
 import vn.hust.datn.evidence.domain.RepositorySnapshot;
 import vn.hust.datn.evidence.domain.User;
+import vn.hust.datn.evidence.exception.EmbeddingUnavailableException;
 import vn.hust.datn.evidence.service.EvidenceQueryService;
 import vn.hust.datn.evidence.testsupport.TestFixtures;
 
@@ -122,6 +124,24 @@ class EmbeddingServiceTest extends AbstractIntegrationTest {
         assertThat(reloaded.getStatus()).isEqualTo(AnalysisRunStatus.SUCCEEDED);
         assertThat(reloaded.getEmbeddingCount()).isZero();
         assertThat(reloaded.getEmbeddingError()).contains("Embedding chua bat");
+    }
+
+    /**
+     * Đường người dùng bấm tay: phải NÉM (để thành 503 kèm lý do) nhưng VẪN GHI lý do lên run trước
+     * khi ném — ném mà không ghi thì sau F5 màn hình cảnh báo không còn biết vì sao vector thiếu.
+     */
+    @Test
+    void sinhLaiBangTay_agentServiceLoi_vuaNemVuaGhiLyDo() {
+        when(embeddingClient.embed(anyList(), eq("document")))
+                .thenThrow(new EmbeddingUnavailableException("agent-service tra ve 429: het quota"));
+
+        assertThatThrownBy(() -> embeddingService.embedRunRecordingFailure(run.getId()))
+                .isInstanceOf(EmbeddingUnavailableException.class)
+                .hasMessageContaining("het quota");
+
+        AnalysisRun reloaded = fixtures.reloadRun(run.getId());
+        assertThat(reloaded.getEmbeddingCount()).isZero();
+        assertThat(reloaded.getEmbeddingError()).contains("het quota");
     }
 
     /** So chữ đứng trước (chính xác), tìm theo nghĩa bù vào sau, mỗi kết quả nói rõ cách tìm ra. */

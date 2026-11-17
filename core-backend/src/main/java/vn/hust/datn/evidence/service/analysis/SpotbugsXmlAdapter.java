@@ -14,6 +14,7 @@ import vn.hust.datn.evidence.domain.EvidenceSource;
 import vn.hust.datn.evidence.domain.EvidenceType;
 import vn.hust.datn.evidence.domain.WarningSeverity;
 import vn.hust.datn.evidence.domain.WarningTool;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 
 /**
  * Đọc {@code spotbugsXml.xml} của SpotBugs (kèm find-sec-bugs).

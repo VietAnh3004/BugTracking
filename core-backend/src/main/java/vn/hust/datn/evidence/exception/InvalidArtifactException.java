@@ -1,4 +1,4 @@
-package vn.hust.datn.evidence.service.analysis;
+package vn.hust.datn.evidence.exception;
 
 /**
  * Artifact của analyzer không đọc được, sai định dạng, hoặc rỗng một cách đáng ngờ.

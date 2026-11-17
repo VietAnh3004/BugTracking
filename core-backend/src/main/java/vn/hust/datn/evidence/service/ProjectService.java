@@ -18,6 +18,7 @@ import vn.hust.datn.evidence.domain.ProjectMember;
 import vn.hust.datn.evidence.domain.ProjectRole;
 import vn.hust.datn.evidence.domain.User;
 import vn.hust.datn.evidence.dto.CreateProjectRequest;
+import vn.hust.datn.evidence.dto.ProjectMemberResponse;
 import vn.hust.datn.evidence.exception.InvalidMemberException;
 import vn.hust.datn.evidence.exception.ResourceNotFoundException;
 import vn.hust.datn.evidence.mapper.ProjectMapper;
@@ -101,12 +102,12 @@ public class ProjectService {
 
     /** Thành viên của dự án — chỉ chủ dự án xem được danh sách. */
     @Transactional(readOnly = true)
-    public List<MemberView> listMembers(UUID projectId, UUID ownerId) {
+    public List<ProjectMemberResponse> listMembers(UUID projectId, UUID ownerId) {
         getOwned(projectId, ownerId);
         return memberRepository.findByProjectIdOrderByAddedAtAsc(projectId).stream()
                 .map(member -> userRepository
                         .findById(member.getUserId())
-                        .map(user -> new MemberView(user.getId(), user.getEmail(), user.getDisplayName(), member.getAddedAt()))
+                        .map(user -> new ProjectMemberResponse(user.getId(), user.getEmail(), user.getDisplayName(), member.getAddedAt()))
                         .orElse(null))
                 .filter(java.util.Objects::nonNull)
                 .toList();
@@ -120,7 +121,7 @@ public class ProjectService {
      * đang thao tác hợp lệ, cái họ cần biết là bảo người kia đăng ký trước.
      */
     @Transactional
-    public MemberView addMember(UUID projectId, UUID ownerId, String email) {
+    public ProjectMemberResponse addMember(UUID projectId, UUID ownerId, String email) {
         Project project = getOwned(projectId, ownerId);
         User user = userRepository
                 .findByEmailIgnoreCase(email.trim())
@@ -140,7 +141,7 @@ public class ProjectService {
                             .truncatedTo(java.time.temporal.ChronoUnit.MICROS));
                     return memberRepository.save(fresh);
                 });
-        return new MemberView(user.getId(), user.getEmail(), user.getDisplayName(), member.getAddedAt());
+        return new ProjectMemberResponse(user.getId(), user.getEmail(), user.getDisplayName(), member.getAddedAt());
     }
 
     /** Gỡ một thành viên. Không phải thành viên thì không làm gì — gỡ hai lần không phải lỗi. */
@@ -149,9 +150,6 @@ public class ProjectService {
         getOwned(projectId, ownerId);
         memberRepository.deleteById(new vn.hust.datn.evidence.domain.ProjectMemberId(projectId, memberUserId));
     }
-
-    /** Một thành viên như giao diện quản lý cần: ai, email gì, được mời lúc nào. */
-    public record MemberView(UUID userId, String email, String displayName, OffsetDateTime addedAt) {}
 
     /**
      * Xoá dự án cùng MỌI thứ bên dưới: snapshot, analysis run, bằng chứng, hội thoại, review.

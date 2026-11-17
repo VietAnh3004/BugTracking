@@ -25,10 +25,10 @@ import vn.hust.datn.evidence.domain.WarningTool;
 import vn.hust.datn.evidence.dto.AnalysisRunResponse;
 import vn.hust.datn.evidence.dto.PageResponse;
 import vn.hust.datn.evidence.dto.WarningView;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 import vn.hust.datn.evidence.mapper.AnalysisRunMapper;
 import vn.hust.datn.evidence.service.analysis.AnalysisRunQueryService;
 import vn.hust.datn.evidence.service.analysis.AnalysisRunService;
-import vn.hust.datn.evidence.service.analysis.InvalidArtifactException;
 import vn.hust.datn.evidence.service.analysis.NamedArtifact;
 
 import io.swagger.v3.oas.annotations.Operation;

@@ -8,6 +8,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
 import vn.hust.datn.evidence.config.properties.AgentServiceProperties;
+import vn.hust.datn.evidence.exception.EmbeddingUnavailableException;
 
 /**
  * Gọi {@code POST /embed} của agent-service. Khoá API của nhà cung cấp embedding chỉ nằm ở

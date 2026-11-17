@@ -13,6 +13,7 @@ import java.util.zip.ZipInputStream;
 import org.springframework.stereotype.Component;
 
 import vn.hust.datn.evidence.config.properties.UploadProperties;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 
 /**
  * Rút các file {@code TEST-*.xml} ra khỏi một zip báo cáo Surefire.

@@ -16,6 +16,7 @@ import vn.hust.datn.evidence.domain.AnalysisRun;
 import vn.hust.datn.evidence.domain.AnalysisRunStatus;
 import vn.hust.datn.evidence.domain.ArtifactSource;
 import vn.hust.datn.evidence.domain.WarningTool;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 import vn.hust.datn.evidence.exception.SandboxUnavailableException;
 import vn.hust.datn.evidence.repository.SnapshotFileRepository;
 import vn.hust.datn.evidence.service.SnapshotQueryService;

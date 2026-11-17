@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import vn.hust.datn.evidence.domain.WarningSeverity;
 import vn.hust.datn.evidence.domain.WarningTool;
+import vn.hust.datn.evidence.exception.InvalidArtifactException;
 import vn.hust.datn.evidence.testsupport.SampleArtifacts;
 
 /**
