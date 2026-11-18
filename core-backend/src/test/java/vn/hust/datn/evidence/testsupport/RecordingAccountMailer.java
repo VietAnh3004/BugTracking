@@ -33,7 +33,7 @@ public class RecordingAccountMailer implements AccountMailer {
         if (mails.isEmpty()) {
             return Optional.empty();
         }
-        Matcher matcher = TOKEN.matcher(mails.getLast().body());
+        Matcher matcher = TOKEN.matcher(mails.getLast().text());
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 }

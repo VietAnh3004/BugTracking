@@ -24,6 +24,7 @@ Bảo vệ dự kiến giữa tháng 12/2026.
 | [docs/huong-dan-test-frontend.md](docs/huong-dan-test-frontend.md) | Giải thích snapshot/cảnh báo/severity/sandbox + các bước nghiệm thu bằng trình duyệt thật |
 | [case-study/vulnshop/SEEDED.md](case-study/vulnshop/SEEDED.md) | Danh mục lỗi gieo có chủ đích + phát hiện ảnh hưởng thiết kế |
 | [docs/deploy-vps.md](docs/deploy-vps.md) | **Triển khai lên VPS** cho tên miền `vsleuth.id.vn`: trạng thái (mục 0), quyết định đã chốt (mục 2), việc còn mở (mục 11). Đọc trước khi đụng vào `infra/docker-compose.vps.yml` hay bất cứ việc gì về deploy |
+| [docs/email.md](docs/email.md) | Gửi thư từ `VSleuth <no-reply@vsleuth.id.vn>` qua **Resend**: bản ghi DNS (SPF/DKIM/DMARC) ở PA Vietnam, cách kiểm thư thật. Đọc trước khi sửa `service/account/*Email*` hay `SmtpAccountMailer` |
 
 Xem `git log` để biết đang dở ở đâu — commit message ghi khá chi tiết lý do.
 

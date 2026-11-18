@@ -77,6 +77,10 @@ services:
       # Tài khoản: link trong email trỏ về APP_PUBLIC_URL; MAIL_USERNAME trống = không gửi thư,
       # chỉ ghi vào log. GOOGLE_CLIENT_ID trống = tắt đăng nhập Google.
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
+      # Thiếu hai dòng này thì container luôn gọi smtp.gmail.com dù .env khai gì (lỗi có thật trước
+      # 18/11/2026: application.yml đọc được MAIL_HOST nhưng compose không truyền vào).
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-}

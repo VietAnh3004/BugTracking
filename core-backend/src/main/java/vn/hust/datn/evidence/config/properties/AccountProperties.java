@@ -49,4 +49,16 @@ public record AccountProperties(
     public String publicUrlWithoutTrailingSlash() {
         return publicUrl.replaceAll("/+$", "");
     }
+
+    /**
+     * Tên thương hiệu hiện trên đầu và chân email: {@code MAIL_FROM_NAME} (cùng tên ở ô "Từ" của hộp
+     * thư — hai chỗ khác tên trông như thư giả mạo), trống thì là tên miền của {@code publicUrl}.
+     */
+    public String brandName() {
+        if (mailFromName != null && !mailFromName.isBlank()) {
+            return mailFromName.trim();
+        }
+        String host = java.net.URI.create(publicUrlWithoutTrailingSlash()).getHost();
+        return host == null ? publicUrl : host;
+    }
 }

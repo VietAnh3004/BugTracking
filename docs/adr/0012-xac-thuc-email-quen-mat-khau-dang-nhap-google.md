@@ -61,3 +61,16 @@ thành lỗ hổng: ai cũng tạo được tài khoản mang email của ngư�
 - Gmail giới hạn khoảng 500 thư/ngày cho tài khoản thường — thừa cho đồ án, không đủ cho sản phẩm.
 - Gravatar nhận SHA-256 của email: ai có email của người dùng đều tính ra được URL ảnh đó. Đây là
   cách Gravatar vốn hoạt động, chấp nhận theo lựa chọn "không lưu ảnh".
+
+## Cập nhật 18/11/2026 — gửi từ tên miền riêng, thư HTML
+
+*(Không sửa nội dung quyết định gốc ở trên.)* Sau khi có tên miền `vsleuth.id.vn`, người dùng chọn
+gửi thư qua **Resend** từ `VSleuth <no-reply@vsleuth.id.vn>` thay vì Gmail SMTP, và thư có **bản
+HTML** kèm bản văn bản thuần. Mã vẫn chỉ nói SMTP chuẩn, nên Gmail vẫn dùng được trên máy dev — đổi
+nhà cung cấp chỉ là đổi biến môi trường. Lý do, cấu hình DNS (SPF/DKIM/DMARC) và cách kiểm:
+[docs/email.md](../email.md).
+
+Hai hệ quả cần biết: (1) tên hiển thị do người dùng đặt nay đi vào HTML, nên mọi chuỗi phải qua
+`EmailTemplate.esc` — thư đã ký DKIM mà chèn được link thì là thư lừa đảo trông chính chủ nhất;
+(2) Resend dùng tên đăng nhập SMTP `resend` (không phải email), nên thiếu `MAIL_FROM` thì
+core-backend dừng ngay lúc khởi động thay vì hỏng âm thầm lúc gửi.
