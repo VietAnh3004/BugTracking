@@ -10,6 +10,8 @@ Tổng thời lượng dự kiến: **45–60 phút**.
 
 - [ ] Postgres + MinIO + core-backend + agent-service đang chạy; `/actuator/health` trả `UP`.
 - [ ] Snapshot vulnshop đã nạp, lần phân tích đã `SUCCEEDED`, số liệu khớp `expected-analysis.json`.
+- [ ] Nếu chạy trên VPS: Docker sandbox đã **TẮT** lại sau khi phân tích (bước 4 mục 9 của
+      [docs/deploy-vps.md](../deploy-vps.md)). Buổi thử không cần sandbox — kết quả đã nằm trong DB.
 - [ ] Danh sách kiểm ở [bo-canh-bao.md](bo-canh-bao.md) đã chạy xong.
 - [ ] Tài khoản `nguoidung-NN` đã tạo, đã đăng nhập sẵn trên máy dùng cho buổi thử.
 - [ ] Đồng hồ bấm giờ, biên bản trống, bộ thứ tự cảnh báo đã xáo cho người này.

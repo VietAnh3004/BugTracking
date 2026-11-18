@@ -12,6 +12,10 @@ Sau ~2 phút (lần đầu lâu hơn vì phải tải dependency Maven và npm):
 - Frontend: http://localhost:3000
 - Backend: http://localhost:8080/api/v1 · Swagger UI: http://localhost:8080/swagger-ui.html
 
+> **Lên VPS thì KHÔNG dùng file này** — nó mở mọi cổng (Postgres, MinIO, agent-service) ra
+> `0.0.0.0`, tức ra Internet. Dùng `docker-compose.vps.yml` và làm theo
+> [docs/deploy-vps.md](../docs/deploy-vps.md).
+
 `docker-compose.yml` chỉ để tiện chạy local và demo. Nó **không** phải điều kiện để hệ thống
 hoạt động: mỗi service khởi động được đơn lẻ chỉ với biến môi trường của nó, và deploy được lên
 các server khác nhau. File compose chỉ nối sẵn các biến đó lại.
@@ -108,7 +112,7 @@ không có Docker daemon, và **toàn bộ chức năng khác không phụ thu�
 artifact thủ công (`POST /api/v1/snapshots/{id}/analysis-runs`) vẫn chạy. Gọi endpoint sandbox khi
 đang tắt trả **503 kèm lý do đọc được**, không phải 500.
 
-### Bật lên — hai bước, và bước thứ hai là một quyết định vận hành
+### Bật lên trên máy dev
 
 ```bash
 # 1. Dựng hai image (script tự đối chiếu với expected-analysis.json, hỏng thì dừng)
@@ -118,7 +122,8 @@ artifact thủ công (`POST /api/v1/snapshots/{id}/analysis-runs`) vẫn chạy.
 ANALYSIS_RUNNER=docker
 ```
 
-Rồi **gỡ comment CẢ HAI khối** trong `docker-compose.yml`:
+Hai khối dưới đây trong `docker-compose.yml` **hiện đã được gỡ comment sẵn** (từ 30/10/2026, vì
+máy dev chạy sandbox thường xuyên):
 
 ```yaml
     volumes:
@@ -126,6 +131,13 @@ Rồi **gỡ comment CẢ HAI khối** trong `docker-compose.yml`:
     group_add:
       - "0"
 ```
+
+Hệ quả cần biết: socket được mount **bất kể** `ANALYSIS_RUNNER` là gì. Đặt `disabled` chỉ khiến
+core-backend không dùng tới nó, chứ quyền root vẫn đã được cấp. Muốn thu hồi thật thì comment lại
+cả hai khối rồi `docker compose up -d core-backend`.
+
+Trên **VPS** không làm theo mục này: xem [docs/deploy-vps.md](../docs/deploy-vps.md) mục 9 — sandbox
+tách thành file ghép riêng `docker-compose.vps.sandbox.yml`, chỉ ghép vào lúc demo.
 
 `group_add` không phải tuỳ chọn: socket thuộc `root:root` mode `660` (Docker Desktop), còn image
 core-backend chạy `USER app`. Chỉ mount socket thì sandbox chết ngay lượt đầu với lỗi kết nối tới
@@ -138,16 +150,20 @@ Ai gọi được `/var/run/docker.sock` đều có thể chạy một container
 tức **đọc và ghi toàn bộ filesystem của host**. Đó không phải leo thang đặc quyền do lỗi cấu hình
 — đó là thiết kế của Docker API.
 
-Vì vậy dòng mount để **comment** chứ không đặt sau một biến môi trường: bật sandbox phải là việc ai
-đó cố ý làm và biết mình đang làm gì.
+Thiết kế ban đầu vì vậy để dòng mount **comment** chứ không đặt sau một biến môi trường: bật
+sandbox phải là việc ai đó cố ý làm và biết mình đang làm gì. Trên máy dev điều đó nay không còn
+đúng (xem mục trên); trên VPS nó được giữ bằng file ghép riêng.
 
 Đọc thêm mục **"Rủi ro còn lại"** của ADR 0008: container **không phải** ranh giới bảo mật trước lỗ
-hổng kernel, và hệ thống này chỉ nhận repo từ **người dùng đã xác thực** — không phải dịch vụ công
-cộng ẩn danh.
+hổng kernel, và ADR đó chấp nhận rủi ro với giả định hệ thống chỉ nhận repo từ **người dùng đã xác
+thực** — không phải dịch vụ công cộng ẩn danh. Giả định này **không đúng** trên một VPS mở đăng ký
+tự do: xem [docs/deploy-vps.md](../docs/deploy-vps.md) mục 2.
 
 ### Tài nguyên và dọn rác
 
-Mỗi lần chạy chiếm 2 GB RAM + 2 CPU (`SANDBOX_MEMORY_BYTES`, `SANDBOX_CPUS`) và chạy **tuần tự** —
+Mỗi lần chạy chiếm 2 GB RAM + 2 CPU (`SANDBOX_MEMORY_BYTES`, `SANDBOX_CPUS` — chỉnh được trên VPS;
+`docker-compose.yml` của máy dev **chưa truyền** hai biến này vào container, nên đặt trong
+`infra/.env` không có tác dụng) và chạy **tuần tự** —
 executor đúng một luồng. Container và volume mang nhãn `evidence.run-id`; `SandboxReaper` dọn đồ mồ
 côi lúc khởi động và mỗi 30 phút, với thời gian ân hạn 1 giờ để không đụng vào run đang chạy.
 

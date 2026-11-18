@@ -1,0 +1,27 @@
+# BẬT Docker sandbox trên VPS — CHỈ dùng trong lúc demo / chạy phân tích. Ghép SAU file chính:
+#
+#   BẬT:  docker compose -f infra/docker-compose.vps.yml -f infra/docker-compose.vps.sandbox.yml \
+#                        --env-file infra/.env.vps up -d
+#   TẮT:  docker compose -f infra/docker-compose.vps.yml --env-file infra/.env.vps up -d
+#
+# Lệnh TẮT không có file này nên Compose tạo lại core-backend KHÔNG còn mount socket — tắt thật,
+# không chỉ đổi một biến. Hai lệnh đều tạo lại container core-backend: web gián đoạn ~1 phút.
+# Đừng tắt khi một lần phân tích đang RUNNING: chờ nó xong (2-4 phút với vulnshop).
+#
+# Ba thứ dưới đây đi CÙNG NHAU, nên nằm chung một file: thiếu một là sandbox hỏng (mount mà
+# runner vẫn `disabled`, hoặc runner `docker` mà không có socket), thừa một là lộ quyền vô ích.
+#
+# Mount Docker socket = core-backend có quyền ROOT trên VPS (ADR 0008). Đó là lý do file này
+# tách riêng thay vì nằm thường trực trong docker-compose.vps.yml: xem docs/deploy-vps.md mục 2.
+
+services:
+  core-backend:
+    environment:
+      ANALYSIS_RUNNER: docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      # Trên Linux, socket thuộc nhóm `docker` với gid KHÔNG phải 0 (khác Docker Desktop).
+      # Lấy bằng: stat -c %g /var/run/docker.sock. Sai gid thì sandbox chết ngay lượt đầu với
+      # lỗi kết nối tới daemon — gặp thật trên Docker Desktop (xem infra/README.md).
+      - "${DOCKER_SOCKET_GID:?Thieu DOCKER_SOCKET_GID: chay stat -c %g /var/run/docker.sock}"

@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+# Mẫu cấu hình cho VPS (docs/deploy-vps.md). File thật `.env.vps` chứa bí mật vẫn bị `.env.*` chặn.
+!.env.vps.example
 *.local
 secrets/
 

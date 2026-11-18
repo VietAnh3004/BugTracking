@@ -23,6 +23,7 @@ Bảo vệ dự kiến giữa tháng 12/2026.
 | [docs/spike-tuan-1.md](docs/spike-tuan-1.md) | Xác thực rủi ro: 3 nguồn bằng chứng khớp `file:line` |
 | [docs/huong-dan-test-frontend.md](docs/huong-dan-test-frontend.md) | Giải thích snapshot/cảnh báo/severity/sandbox + các bước nghiệm thu bằng trình duyệt thật |
 | [case-study/vulnshop/SEEDED.md](case-study/vulnshop/SEEDED.md) | Danh mục lỗi gieo có chủ đích + phát hiện ảnh hưởng thiết kế |
+| [docs/deploy-vps.md](docs/deploy-vps.md) | **Triển khai lên VPS** cho tên miền `vsleuth.id.vn`: trạng thái (mục 0), quyết định đã chốt (mục 2), việc còn mở (mục 11). Đọc trước khi đụng vào `infra/docker-compose.vps.yml` hay bất cứ việc gì về deploy |
 
 Xem `git log` để biết đang dở ở đâu — commit message ghi khá chi tiết lý do.
 
@@ -34,6 +35,15 @@ Xem `git log` để biết đang dở ở đâu — commit message ghi khá chi 
 | Backend | Spring Boot (core, sở hữu dữ liệu) + FastAPI (agent, **không** truy cập DB) |
 | LLM | Provider-agnostic qua interface `LlmProvider` |
 | Thời gian | 20 tuần, bắt đầu 27/07/2026 |
+
+**Deploy (chốt 18/11/2026)**: tên miền `vsleuth.id.vn` (PA Vietnam, KHÔNG mua shared hosting)
+· một VPS Ubuntu ≥ 8 GB · Nginx + Certbot trên host · `vsleuth.id.vn` → frontend,
+`api.vsleuth.id.vn` → core-backend · compose RIÊNG `infra/docker-compose.vps.yml` (không phải
+override file dev) · Docker sandbox **TẮT mặc định, chỉ bật lúc demo** bằng cách ghép thêm
+`infra/docker-compose.vps.sandbox.yml` (lý do: ai cũng tự đăng ký được, mà mount socket = root trên
+VPS). Chi tiết và lý do: [docs/deploy-vps.md](docs/deploy-vps.md).
+Thêm biến môi trường mới cho service nào thì thêm ở CẢ `docker-compose.yml` lẫn
+`docker-compose.vps.yml`.
 
 Hai ràng buộc người dùng nêu rõ, áp dụng cho mọi thay đổi:
 
@@ -96,6 +106,18 @@ docker tag  mirror.gcr.io/pgvector/pgvector:pg16 pgvector/pgvector:pg16
 ```
 
 **Mount Docker từ Git Bash**: cần `MSYS_NO_PATHCONV=1` và đường dẫn dạng `//d/study/...`.
+
+**`docker compose up --build` HỎNG trên máy này (Docker Compose v5.6.1, buildx 0.38.1).** Compose v5
+build bằng `buildx bake`, và bake dừng với `additional privileges requested: pass
+"--allow=fs.read=frontend\\Dockerfile"` — không container nào được tạo, dù lệnh bao ngoài có thể
+báo exit 0. `COMPOSE_BAKE=false` **không còn tác dụng** ở v5. Đừng tắt bước kiểm quyền của bake
+(`BUILDX_BAKE_ENTITLEMENTS_FS=0`): đó là tắt một cơ chế an ninh, và lớp kiểm duyệt của Claude Code
+chặn lệnh đó. Cách dùng được (gặp thật 18/11/2026): build từng image bằng `docker build` — tên phải
+là `evidence-agent-<service>` để compose nhận — rồi `up -d --no-build`:
+```bash
+for s in core-backend agent-service frontend; do docker build -t evidence-agent-$s ./$s || break; done
+docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --no-build
+```
 
 **Git Bash + Docker có HAI cái bẫy đường dẫn NGƯỢC CHIỀU nhau — chỉ tắt path conversion là hỏng
 cái còn lại.** Đường dẫn **trong container** (`/work`, `name:/work/src`) bị MSYS biến thành

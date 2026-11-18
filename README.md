@@ -109,10 +109,16 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up -d
 `docker-compose.yml` chỉ để tiện chạy local — **không** phải điều kiện để hệ thống hoạt động.
 Mỗi service khởi động được đơn lẻ chỉ với biến môi trường của nó.
 
-**Docker sandbox cho analyzer mặc định TẮT** (`ANALYSIS_RUNNER=disabled`). Bật nó đòi mount
-`/var/run/docker.sock`, tương đương cấp quyền root trên máy chủ — nên dòng mount để **comment**
-trong compose chứ không đặt sau một biến môi trường. Cách bật và rủi ro đi kèm:
-[infra/README.md](infra/README.md) và [ADR 0008](docs/adr/0008-chay-analyzer-trong-docker-sandbox.md).
+**Docker sandbox cho analyzer mặc định TẮT** trong ứng dụng (`ANALYSIS_RUNNER=disabled`). Dùng nó
+đòi mount `/var/run/docker.sock`, tương đương cấp quyền root trên máy chủ.
+
+> ⚠️ `infra/docker-compose.yml` (bản cho máy dev) hiện **mount socket SẴN** — khác thiết kế ban đầu
+> là để dòng đó comment. Chạy file compose này là core-backend có quyền root trên máy bạn, **kể cả
+> khi** `ANALYSIS_RUNNER` tắt. Không muốn thì comment khối mount trước khi `up`. Trên VPS dùng
+> `docker-compose.vps.yml`, nơi sandbox tắt và chỉ bật lúc demo ([docs/deploy-vps.md](docs/deploy-vps.md)).
+
+Cách bật và rủi ro đi kèm: [infra/README.md](infra/README.md) và
+[ADR 0008](docs/adr/0008-chay-analyzer-trong-docker-sandbox.md).
 
 Chi tiết từng service: xem README trong thư mục tương ứng.
 
@@ -149,4 +155,6 @@ container), không phải lúc build — nên một image dùng được cho m�
 - [case-study/vulnshop/SEEDED.md](case-study/vulnshop/SEEDED.md) — danh mục lỗi gieo có chủ đích
 - [docs/samples/](docs/samples/) — artifact thật của analyzer
 - [infra/analyzer/README.md](infra/analyzer/README.md) — hai image analyzer và năm cạm bẫy khi dựng
+- [docs/deploy-vps.md](docs/deploy-vps.md) — triển khai lên VPS (`vsleuth.id.vn`): Nginx + HTTPS,
+  đóng cổng nội bộ, kiểm chứng từ bên ngoài, sao lưu
 - [CLAUDE.md](CLAUDE.md) — quy ước, lệnh hay dùng, cạm bẫy môi trường

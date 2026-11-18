@@ -1,0 +1,191 @@
+# Chạy toàn bộ hệ thống trên MỘT VPS có IP công khai, sau Nginx + Let's Encrypt trên host.
+# Hướng dẫn đầy đủ, từng bước: docs/deploy-vps.md
+#
+#   docker compose -f infra/docker-compose.vps.yml --env-file infra/.env.vps up -d --build
+#
+# ĐỨNG MỘT MÌNH, KHÔNG chồng lên docker-compose.yml — có chủ đích. File dev mở mọi cổng ra
+# 0.0.0.0 và (trên máy dev) đang mount Docker socket. Nếu file này là bản override, thứ gì sau
+# này thêm vào file dev (một cổng, một mount) sẽ tự lọt sang VPS mà không ai để ý. Đổi lại phải
+# lặp danh sách biến môi trường: thêm biến mới cho service nào thì thêm ở CẢ HAI file. Quên ở
+# đây thì service fail-fast lúc khởi động (UnresolvedPlaceholderValidator / pydantic-settings),
+# không lệch im lặng.
+#
+# Ba khác biệt so với file dev, cả ba vì máy này nằm trên Internet:
+#
+#   1. KHÔNG cổng nào mở ra 0.0.0.0. Cổng nào cần chạm từ host thì gắn vào 127.0.0.1:
+#        - 8080, 3000: Nginx trên host proxy vào.
+#        - 5432, 9001: chỉ để quản trị qua đường hầm SSH (docs/deploy-vps.md mục 8).
+#      Docker tự chèn luật iptables ĐỨNG TRƯỚC UFW, nên `"5432:5432"` vẫn mở ra Internet kể cả
+#      khi đã `ufw deny 5432`. Gắn 127.0.0.1 là cách chặn duy nhất không phụ thuộc tường lửa.
+#   2. Bí mật bắt buộc khai dạng ${VAR:?...}: thiếu là `docker compose` dừng NGAY, trước khi tạo
+#      container nào — thay vì một container chết lặng lẽ hoặc chạy với giá trị rỗng.
+#   3. restart: unless-stopped + giới hạn log, để VPS khởi động lại thì tự lên và log không lấp
+#      đầy ổ đĩa.
+
+name: evidence-agent
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-evidence_agent}
+      POSTGRES_USER: ${POSTGRES_USER:-evidence}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Thieu POSTGRES_PASSWORD trong infra/.env.vps}
+    ports:
+      # Chỉ cho đường hầm SSH (psql/DBeaver từ máy bạn). KHÔNG đổi thành "5432:5432".
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    # Cùng digest với docker-compose.yml và MinioObjectStorageClientTest — đổi thì đổi cả ba.
+    image: cgr.dev/chainguard/minio@sha256:0f9fda72fbc6bd3560ea903aec2ceefa20f6ba82628d67656f37fb370c39ae9c
+    restart: unless-stopped
+    logging: *default-logging
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Thieu MINIO_ROOT_USER trong infra/.env.vps}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Thieu MINIO_ROOT_PASSWORD trong infra/.env.vps}
+    ports:
+      # Chỉ trang quản trị, chỉ qua đường hầm SSH. Cổng API 9000 KHÔNG mở: core-backend gọi
+      # http://minio:9000 trong mạng Docker, trình duyệt không bao giờ chạm MinIO.
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  core-backend:
+    build:
+      context: ../core-backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-evidence_agent}
+      DB_USER: ${POSTGRES_USER:-evidence}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      AGENT_SERVICE_URL: http://agent-service:8000
+      # Phải là https://<tên miền frontend>, khớp TỪNG KÝ TỰ với thanh địa chỉ trình duyệt.
+      CORS_ORIGINS: ${CORS_ORIGINS:?Thieu CORS_ORIGINS trong infra/.env.vps}
+      JWT_SECRET: ${JWT_SECRET:?Thieu JWT_SECRET trong infra/.env.vps}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Thieu SERVICE_TOKEN trong infra/.env.vps}
+      STORAGE_ENDPOINT: http://minio:9000
+      STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
+      STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-repositories}
+      # Phải khớp client_max_body_size trong infra/vps/nginx-vsleuth.conf, nếu không Nginx chặn
+      # trước với 413 và backend không bao giờ thấy request.
+      MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-100MB}
+      UPLOAD_MAX_FILES: ${UPLOAD_MAX_FILES:-20000}
+      UPLOAD_MAX_UNCOMPRESSED_BYTES: ${UPLOAD_MAX_UNCOMPRESSED_BYTES:-524288000}
+      UPLOAD_MAX_COMPRESSION_RATIO: ${UPLOAD_MAX_COMPRESSION_RATIO:-200}
+      UPLOAD_MAX_STORED_FILE_BYTES: ${UPLOAD_MAX_STORED_FILE_BYTES:-2097152}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-PT15M}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-P14D}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:?Thieu APP_PUBLIC_URL trong infra/.env.vps}
+      # Gửi thư qua Resend từ no-reply@vsleuth.id.vn — cách cấu hình và bản ghi DNS: docs/email.md
+      MAIL_HOST: ${MAIL_HOST:-smtp.resend.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-VSleuth}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      # ======================================================================================
+      # DOCKER SANDBOX — TẮT ở đây, CHỈ BẬT LÚC DEMO (chốt với người dùng 18/11/2026).
+      #
+      # File này KHÔNG mount Docker socket. Muốn bật thì ghép thêm docker-compose.vps.sandbox.yml
+      # (mount socket + group_add + ANALYSIS_RUNNER=docker, đi CÙNG NHAU trong một file — không
+      # thể bật nửa vời). Gọi "Phân tích tự động" khi đang tắt trả 503 kèm lý do, không phải 500.
+      #
+      # Vì sao không bật thường trực: mount socket = root trên VPS, mà ai cũng tự đăng ký được
+      # tài khoản — xem docs/deploy-vps.md mục 2. Sandbox chỉ cần lúc PHÂN TÍCH; kết quả (kể cả
+      # coverage từng test) nằm trong DB và còn nguyên sau khi tắt.
+      # ======================================================================================
+      ANALYSIS_RUNNER: disabled
+      ANALYZER_JAVA_IMAGE: ${ANALYZER_JAVA_IMAGE:-evidence/analyzer-java:latest}
+      ANALYZER_SEMGREP_IMAGE: ${ANALYZER_SEMGREP_IMAGE:-evidence/analyzer-semgrep:latest}
+      SANDBOX_TIMEOUT: ${SANDBOX_TIMEOUT:-PT15M}
+      SANDBOX_MEMORY_BYTES: ${SANDBOX_MEMORY_BYTES:-2147483648}
+      SANDBOX_CPUS: ${SANDBOX_CPUS:-2}
+    ports:
+      # Chỉ Nginx trên host gọi vào. Trình duyệt đi qua https://api.<tên miền>.
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  agent-service:
+    build:
+      context: ../agent-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      CORE_API_URL: http://core-backend:8080
+      SERVICE_TOKEN: ${SERVICE_TOKEN}
+      LLM_PROVIDER: ${LLM_PROVIDER:?Thieu LLM_PROVIDER trong infra/.env.vps}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-2}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-none}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      PROMPT_VERSION: ${PROMPT_VERSION:-v1}
+    # KHÔNG có `ports`: chỉ core-backend gọi vào, qua mạng Docker. Trình duyệt không bao giờ gọi
+    # thẳng agent-service (ADR 0010), và nó không có xác thực người dùng.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      # URL TRÌNH DUYỆT gọi tới (https://api.<tên miền>), không phải hostname trong mạng Docker.
+      API_BASE_URL: ${API_BASE_URL:?Thieu API_BASE_URL trong infra/.env.vps}
+    ports:
+      - "127.0.0.1:3000:80"
+    healthcheck:
+      # 127.0.0.1 chứ không phải localhost — lý do ở healthcheck cùng service trong docker-compose.yml.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
+  minio-data:
