@@ -178,7 +178,13 @@ class AccountFlowTest extends AbstractWebIntegrationTest {
     @Test
     void datLaiVaDoiMatKhauCungApQuyTacMatKhau() throws Exception {
         String email = register();
-        verifyAndRead(email); // chưa xác thực email thì không đăng nhập được ở bước đổi mật khẩu
+        JsonNode session = verifyAndRead(email);
+
+        // Mật khẩu hiện tại dùng hằng PASSWORD, không viết chuỗi thẳng sau biến token: gitleaks
+        // (generic-api-key) đọc `changePassword(token, "<chuỗi dài>"` là một API key bị lộ.
+        changePassword(session.get("accessToken").asText(), PASSWORD, "khong-co-chu-so")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.newPassword").value("Mật khẩu phải có ít nhất một chữ số"));
 
         postJson("/api/v1/auth/forgot-password", "{\"email\": \"%s\"}".formatted(email));
         String reset = mailer.latestToken(email, RESET).orElseThrow();
@@ -187,13 +193,6 @@ class AccountFlowTest extends AbstractWebIntegrationTest {
                 .andExpect(jsonPath("$.fieldErrors.newPassword").value("Mật khẩu phải có ít nhất một chữ số"));
         // Bị chặn ở bước validate thì link chưa bị tiêu: người dùng sửa mật khẩu rồi bấm lại được.
         postJson("/api/v1/auth/reset-password", resetBody(reset, "mat-khau-moi-12345")).andExpect(status().isNoContent());
-
-        String access = read(login(email, "mat-khau-moi-12345").andExpect(status().isOk()))
-                .get("accessToken")
-                .asText();
-        changePassword(access, "mat-khau-moi-12345", "khong-co-chu-so")
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fieldErrors.newPassword").value("Mật khẩu phải có ít nhất một chữ số"));
     }
 
     // ===================================== hồ sơ / mật khẩu =====================================

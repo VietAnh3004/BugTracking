@@ -1,0 +1,7 @@
+# Báo nhầm của gitleaks (generic-api-key) — đã xem từng dòng, không phải bí mật thật.
+# Mỗi dòng: <commit>:<file>:<rule>:<dòng>, lấy từ mục "Fingerprint" trong log của gitleaks.
+#
+# 9215056: mật khẩu GIẢ "mat-khau-moi-12345" trong test, đứng sau biến tên `access` nên bị đọc nhầm
+# thành API key. Dòng đó đã được viết lại ở commit sau; ghi ở đây để lần quét lại dải commit cũ
+# (chạy lại job, hoặc quét toàn bộ lịch sử) không đỏ lại vì commit đó.
+92150561c4f865fa7ebfaf3937756db00b65d46c:core-backend/src/test/java/vn/hust/datn/evidence/controller/AccountFlowTest.java:generic-api-key:194
