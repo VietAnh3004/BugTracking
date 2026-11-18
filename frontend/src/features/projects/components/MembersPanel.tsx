@@ -14,6 +14,7 @@ import {
   useRemoveMember,
 } from '@/features/projects/hooks/useProjectMembers';
 import { ApiError } from '@/shared/lib/apiClient';
+import { InfoTip } from '@/shared/ui/InfoTip';
 import { buttonClass, CARD, INPUT } from '@/shared/ui/styles';
 
 import type { FormEvent } from 'react';
@@ -31,11 +32,14 @@ export function MembersPanel({ projectId }: { projectId: string }) {
 
   return (
     <section className={`${CARD} p-5`}>
-      <h2 className="text-ink mt-0 mb-1 text-base font-semibold">Thành viên</h2>
-      <p className="text-ink-muted mt-0 mb-4 text-sm">
-        Thành viên xem được mã và bằng chứng, hỏi Agent, đánh giá, và gán nhãn với vai trò người gán
-        thứ hai — không thấy nhãn của bạn. Họ không xoá, không tải mã, không chạy phân tích được.
-      </p>
+      <div className="mb-4 flex items-center gap-1.5">
+        <h2 className="text-ink m-0 text-base font-semibold">Thành viên</h2>
+        <InfoTip label="Giải thích: Thành viên">
+          Thành viên xem được mã và bằng chứng, hỏi Agent, đánh giá, và gán nhãn với vai trò người
+          gán thứ hai — không thấy nhãn của bạn. Họ không xoá, không tải mã, không chạy phân tích
+          được.
+        </InfoTip>
+      </div>
 
       <form onSubmit={handleSubmit} className="flex gap-2">
         <label htmlFor="member-email" className="sr-only">

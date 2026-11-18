@@ -8,6 +8,7 @@
 
 import { CreateProjectForm } from '@/features/projects/components/CreateProjectForm';
 import { ProjectList } from '@/features/projects/components/ProjectList';
+import { InfoTip } from '@/shared/ui/InfoTip';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { CARD } from '@/shared/ui/styles';
 
@@ -25,10 +26,12 @@ export function ProjectsPage() {
         </section>
 
         <section className={`${CARD} p-5`}>
-          <h2 className="text-ink mt-0 mb-1 text-base font-semibold">Tạo dự án mới</h2>
-          <p className="text-ink-muted mt-0 mb-4 text-sm">
-            Đặt tên rồi tải mã nguồn dạng zip lên ở bước tiếp theo.
-          </p>
+          <div className="mb-4 flex items-center gap-1.5">
+            <h2 className="text-ink m-0 text-base font-semibold">Tạo dự án mới</h2>
+            <InfoTip label="Giải thích: Tạo dự án mới">
+              Đặt tên rồi tải mã nguồn dạng zip lên ở bước tiếp theo.
+            </InfoTip>
+          </div>
           <CreateProjectForm />
         </section>
       </div>

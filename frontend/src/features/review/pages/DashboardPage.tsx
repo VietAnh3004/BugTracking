@@ -55,7 +55,7 @@ export function DashboardPage() {
           label: 'Về danh sách cảnh báo',
         }}
         title="Chỉ số của lần phân tích"
-        description="Rê chuột lên tên chỉ số có gạch chấm để xem định nghĩa. Dấu gạch nghĩa là chưa đủ dữ liệu để tính, không phải 0%."
+        description="Rê chuột lên dấu ? cạnh tên chỉ số để xem định nghĩa. Dấu gạch nghĩa là chưa đủ dữ liệu để tính, không phải 0%."
         actions={<ExportButtons runId={runId} />}
       />
 
