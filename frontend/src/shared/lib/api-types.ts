@@ -1025,6 +1025,7 @@ export interface components {
         };
         ResetPasswordRequest: {
             token: string;
+            /** @description Tối thiểu 8 ký tự, có ít nhất một chữ cái và một chữ số. */
             newPassword: string;
         };
         EmailRequest: {
@@ -1032,6 +1033,7 @@ export interface components {
         };
         RegisterRequest: {
             email: string;
+            /** @description Tối thiểu 8 ký tự, có ít nhất một chữ cái và một chữ số. */
             password: string;
             displayName: string;
         };
@@ -1043,6 +1045,7 @@ export interface components {
         };
         ChangePasswordRequest: {
             currentPassword?: string;
+            /** @description Tối thiểu 8 ký tự, có ít nhất một chữ cái và một chữ số. */
             newPassword: string;
         };
         LoginRequest: {

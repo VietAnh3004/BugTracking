@@ -89,6 +89,34 @@ class AuthControllerTest extends AbstractWebIntegrationTest {
                 .andExpect(jsonPath("$.fieldErrors.password").exists());
     }
 
+    /** Đủ 8 ký tự nhưng thiếu chữ số / thiếu chữ cái: mỗi trường hợp báo ĐÚNG yêu cầu còn thiếu. */
+    @Test
+    void matKhauThieuChuSoHoacChuCaiTraVe400NoiRoThieuGi() throws Exception {
+        expectPasswordError("chi-co-chu-cai", "Mật khẩu phải có ít nhất một chữ số");
+        expectPasswordError("1234-5678-90", "Mật khẩu phải có ít nhất một chữ cái");
+    }
+
+    /** Chữ cái tính theo Unicode — mật khẩu tiếng Việt có dấu phải được nhận, khớp regex frontend. */
+    @Test
+    void matKhauTiengVietCoDauVaChuSoDuocNhan() throws Exception {
+        String email = "co-dau-%d@test.local".formatted(System.nanoTime());
+        getMockMvc()
+                .perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody(email, "mậtkhẩu2026", "Nguoi Dung")))
+                .andExpect(status().isCreated());
+    }
+
+    private void expectPasswordError(String password, String message) throws Exception {
+        String email = "quy-tac-%d@test.local".formatted(System.nanoTime());
+        getMockMvc()
+                .perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody(email, password, "Nguoi Dung")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.password").value(message));
+    }
+
     @Test
     void dangNhapSaiEmailVaSaiMatKhauTraVeCungMotThongDiep() throws Exception {
         String email = "dang-nhap-%d@test.local".formatted(System.nanoTime());

@@ -2353,7 +2353,7 @@
           },
           "newPassword" : {
             "type" : "string",
-            "maxLength" : 2147483647,
+            "description" : "Tối thiểu 8 ký tự, có ít nhất một chữ cái và một chữ số.",
             "minLength" : 8
           }
         },
@@ -2378,7 +2378,7 @@
           },
           "password" : {
             "type" : "string",
-            "maxLength" : 2147483647,
+            "description" : "Tối thiểu 8 ký tự, có ít nhất một chữ cái và một chữ số.",
             "minLength" : 8
           },
           "displayName" : {
@@ -2415,7 +2415,7 @@
           },
           "newPassword" : {
             "type" : "string",
-            "maxLength" : 2147483647,
+            "description" : "Tối thiểu 8 ký tự, có ít nhất một chữ cái và một chữ số.",
             "minLength" : 8
           }
         },

@@ -171,6 +171,31 @@ class AccountFlowTest extends AbstractWebIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    /**
+     * Quy tắc mật khẩu của đăng ký phải áp cả ở hai đường đặt mật khẩu còn lại — nếu không, ai bị
+     * chặn lúc đăng ký chỉ việc qua "quên mật khẩu" hoặc trang tài khoản để đặt mật khẩu yếu.
+     */
+    @Test
+    void datLaiVaDoiMatKhauCungApQuyTacMatKhau() throws Exception {
+        String email = register();
+        verifyAndRead(email); // chưa xác thực email thì không đăng nhập được ở bước đổi mật khẩu
+
+        postJson("/api/v1/auth/forgot-password", "{\"email\": \"%s\"}".formatted(email));
+        String reset = mailer.latestToken(email, RESET).orElseThrow();
+        postJson("/api/v1/auth/reset-password", resetBody(reset, "khong-co-chu-so"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.newPassword").value("Mật khẩu phải có ít nhất một chữ số"));
+        // Bị chặn ở bước validate thì link chưa bị tiêu: người dùng sửa mật khẩu rồi bấm lại được.
+        postJson("/api/v1/auth/reset-password", resetBody(reset, "mat-khau-moi-12345")).andExpect(status().isNoContent());
+
+        String access = read(login(email, "mat-khau-moi-12345").andExpect(status().isOk()))
+                .get("accessToken")
+                .asText();
+        changePassword(access, "mat-khau-moi-12345", "khong-co-chu-so")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.newPassword").value("Mật khẩu phải có ít nhất một chữ số"));
+    }
+
     // ===================================== hồ sơ / mật khẩu =====================================
 
     @Test

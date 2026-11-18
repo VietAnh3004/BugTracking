@@ -4,8 +4,10 @@ import { Link } from 'react-router-dom';
 import { AuthForm } from '@/features/auth/components/AuthForm';
 import { CheckInboxNotice } from '@/features/auth/components/CheckInboxNotice';
 import { GoogleLoginSection } from '@/features/auth/components/GoogleLoginSection';
+import { PasswordRequirements } from '@/features/auth/components/PasswordRequirements';
 import { useResendVerification } from '@/features/auth/hooks/useAccount';
 import { useRegister } from '@/features/auth/hooks/useRegister';
+import { firstUnmetPasswordRule } from '@/features/auth/lib/passwordRules';
 import { ApiError } from '@/shared/lib/apiClient';
 import { TEXT_LINK } from '@/shared/ui/styles';
 import { TextField } from '@/shared/ui/TextField';
@@ -16,11 +18,20 @@ export function RegisterPage() {
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
+  // Đã bấm gửi khi mật khẩu còn thiếu yêu cầu: danh sách tô đỏ dòng chưa đạt. Cố ý không thêm
+  // dòng cảnh báo riêng — danh sách ngay dưới ô nhập đã nói đủ thiếu gì.
+  const [flagUnmet, setFlagUnmet] = useState(false);
   const register = useRegister();
   const resend = useResendVerification();
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // Kiểm trước ở client để khỏi tốn một lượt gọi; backend vẫn kiểm lại (@NewPassword).
+    if (firstUnmetPasswordRule(password) !== null) {
+      setFlagUnmet(true);
+      document.getElementById('password')?.focus();
+      return;
+    }
     register.mutate({ email, displayName, password });
   }
 
@@ -76,14 +87,22 @@ export function RegisterPage() {
         onChange={setDisplayName}
         autoComplete="name"
       />
-      <TextField
-        id="password"
-        label="Mật khẩu"
-        type="password"
-        value={password}
-        onChange={setPassword}
-        autoComplete="new-password"
-      />
+      <div className="flex flex-col gap-2">
+        <TextField
+          id="password"
+          label="Mật khẩu"
+          type="password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+          describedBy="password-requirements"
+        />
+        <PasswordRequirements
+          id="password-requirements"
+          password={password}
+          flagUnmet={flagUnmet}
+        />
+      </div>
     </AuthForm>
   );
 }
@@ -94,6 +113,12 @@ function describeRegisterError(error: unknown): string {
     // họ vừa nhập; giấu đi chỉ khiến họ không hiểu tại sao không tạo được tài khoản.
     if (error.status === 409) {
       return 'Email này đã được đăng ký. Quên mật khẩu thì dùng "Quên mật khẩu?" ở trang đăng nhập.';
+    }
+    // 400 validate: backend nói rõ field nào sai (vd "Mật khẩu phải có ít nhất một chữ số") —
+    // hiện câu đó thay vì tiêu đề chung "Dữ liệu đầu vào không hợp lệ".
+    const firstFieldError = Object.values(error.problem.fieldErrors ?? {})[0];
+    if (firstFieldError !== undefined) {
+      return firstFieldError;
     }
     return error.problem.detail ?? error.message;
   }

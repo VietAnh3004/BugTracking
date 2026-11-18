@@ -7,8 +7,10 @@
 
 import { useState } from 'react';
 
+import { PasswordRequirements } from '@/features/auth/components/PasswordRequirements';
 import { useChangePassword, useUpdateProfile } from '@/features/auth/hooks/useAccount';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { firstUnmetPasswordRule } from '@/features/auth/lib/passwordRules';
 import { ApiError } from '@/shared/lib/apiClient';
 import { Avatar } from '@/shared/ui/Avatar';
 import { PageHeader } from '@/shared/ui/PageHeader';
@@ -17,8 +19,6 @@ import { TextField } from '@/shared/ui/TextField';
 
 import type { CurrentUser } from '@/features/auth/api/authApi';
 import type { FormEvent, ReactNode } from 'react';
-
-const MIN_PASSWORD = 8;
 
 export function AccountPage() {
   const { user } = useAuth();
@@ -150,8 +150,9 @@ function PasswordSection({ user }: { user: CurrentUser }) {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (next.length < MIN_PASSWORD) {
-      setLocalError(`Mật khẩu mới phải dài tối thiểu ${MIN_PASSWORD} ký tự.`);
+    const unmet = firstUnmetPasswordRule(next);
+    if (unmet !== null) {
+      setLocalError(`Mật khẩu mới chưa đạt yêu cầu: ${unmet.label.toLowerCase()}.`);
       return;
     }
     if (next !== confirm) {
@@ -198,6 +199,7 @@ function PasswordSection({ user }: { user: CurrentUser }) {
             value={next}
             onChange={setNext}
             autoComplete="new-password"
+            describedBy="password-requirements"
           />
           <TextField
             id="confirmPassword"
@@ -208,6 +210,7 @@ function PasswordSection({ user }: { user: CurrentUser }) {
             autoComplete="new-password"
           />
         </div>
+        <PasswordRequirements id="password-requirements" password={next} />
         <p className="text-ink-muted m-0 text-xs">
           Đổi xong, mọi thiết bị khác đang đăng nhập tài khoản này sẽ bị đăng xuất.
         </p>

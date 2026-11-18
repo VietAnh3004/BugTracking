@@ -19,6 +19,8 @@ interface TextFieldProps {
   autoComplete?: string;
   required?: boolean;
   placeholder?: string;
+  /** `id` của phần mô tả đi kèm (vd danh sách yêu cầu mật khẩu) — gắn vào `aria-describedby`. */
+  describedBy?: string;
 }
 
 export function TextField({
@@ -30,6 +32,7 @@ export function TextField({
   autoComplete,
   required = true,
   placeholder,
+  describedBy,
 }: TextFieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -43,6 +46,7 @@ export function TextField({
         required={required}
         autoComplete={autoComplete}
         placeholder={placeholder}
+        aria-describedby={describedBy}
         onChange={(event) => onChange(event.target.value)}
         className={INPUT}
       />

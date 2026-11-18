@@ -7,7 +7,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { fakeAuthTokens, mockFetchByUrl } from '@/test/mockFetch';
@@ -64,6 +64,91 @@ describe('Đăng ký', () => {
     expect(screen.getByText('moi@test.local')).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/register');
     expect(window.localStorage.getItem(REFRESH_TOKEN_KEY)).toBeNull();
+  });
+
+  /** Trạng thái đạt/chưa đạt của từng dòng, đọc qua `data-met` để không phụ thuộc class màu. */
+  function requirementStates(): Record<string, boolean> {
+    const list = screen.getByRole('list', { name: 'Yêu cầu mật khẩu' });
+    return Object.fromEntries(
+      within(list)
+        .getAllByRole('listitem')
+        .map((item) => [
+          item.textContent?.replace(/ \((đã|chưa) đạt\)$/, '') ?? '',
+          item.dataset.met === 'true',
+        ]),
+    );
+  }
+
+  it('ghi đủ yêu cầu mật khẩu, yêu cầu nào đạt thì đánh dấu ngay lúc gõ', async () => {
+    mockFetchByUrl({ '/api/v1/auth/config': NO_GOOGLE, '/actuator/health': HEALTH });
+    renderRoute('/register');
+
+    const password = await screen.findByLabelText('Mật khẩu');
+    expect(requirementStates()).toEqual({
+      'Tối thiểu 8 ký tự': false,
+      'Có ít nhất một chữ cái': false,
+      'Có ít nhất một chữ số': false,
+    });
+
+    await userEvent.type(password, 'abc');
+    expect(requirementStates()).toEqual({
+      'Tối thiểu 8 ký tự': false,
+      'Có ít nhất một chữ cái': true,
+      'Có ít nhất một chữ số': false,
+    });
+
+    await userEvent.type(password, 'defgh1');
+    expect(requirementStates()).toEqual({
+      'Tối thiểu 8 ký tự': true,
+      'Có ít nhất một chữ cái': true,
+      'Có ít nhất một chữ số': true,
+    });
+    // Trình đọc màn hình nghe được trạng thái, không chỉ thấy màu.
+    expect(screen.getByText('Có ít nhất một chữ số')).toHaveTextContent('(đã đạt)');
+  });
+
+  it('mật khẩu thiếu chữ số thì KHÔNG gọi backend, chỉ tô đỏ dòng chưa đạt — không có dòng cảnh báo', async () => {
+    const fetchSpy = mockFetchByUrl({
+      '/api/v1/auth/config': NO_GOOGLE,
+      '/actuator/health': HEALTH,
+    });
+    renderRoute('/register');
+
+    await userEvent.type(await screen.findByLabelText('Email'), 'moi@test.local');
+    await userEvent.type(screen.getByLabelText('Tên hiển thị'), 'Nguoi Moi');
+    await userEvent.type(screen.getByLabelText('Mật khẩu'), 'chi-co-chu-cai');
+    await userEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
+
+    expect(screen.getByText('Có ít nhất một chữ số').closest('li')).toHaveClass('text-red-600');
+    expect(screen.getByText('Có ít nhất một chữ cái').closest('li')).toHaveClass(
+      'text-emerald-600',
+    );
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Mật khẩu')).toHaveFocus();
+    expect(calledWithMethod(fetchSpy, '/register', 'POST')).toBe(false);
+  });
+
+  it('backend từ chối mật khẩu thì hiện đúng câu trong fieldErrors', async () => {
+    mockFetchByUrl({
+      '/api/v1/auth/register': {
+        status: 400,
+        body: {
+          type: 'https://datn.hust.vn/problems/validation-failed',
+          title: 'Dữ liệu đầu vào không hợp lệ',
+          fieldErrors: { email: 'Email không đúng định dạng' },
+        },
+      },
+      '/api/v1/auth/config': NO_GOOGLE,
+      '/actuator/health': HEALTH,
+    });
+    renderRoute('/register');
+
+    await userEvent.type(await screen.findByLabelText('Email'), 'moi@test.local');
+    await userEvent.type(screen.getByLabelText('Tên hiển thị'), 'Nguoi Moi');
+    await userEvent.type(screen.getByLabelText('Mật khẩu'), 'mat-khau-du-dai-8');
+    await userEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Email không đúng định dạng');
   });
 });
 

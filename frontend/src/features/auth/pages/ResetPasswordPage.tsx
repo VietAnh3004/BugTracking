@@ -10,8 +10,10 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { AuthForm } from '@/features/auth/components/AuthForm';
+import { PasswordRequirements } from '@/features/auth/components/PasswordRequirements';
 import { useResetPassword } from '@/features/auth/hooks/useAccount';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { firstUnmetPasswordRule } from '@/features/auth/lib/passwordRules';
 import { tokenFromHash } from '@/features/auth/lib/tokenFromHash';
 import { ApiError } from '@/shared/lib/apiClient';
 import { IconCheck } from '@/shared/ui/icons';
@@ -19,8 +21,6 @@ import { buttonClass, CARD, TEXT_LINK } from '@/shared/ui/styles';
 import { TextField } from '@/shared/ui/TextField';
 
 import type { FormEvent } from 'react';
-
-const MIN_PASSWORD = 8;
 
 export function ResetPasswordPage() {
   const location = useLocation();
@@ -36,9 +36,10 @@ export function ResetPasswordPage() {
     if (token === null) {
       return;
     }
-    // Kiểm trước ở client cho nhanh; backend vẫn kiểm lại (@Size min 8) — đây chỉ là tiện lợi.
-    if (password.length < MIN_PASSWORD) {
-      setLocalError(`Mật khẩu phải dài tối thiểu ${MIN_PASSWORD} ký tự.`);
+    // Kiểm trước ở client cho nhanh; backend vẫn kiểm lại (@NewPassword) — đây chỉ là tiện lợi.
+    const unmet = firstUnmetPasswordRule(password);
+    if (unmet !== null) {
+      setLocalError(`Mật khẩu chưa đạt yêu cầu: ${unmet.label.toLowerCase()}.`);
       return;
     }
     if (password !== confirm) {
@@ -107,14 +108,18 @@ export function ResetPasswordPage() {
         </Link>
       }
     >
-      <TextField
-        id="newPassword"
-        label="Mật khẩu mới"
-        type="password"
-        value={password}
-        onChange={setPassword}
-        autoComplete="new-password"
-      />
+      <div className="flex flex-col gap-2">
+        <TextField
+          id="newPassword"
+          label="Mật khẩu mới"
+          type="password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+          describedBy="password-requirements"
+        />
+        <PasswordRequirements id="password-requirements" password={password} />
+      </div>
       <TextField
         id="confirmPassword"
         label="Nhập lại mật khẩu mới"
@@ -129,6 +134,10 @@ export function ResetPasswordPage() {
 
 function describeError(error: unknown): string {
   if (error instanceof ApiError) {
+    const firstFieldError = Object.values(error.problem.fieldErrors ?? {})[0];
+    if (firstFieldError !== undefined) {
+      return firstFieldError;
+    }
     return error.problem.detail ?? error.message;
   }
   return 'Không gọi được backend. Kiểm tra kết nối mạng.';
