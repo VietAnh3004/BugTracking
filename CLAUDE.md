@@ -24,6 +24,7 @@ Bảo vệ dự kiến giữa tháng 12/2026.
 | [docs/huong-dan-test-frontend.md](docs/huong-dan-test-frontend.md) | Giải thích snapshot/cảnh báo/severity/sandbox + các bước nghiệm thu bằng trình duyệt thật |
 | [case-study/vulnshop/SEEDED.md](case-study/vulnshop/SEEDED.md) | Danh mục lỗi gieo có chủ đích + phát hiện ảnh hưởng thiết kế |
 | [docs/deploy-vps.md](docs/deploy-vps.md) | **Triển khai lên VPS** cho tên miền `vsleuth.id.vn`: trạng thái (mục 0), quyết định đã chốt (mục 2), việc còn mở (mục 11). Đọc trước khi đụng vào `infra/docker-compose.vps.yml` hay bất cứ việc gì về deploy |
+| [docs/viec-con-mo.md](docs/viec-con-mo.md) | **Lỗi/việc đã biết nhưng chủ ý để sau** (vd embedding Gemini free hỏng khi run > 100 bằng chứng), kèm nguyên nhân đã xác minh và hướng sửa đã chốt. Đọc trước khi bắt đầu một việc mới |
 | [docs/email.md](docs/email.md) | Gửi thư từ `VSleuth <no-reply@vsleuth.id.vn>` qua **Resend**: bản ghi DNS (SPF/DKIM/DMARC) ở PA Vietnam, cách kiểm thư thật. Đọc trước khi sửa `service/account/*Email*` hay `SmtpAccountMailer` |
 
 Xem `git log` để biết đang dở ở đâu — commit message ghi khá chi tiết lý do.
@@ -574,15 +575,28 @@ Chạy lại analyzer làm `docs/samples/` hiện ra "đã sửa" trong git kể
 ## Quy ước
 
 - **Conventional Commits**, commit nhỏ một mục đích. Nhánh `main` luôn chạy được.
+- **Admin chỉ có MỘT tài khoản, khai bằng `ADMIN_USERNAME`/`ADMIN_PASSWORD` trong `infra/.env*`**
+  (gitignored; KHÔNG ghi giá trị thật vào `.example`, tài liệu, commit hay log — đã có `toString` của
+  `AdminProperties` giấu mật khẩu). `AdminBootstrap` đồng bộ lúc khởi động. Mọi `/api/v1/admin/**` chặn
+  theo ĐƯỜNG DẪN ở `SecurityConfig` (`hasRole("ADMIN")`), không theo annotation từng method. Xoá tài khoản
+  đi qua `ProjectService.deleteWithContents` để dọn MinIO đúng cách; nhãn ground truth người-gán-thứ-hai
+  được GIỮ. Test đổi/tắt admin phải khôi phục lại vì DB test dùng chung (xem `AdminBootstrapTest`).
 - **Không trả entity JPA ra API** — luôn qua DTO.
 - **Schema chỉ đổi qua Flyway**, `ddl-auto: validate`.
 - **Không gọi `fetch` trực tiếp trong component React** — qua `apiClient`.
-- **Giao diện CHỈ có nền tối (từ 19/11/2026), và thang màu Tailwind bị ĐẢO** trong
-  `frontend/src/index.css` (`-50` mang giá trị của `-950`...). Viết màu như đang làm giao diện
-  sáng (`bg-red-50 text-red-700` cho thông báo lỗi) — trên màn hình tự ra đỏ tối + chữ đỏ sáng.
-  Mảng màu ĐẶC có chữ trắng thì dùng token `bg-brand-solid` / `bg-danger-solid`, KHÔNG dùng
-  `bg-brand` hay `bg-red-600` (sẽ ra nền nhạt + chữ trắng, không đọc được). Nền `bg-ink` thì chữ là
-  `text-surface`, không phải `text-white`.
+- **Giao diện CHỈ có nền tối (từ 19/11/2026), kiểu IDE** — token ở `frontend/src/index.css`, xem
+  toàn bộ component ở `/styleguide` (không cần đăng nhập). Màu trạng thái dùng **token ngữ nghĩa**
+  `danger` / `warning` / `success` / `info` (`text-danger`, `bg-danger/10`, `ring-danger/25`), luôn
+  kèm chữ hoặc icon; KHÔNG dùng thẳng `red-*`, `amber-*`... cho trạng thái. Thang màu Tailwind vẫn bị
+  ĐẢO (`-50` mang giá trị `-950`) — chỉ còn để tô màu cú pháp (`tokenClasses.ts`). Mảng màu ĐẶC có chữ
+  trắng dùng `bg-brand-solid` / `bg-danger-solid`, không dùng `bg-brand` (bản sáng, cho chữ/link).
+  Nền `bg-ink` thì chữ là `text-surface`. Icon lấy từ `@/shared/ui/icons` (Lucide, nét 1.5), không
+  import thẳng `lucide-react`; không dùng ký tự biểu tượng (✓ ⚠ →) trong chữ. Đang tải / trống /
+  lỗi dùng `LoadingState` (skeleton theo hình nội dung) / `EmptyState` / `ErrorState` ở
+  `shared/ui/states.tsx`. Đổi màu thì đo lại tương phản WCAG trên cả 4 lớp nền. **Iframe khác
+  origin** (nút đăng nhập Google) phải bọc trong khung `[color-scheme:light]`: trang khai
+  `color-scheme: dark`, chế độ màu của iframe lệch với trang bên trong thì trình duyệt tô nó nền
+  TRẮNG ĐẶC — gặp thật ở nút Google ngay sau khi chuyển sang giao diện tối.
 - **Không nhúng prompt giữa code Python** — để trong `prompts/*.jinja2`, version hoá.
 - **Không gọi LLM thật trong test** — luôn mock.
 - Ba loại verdict của agent: `LIKELY_TRUE_POSITIVE`, `LIKELY_FALSE_POSITIVE`,
