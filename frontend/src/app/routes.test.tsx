@@ -7,7 +7,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { fakeAuthTokens, mockFetchByUrl } from '@/test/mockFetch';
 import { renderRoute } from '@/test/renderRoute';
@@ -89,10 +90,79 @@ describe('định tuyến', () => {
     expect(screen.getByRole('button', { name: /Phiên mới về EV-001A/ })).toBeInTheDocument();
   });
 
-  it('hiển thị tên người dùng và nút đăng xuất khi đã đăng nhập', async () => {
+  it('hiển thị tên người dùng khi đã đăng nhập; đăng xuất nằm trong menu, không bày sẵn', async () => {
     renderRoute('/projects');
 
     expect(await screen.findByText('Nguoi Dung Test')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Đăng xuất' })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Đăng xuất' })).not.toBeInTheDocument();
+  });
+});
+
+describe('menu tài khoản', () => {
+  async function openMenu() {
+    const trigger = await screen.findByRole('button', { name: 'Tài khoản: Nguoi Dung Test' });
+    await userEvent.click(trigger);
+    return trigger;
+  }
+
+  it('bấm vào tên KHÔNG chuyển trang mà mở hai lựa chọn', async () => {
+    const { router } = renderRoute('/projects');
+
+    const trigger = await openMenu();
+
+    expect(router.state.location.pathname).toBe('/projects');
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    const menu = screen.getByRole('menu', { name: 'Tài khoản' });
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent),
+    ).toEqual(['Cài đặt tài khoản', 'Đăng xuất']);
+    // Mở ra thì focus nằm ở mục đầu, bàn phím đi tiếp được ngay.
+    expect(screen.getByRole('menuitem', { name: 'Cài đặt tài khoản' })).toHaveFocus();
+  });
+
+  it('"Cài đặt tài khoản" sang /account và đóng menu', async () => {
+    const { router } = renderRoute('/projects');
+
+    await openMenu();
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Cài đặt tài khoản' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/account'));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('"Đăng xuất" gọi logout và đưa về trang đăng nhập', async () => {
+    const { router } = renderRoute('/projects');
+
+    await openMenu();
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Đăng xuất' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/login'));
+    expect(window.localStorage.getItem(REFRESH_TOKEN_KEY)).toBeNull();
+  });
+
+  it('↓ chuyển mục, Esc đóng menu và trả focus về nút', async () => {
+    renderRoute('/projects');
+
+    const trigger = await openMenu();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'Đăng xuất' })).toHaveFocus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'Cài đặt tài khoản' })).toHaveFocus();
+
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('bấm ra ngoài thì đóng menu', async () => {
+    renderRoute('/projects');
+
+    await openMenu();
+    await userEvent.click(screen.getByRole('heading', { name: 'Dự án' }));
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 });

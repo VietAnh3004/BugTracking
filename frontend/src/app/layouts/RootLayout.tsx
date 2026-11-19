@@ -11,19 +11,19 @@
  * hẳn, còn trang đăng nhập thì không nên giãn ra cả màn hình.
  *
  * Thanh trên cùng `sticky`: các màn hình chính (bảng 34 cảnh báo, file mã nguồn vài trăm dòng)
- * đều dài, và người dùng vẫn cần thấy mình đang ở ứng dụng nào và đăng xuất ở đâu khi đã cuộn sâu.
+ * đều dài, và người dùng vẫn cần thấy mình đang ở ứng dụng nào và đăng xuất ở đâu khi đã cuộn sâu
+ * (đăng xuất và cài đặt tài khoản nằm trong `AccountMenu`, mở khi bấm vào tên).
  */
 
 import { Link, Outlet } from 'react-router-dom';
 
+import { AccountMenu } from '@/features/auth/components/AccountMenu';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { BackendStatus } from '@/features/system/components/BackendStatus';
-import { Avatar } from '@/shared/ui/Avatar';
 import { IconLogo } from '@/shared/ui/icons';
-import { buttonClass } from '@/shared/ui/styles';
 
 export function RootLayout() {
-  const { status, user, signOut } = useAuth();
+  const { status, user } = useAuth();
 
   return (
     <div className="flex min-h-screen flex-col font-sans">
@@ -44,24 +44,8 @@ export function RootLayout() {
           </Link>
 
           {status === 'authenticated' && user !== null ? (
-            <div className="flex shrink-0 items-center gap-3">
-              <Link
-                to="/account"
-                title="Tài khoản"
-                className="hover:bg-surface-sunken flex items-center gap-2 rounded-full py-0.5 pr-2 pl-0.5 md:pr-3"
-              >
-                <Avatar displayName={user.displayName} avatarUrl={user.avatarUrl} />
-                <span className="text-ink hidden text-sm font-medium md:inline">
-                  {user.displayName}
-                </span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => void signOut()}
-                className={buttonClass('secondary', 'sm')}
-              >
-                Đăng xuất
-              </button>
+            <div className="shrink-0">
+              <AccountMenu user={user} />
             </div>
           ) : null}
         </div>
