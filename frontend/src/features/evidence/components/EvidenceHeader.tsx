@@ -18,7 +18,7 @@ export function EvidenceHeader({ evidence, runId }: { evidence: EvidenceDetail; 
   return (
     <header className={`${CARD} p-5 sm:p-6`}>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="bg-ink rounded-md px-2 py-0.5 font-mono text-xs font-semibold text-white">
+        <span className="bg-ink text-surface rounded-md px-2 py-0.5 font-mono text-xs font-semibold">
           {evidence.shortId}
         </span>
         <span className="bg-surface-sunken text-ink-muted rounded-md px-2 py-0.5 font-mono text-[11px]">

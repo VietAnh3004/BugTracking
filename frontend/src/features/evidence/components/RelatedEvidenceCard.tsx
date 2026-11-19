@@ -47,7 +47,7 @@ export function RelatedEvidenceCard({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Link
           to={`/snapshots/${snapshotId}/runs/${runId}/evidence/${item.shortId}`}
-          className="bg-brand-subtle text-brand hover:bg-brand rounded px-1.5 py-0.5 font-mono text-xs font-semibold transition-colors hover:text-white"
+          className="bg-brand-subtle text-brand hover:bg-brand-solid rounded px-1.5 py-0.5 font-mono text-xs font-semibold transition-colors hover:text-white"
         >
           {item.shortId}
         </Link>

@@ -20,10 +20,10 @@ const BUTTON_SIZES = {
 } as const;
 
 const BUTTON_VARIANTS = {
-  primary: 'bg-brand text-white shadow-xs hover:bg-brand-hover',
+  primary: 'bg-brand-solid text-white shadow-xs hover:bg-brand-solid-hover',
   secondary: 'border border-border-strong bg-surface text-ink shadow-xs hover:bg-surface-muted',
   ghost: 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
-  danger: 'bg-red-600 text-white shadow-xs hover:bg-red-700',
+  danger: 'bg-danger-solid text-white shadow-xs hover:bg-danger-solid-hover',
   dangerOutline: 'border border-red-200 bg-surface text-red-700 hover:bg-red-50',
 } as const;
 

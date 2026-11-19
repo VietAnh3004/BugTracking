@@ -577,6 +577,12 @@ Chạy lại analyzer làm `docs/samples/` hiện ra "đã sửa" trong git kể
 - **Không trả entity JPA ra API** — luôn qua DTO.
 - **Schema chỉ đổi qua Flyway**, `ddl-auto: validate`.
 - **Không gọi `fetch` trực tiếp trong component React** — qua `apiClient`.
+- **Giao diện CHỈ có nền tối (từ 19/11/2026), và thang màu Tailwind bị ĐẢO** trong
+  `frontend/src/index.css` (`-50` mang giá trị của `-950`...). Viết màu như đang làm giao diện
+  sáng (`bg-red-50 text-red-700` cho thông báo lỗi) — trên màn hình tự ra đỏ tối + chữ đỏ sáng.
+  Mảng màu ĐẶC có chữ trắng thì dùng token `bg-brand-solid` / `bg-danger-solid`, KHÔNG dùng
+  `bg-brand` hay `bg-red-600` (sẽ ra nền nhạt + chữ trắng, không đọc được). Nền `bg-ink` thì chữ là
+  `text-surface`, không phải `text-white`.
 - **Không nhúng prompt giữa code Python** — để trong `prompts/*.jinja2`, version hoá.
 - **Không gọi LLM thật trong test** — luôn mock.
 - Ba loại verdict của agent: `LIKELY_TRUE_POSITIVE`, `LIKELY_FALSE_POSITIVE`,

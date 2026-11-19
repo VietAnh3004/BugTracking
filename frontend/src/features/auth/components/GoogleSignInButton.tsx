@@ -97,7 +97,8 @@ export function GoogleSignInButton({
         });
         google.accounts.id.renderButton(container.current, {
           type: 'standard',
-          theme: 'outline',
+          // Nút do Google tự vẽ: 'outline' là nút trắng, chói hẳn trên nền tối.
+          theme: 'filled_black',
           size: 'large',
           text,
           shape: 'rectangular',

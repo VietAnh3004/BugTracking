@@ -84,7 +84,7 @@ export function WarningTable({ warnings, snapshotId, runId, reviewByShortId }: W
                 <span className="mt-1.5 flex flex-wrap items-center gap-2">
                   <Link
                     to={`/snapshots/${snapshotId}/runs/${runId}/evidence/${warning.shortId}`}
-                    className="bg-brand-subtle text-brand hover:bg-brand rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold transition-colors hover:text-white"
+                    className="bg-brand-subtle text-brand hover:bg-brand-solid rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold transition-colors hover:text-white"
                     title="Mở Evidence Explorer: ngữ cảnh mã, test liên quan và độ phủ"
                   >
                     {warning.shortId}

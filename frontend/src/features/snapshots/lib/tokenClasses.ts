@@ -3,8 +3,10 @@
  * quét mã nguồn bằng phân tích tĩnh, class ghép động không bao giờ được sinh ra (xem
  * `src/index.css`).
  *
- * Bảng màu nhạt, gần với GitHub: khung xem mã là để ĐỌC bằng chứng, dải vàng tô vùng cảnh báo
- * phải vẫn là thứ nổi nhất trên màn hình — màu cú pháp đậm sẽ tranh mất sự chú ý đó.
+ * Viết theo thang màu của giao diện SÁNG (`text-rose-700`...); `src/index.css` đảo thang cho nền
+ * tối nên trên màn hình chúng ra bản pastel (rose-300...), gần bảng màu tối của GitHub. Khung xem
+ * mã là để ĐỌC bằng chứng: dải tô vùng cảnh báo phải vẫn là thứ nổi nhất trên màn hình — màu cú
+ * pháp chói sẽ tranh mất sự chú ý đó.
  */
 const TOKEN_CLASSES: Record<string, string> = {
   comment: 'text-slate-500 italic',

@@ -122,7 +122,7 @@ export function InfoTip({ label, children }: InfoTipProps) {
               ref={bubbleRef}
               aria-hidden="true"
               style={position === null ? { top: 0, left: 0 } : position}
-              className={`bg-ink pointer-events-none fixed z-50 max-w-72 rounded-lg px-3 py-2 text-left text-xs leading-relaxed font-normal tracking-normal text-white normal-case shadow-lg ${
+              className={`bg-ink text-surface pointer-events-none fixed z-50 max-w-72 rounded-lg px-3 py-2 text-left text-xs leading-relaxed font-normal tracking-normal normal-case shadow-lg ${
                 position === null ? 'invisible' : ''
               }`}
             >

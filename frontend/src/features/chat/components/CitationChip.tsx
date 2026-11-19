@@ -38,7 +38,7 @@ export function CitationChip({ citation, snapshotId, runId }: CitationChipProps)
       <Link
         to={`/snapshots/${snapshotId}/runs/${runId}/evidence/${citation.shortId}`}
         title={explanation}
-        className="bg-brand-subtle text-brand ring-brand/20 hover:bg-brand inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-semibold ring-1 transition-colors ring-inset hover:text-white"
+        className="bg-brand-subtle text-brand ring-brand/20 hover:bg-brand-solid inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-semibold ring-1 transition-colors ring-inset hover:text-white"
       >
         {citation.shortId}
       </Link>

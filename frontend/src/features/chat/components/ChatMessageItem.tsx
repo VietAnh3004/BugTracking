@@ -13,7 +13,7 @@ export function ChatMessageItem({ message, snapshotId, runId }: ChatMessageItemP
   if (message.role === 'USER') {
     return (
       <li className="flex justify-end">
-        <p className="bg-brand m-0 max-w-[85%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm whitespace-pre-wrap text-white shadow-xs">
+        <p className="bg-brand-solid m-0 max-w-[85%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm whitespace-pre-wrap text-white shadow-xs">
           {message.content}
         </p>
       </li>

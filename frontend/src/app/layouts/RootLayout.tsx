@@ -30,7 +30,7 @@ export function RootLayout() {
       <header className="border-border bg-surface/90 sticky top-0 z-30 border-b backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
           <Link to="/projects" className="group flex min-w-0 items-center gap-3">
-            <span className="bg-brand grid size-9 shrink-0 place-items-center rounded-lg text-white shadow-sm">
+            <span className="bg-brand-solid grid size-9 shrink-0 place-items-center rounded-lg text-white shadow-sm">
               <IconLogo className="size-5" />
             </span>
             <span className="min-w-0">
