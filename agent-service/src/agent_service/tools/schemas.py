@@ -37,20 +37,15 @@ GET_WARNING: Final[dict[str, Any]] = {
 GET_CODE_CONTEXT: Final[dict[str, Any]] = {
     "name": "get_code_context",
     "description": (
-        "Lấy đoạn mã nguồn bao quanh vị trí một bằng chứng — thường là method chứa dòng bị "
-        "cảnh báo. Gọi khi cần đọc mã thật để phán đoán cảnh báo đúng hay sai. Trả về mảng "
-        "rỗng nghĩa là KHÔNG có ngữ cảnh mã liên kết được, không phải là mã không tồn tại."
+        "Lấy mã nguồn của method (hoặc lớp) chứa vị trí một bằng chứng — mã nằm ở trường "
+        "`snippet` của từng mục. Gọi khi cần đọc mã thật để phán đoán cảnh báo đúng hay sai: "
+        "đọc `snippet` để biết giá trị đi vào đâu, dùng cho việc gì. Trả về mảng rỗng nghĩa là "
+        "KHÔNG có ngữ cảnh mã liên kết được, không phải là mã không tồn tại."
     ),
     "input_schema": {
         "type": "object",
         "properties": {
             "evidence_id": {"type": "string", "description": "Evidence ID dạng EV-XXXX."},
-            "context_lines": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 50,
-                "description": "Số dòng mở rộng thêm mỗi phía. Mặc định 5.",
-            },
         },
         "required": ["evidence_id"],
     },

@@ -110,8 +110,10 @@ public class EvidenceQueryService {
      *       vì sao.
      * </ul>
      *
-     * <p>{@code contextLines} giữ lại trong chữ ký tool: nó thuộc hợp đồng JSON Schema mà
-     * agent-service đã sinh ra, và đổi chữ ký tool là một breaking change theo ADR 0005.
+     * <p>Mã trả về là {@code content.snippet} đã lưu lúc trích CODE_CONTEXT: nguyên method (hoặc lớp)
+     * chứa dòng bị cảnh báo, không phải "N dòng quanh dòng đó". {@code contextLines} vì vậy KHÔNG có
+     * tác dụng — chỉ còn trong chữ ký để request cũ vẫn hợp lệ (đổi chữ ký là breaking change theo
+     * ADR 0005); agent-service đã bỏ nó khỏi JSON Schema gửi cho model.
      */
     public List<ToolEvidenceItem> getCodeContext(UUID runId, String shortId, int contextLines) {
         ensureRunQueryable(runId);
@@ -258,6 +260,29 @@ public class EvidenceQueryService {
         return link.getFromEvidenceId().equals(anchorId) ? link.getToEvidenceId() : link.getFromEvidenceId();
     }
 
+    /** Trần ký tự của mã trả cho model: ngân sách bằng chứng của cả phiên chỉ ~12000 ký tự. */
+    static final int MAX_SNIPPET_CHARS = 3000;
+
+    /**
+     * Mã nguồn của một bằng chứng CODE_CONTEXT, cắt ở ranh giới dòng nếu quá dài. Cắt thì NÓI RA — cắt
+     * im lặng khiến model tưởng đã đọc hết method và kết luận trên nửa thân hàm.
+     */
+    static String snippetOf(EvidenceRecord record) {
+        if (record.getType() != EvidenceType.CODE_CONTEXT || record.getContent() == null) {
+            return null;
+        }
+        Object raw = record.getContent().get("snippet");
+        if (!(raw instanceof String snippet) || snippet.isBlank()) {
+            return null;
+        }
+        if (snippet.length() <= MAX_SNIPPET_CHARS) {
+            return snippet;
+        }
+        int cut = snippet.lastIndexOf('\n', MAX_SNIPPET_CHARS);
+        String head = snippet.substring(0, cut > 0 ? cut : MAX_SNIPPET_CHARS);
+        return head + "\n// … (đã cắt bớt: đoạn mã dài " + snippet.length() + " ký tự, chỉ hiện phần đầu)";
+    }
+
     private ToolEvidenceItem toItem(EvidenceRecord record, EvidenceLinkRelation relation, EvidenceLink link) {
         return new ToolEvidenceItem(
                 record.getShortId(),
@@ -268,7 +293,8 @@ public class EvidenceQueryService {
                 record.getSymbol(),
                 relation,
                 link == null ? null : link.getMethod(),
-                link == null ? 0.0 : link.getWeight().doubleValue());
+                link == null ? 0.0 : link.getWeight().doubleValue(),
+                snippetOf(record));
     }
 
     /**

@@ -289,6 +289,13 @@ public class TestFixtures {
         return evidenceRecordRepository.saveAndFlush(record);
     }
 
+    /** Bằng chứng CODE_CONTEXT có mã thật — đúng dạng {@code CodeContextExtractor} lưu ở {@code content}. */
+    public EvidenceRecord codeContext(AnalysisRun run, String filePath, int startLine, String snippet) {
+        EvidenceRecord record = evidenceRecord(run, EvidenceType.CODE_CONTEXT, EvidenceSource.parser, filePath, startLine);
+        record.setContent(Map.of("kind", "METHOD", "snippet", snippet, "context_start_line", startLine));
+        return evidenceRecordRepository.saveAndFlush(record);
+    }
+
     /**
      * Tạo evidence_record + warning mở rộng 1:1 trong một lời gọi — trường hợp dùng phổ biến nhất.
      *

@@ -1,5 +1,6 @@
 package vn.hust.datn.evidence.dto.tool;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
@@ -15,6 +16,11 @@ import vn.hust.datn.evidence.domain.EvidenceType;
  * có stack frame production. Thiếu hai trường này, LLM không phân biệt được bằng chứng mạnh/yếu,
  * và tuần 15 không đo được "bao nhiêu % link chỉ dựa vào quy ước tên".
  *
+ * <p>{@code snippet} là MÃ NGUỒN của bằng chứng {@code CODE_CONTEXT} (thân method/lớp chứa dòng bị cảnh
+ * báo). Thiếu nó thì {@code get_code_context} chỉ trả về một dòng tóm tắt "dòng 38-45" và agent không
+ * bao giờ đọc được mã — lỗi này từng khiến agent kết luận trên mã nó chưa hề thấy. Chỉ có ở item
+ * CODE_CONTEXT; các loại khác để null và KHÔNG xuất hiện trong JSON (không tốn token vô ích).
+ *
  * <p>snake_case vì đây là payload tool — LLM sinh/đọc theo quy ước đó (ADR 0005), forward nguyên
  * văn không dịch tên trường.
  */
@@ -28,4 +34,5 @@ public record ToolEvidenceItem(
         String symbol,
         EvidenceLinkRelation relation,
         EvidenceLinkMethod method,
-        double weight) {}
+        double weight,
+        @JsonInclude(JsonInclude.Include.NON_NULL) String snippet) {}

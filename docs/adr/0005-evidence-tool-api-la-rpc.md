@@ -78,3 +78,28 @@ Forward JWT sẽ vỡ ở đúng thực nghiệm cốt lõi của đồ án (§6
   `EvidenceWrongRunException`, `EvidenceNotAWarningException`, `RunNotQueryableException`), ánh xạ
   1-1 với `ClaimCitationResolution` đã có từ ADR 0004 — CitationValidator tuần 12-13 dùng lại
   nguyên xi, không phải thiết kế lại phân loại lỗi.
+
+## Bổ sung 19/11/2026 — `get_code_context` phải trả MÃ, và bỏ `context_lines`
+
+**Lỗi phát hiện.** Tool được mô tả là "lấy đoạn mã nguồn", system prompt bảo agent "đọc mã bằng
+`get_code_context`", nhưng `ToolEvidenceItem` không có trường nào chứa mã: item CODE_CONTEXT chỉ có
+`summary` kiểu "dòng 38-45", dù `evidence_record.content.snippet` đã lưu sẵn thân method. Agent gọi tool
+nhiều lần, lần nào cũng không thấy mã, cạn ngân sách vòng truy xuất rồi kết luận dựa vào tên lớp và mức
+nghiêm trọng. Ví dụ: cảnh báo `WEAK_MESSAGE_DIGEST_MD5` ở `checksumForDeduplication` (MD5 băm nội dung
+tệp, false positive) bị kết luận "lỗi thật" y như ca băm mật khẩu.
+
+**Quyết định.**
+
+1. Thêm trường `snippet` vào `ToolEvidenceItem` — chỉ có ở item `CODE_CONTEXT` (lấy từ
+   `content.snippet`), vắng mặt trong JSON ở các loại khác (`@JsonInclude(NON_NULL)`). Thêm trường là
+   thay đổi tương thích ngược, không phải breaking change.
+2. Mã dài quá 3000 ký tự thì cắt ở ranh giới dòng và **ghi rõ đã cắt** (ngân sách bằng chứng của cả
+   phiên chỉ ~12000 ký tự; cắt im lặng khiến model tưởng đã đọc hết method).
+3. `context_lines` **bỏ khỏi JSON Schema gửi cho model**: mã trả về là nguyên method/lớp chứa dòng bị
+   cảnh báo, không phải "N dòng quanh dòng đó", nên tham số này không có tác dụng và chỉ mời model gọi
+   lại vô ích. Backend vẫn chấp nhận trường này (bị bỏ qua) để request cũ không vỡ.
+
+**Hệ quả cho thực nghiệm.** Mọi lượt hỏi Agent chạy TRƯỚC thay đổi này đã trả lời khi không thấy mã
+nguồn, nên số liệu của chúng (Evidence Citation Accuracy, tỉ lệ kết luận đúng) không so sánh trực tiếp
+được với số liệu sau thay đổi; cần chạy lại trước khi đưa vào chương 4. Prompt version vẫn `v1` vì
+prompt không đổi — cột `llm_trace.created_at` là mốc phân biệt hai giai đoạn.

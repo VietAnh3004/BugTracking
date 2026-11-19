@@ -204,6 +204,47 @@ class EvidenceToolControllerTest extends AbstractWebIntegrationTest {
     }
 
     /**
+     * Lỗi gốc: {@code get_code_context} chỉ trả dòng tóm tắt "dòng 38-45", không có mã. Agent gọi đi gọi
+     * lại, không bao giờ đọc được thân hàm, và kết luận một cảnh báo MD5 "dùng để khử trùng tệp" là lỗi
+     * thật. Test này khoá hợp đồng: item CODE_CONTEXT PHẢI mang mã thật; các loại khác không có trường
+     * `snippet`.
+     */
+    @Test
+    void getCodeContext_traVeMaNguonThatTrongTruongSnippet() throws Exception {
+        Project project = fixtures.project("p-" + System.nanoTime());
+        RepositorySnapshot snapshot = fixtures.snapshot(project);
+        AnalysisRun run = fixtures.succeededRun(snapshot, 1);
+        Warning warning = fixtures.warning(run, "WEAK_MESSAGE_DIGEST_MD5", WarningTool.spotbugs, "PasswordHasher.java", 40);
+        String code = "public String checksumForDeduplication(byte[] fileContent) {\n"
+                + "    MessageDigest digest = MessageDigest.getInstance(\"MD5\");\n"
+                + "    return HexFormat.of().formatHex(digest.digest(fileContent));\n}";
+        EvidenceRecord context = fixtures.codeContext(run, "PasswordHasher.java", 38, code);
+        EvidenceRecord test = fixtures.evidenceRecord(
+                run, EvidenceType.FAILED_TEST, EvidenceSource.surefire, "PasswordHasherTest.java", 20);
+        fixtures.link(
+                warning.getEvidenceRecord(), context, EvidenceLinkRelation.LOCATED_IN, EvidenceLinkMethod.LINE_EXACT, 1.0);
+        fixtures.link(
+                test, warning.getEvidenceRecord(), EvidenceLinkRelation.SUPPORTS, EvidenceLinkMethod.STACK_FRAME, 1.0);
+
+        String body =
+                """
+                {"analysis_run_id": "%s", "evidence_id": "%s"}
+                """
+                        .formatted(run.getId(), warning.getEvidenceRecord().getShortId());
+
+        getMockMvc()
+                .perform(post("/api/v1/tools/get_code_context").contentType(MediaType.APPLICATION_JSON).content(body).with(serviceToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].type").value("CODE_CONTEXT"))
+                .andExpect(jsonPath("$.items[0].snippet").value(code));
+        // Loại khác không mang trường snippet (không tốn token vô ích).
+        getMockMvc()
+                .perform(post("/api/v1/tools/get_related_tests").contentType(MediaType.APPLICATION_JSON).content(body).with(serviceToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].snippet").doesNotExist());
+    }
+
+    /**
      * Ba tool này rỗng suốt từ tuần 4 tới hết tuần 8-9 vì {@code evidence_link} chưa có writer nào.
      * Từ tuần 10-11 chúng phải trả DỮ LIỆU THẬT — đó là tiền đề của agent loop ở tuần 12-13.
      *
