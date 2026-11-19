@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import vn.hust.datn.evidence.domain.Conversation;
+import vn.hust.datn.evidence.domain.ProjectTier;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -16,15 +17,20 @@ public record ConversationResponse(
                 String focusShortId,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String title,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) OffsetDateTime createdAt,
-        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) OffsetDateTime updatedAt) {
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) OffsetDateTime updatedAt,
+        @Schema(
+                        requiredMode = Schema.RequiredMode.REQUIRED,
+                        description = "Hạng của dự án chứa hội thoại; PREMIUM thì giao diện cho chọn model từng câu")
+                ProjectTier projectTier) {
 
-    public static ConversationResponse from(Conversation conversation) {
+    public static ConversationResponse from(Conversation conversation, ProjectTier projectTier) {
         return new ConversationResponse(
                 conversation.getId(),
                 conversation.getAnalysisRunId(),
                 conversation.getFocusShortId(),
                 conversation.getTitle(),
                 conversation.getCreatedAt(),
-                conversation.getUpdatedAt());
+                conversation.getUpdatedAt(),
+                projectTier);
     }
 }

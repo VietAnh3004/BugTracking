@@ -91,7 +91,7 @@ async def test_loi_cua_google_doc_duoc() -> None:
 
 def _client(settings: Settings, embedder: GeminiEmbedder | None) -> TestClient:
     app.state.settings = settings
-    app.state.provider = ScriptedProvider([])
+    app.state.providers = {"free": ScriptedProvider([])}
     app.state.tool_client = EvidenceToolClient(settings)
     app.state.embedder = embedder
     return TestClient(app)

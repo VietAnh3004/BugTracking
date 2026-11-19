@@ -147,6 +147,12 @@ services:
       # Chỉ LLM_PROVIDER=openai đọc: trỏ sang API tương thích OpenAI (Gemini, Groq, Ollama…).
       LLM_BASE_URL: ${LLM_BASE_URL:-}
       LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-2}
+      # Model Premium cho dự án được admin nâng hạng. Thiếu PREMIUM_LLM_API_KEY = tier premium tắt
+      # (hỏi Premium báo lỗi rõ ràng, không rơi về model free).
+      PREMIUM_LLM_PROVIDER: ${PREMIUM_LLM_PROVIDER:-anthropic}
+      PREMIUM_LLM_API_KEY: ${PREMIUM_LLM_API_KEY:-}
+      PREMIUM_LLM_MODEL: ${PREMIUM_LLM_MODEL:-claude-sonnet-5}
+      PREMIUM_LLM_BASE_URL: ${PREMIUM_LLM_BASE_URL:-}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-none}
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
       # Đi thẳng vào llm_trace.prompt_version. Đổi prompt mà quên tăng số này thì kết quả của

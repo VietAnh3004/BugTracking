@@ -1149,6 +1149,63 @@
         }
       }
     },
+    "/api/v1/conversations/{conversationId}" : {
+      "delete" : {
+        "tags" : [ "conversations" ],
+        "summary" : "Xoá một phiên hỏi đáp (ẩn khỏi người dùng, dữ liệu thực nghiệm được giữ)",
+        "operationId" : "delete_1",
+        "parameters" : [ {
+          "name" : "conversationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "conversations" ],
+        "summary" : "Đổi tên một phiên hỏi đáp",
+        "operationId" : "rename",
+        "parameters" : [ {
+          "name" : "conversationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RenameConversationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConversationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/me" : {
       "get" : {
         "tags" : [ "auth" ],
@@ -1186,6 +1243,43 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/projects/{id}" : {
+      "patch" : {
+        "tags" : [ "admin-controller" ],
+        "operationId" : "changeProjectTier",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateProjectTierRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminProjectView"
                 }
               }
             }
@@ -1328,7 +1422,7 @@
       },
       "delete" : {
         "tags" : [ "projects" ],
-        "operationId" : "delete_1",
+        "operationId" : "delete_2",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -1689,6 +1783,35 @@
                   "type" : "array",
                   "items" : {
                     "$ref" : "#/components/schemas/AdminUserView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/projects" : {
+      "get" : {
+        "tags" : [ "admin-controller" ],
+        "operationId" : "listProjects",
+        "parameters" : [ {
+          "name" : "q",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminProjectView"
                   }
                 }
               }
@@ -2058,6 +2181,9 @@
           "weight" : {
             "type" : "number",
             "format" : "double"
+          },
+          "snippet" : {
+            "type" : "string"
           }
         }
       },
@@ -2230,9 +2356,14 @@
             "type" : "string",
             "description" : "Vai trò của NGƯỜI ĐANG GỌI với dự án này: OWNER (chủ) hoặc MEMBER (được chia sẻ)",
             "enum" : [ "OWNER", "MEMBER" ]
+          },
+          "tier" : {
+            "type" : "string",
+            "description" : "Hạng dự án: FREE (chỉ model miễn phí) hoặc PREMIUM (chọn được model Premium)",
+            "enum" : [ "FREE", "PREMIUM" ]
           }
         },
-        "required" : [ "createdAt", "id", "name", "role", "updatedAt" ]
+        "required" : [ "createdAt", "id", "name", "role", "tier", "updatedAt" ]
       },
       "SnapshotResponse" : {
         "type" : "object",
@@ -2313,6 +2444,11 @@
             "type" : "string",
             "maxLength" : 4000,
             "minLength" : 0
+          },
+          "model" : {
+            "type" : "string",
+            "description" : "Model trả lời câu này; bỏ trống = FREE. PREMIUM chỉ hợp lệ trong dự án Premium, nếu không backend trả 403",
+            "enum" : [ "FREE", "PREMIUM" ]
           }
         },
         "required" : [ "question" ]
@@ -2592,9 +2728,26 @@
           "updatedAt" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "projectTier" : {
+            "type" : "string",
+            "description" : "Hạng của dự án chứa hội thoại; PREMIUM thì giao diện cho chọn model từng câu",
+            "enum" : [ "FREE", "PREMIUM" ]
           }
         },
-        "required" : [ "analysisRunId", "createdAt", "id", "title", "updatedAt" ]
+        "required" : [ "analysisRunId", "createdAt", "id", "projectTier", "title", "updatedAt" ]
+      },
+      "RenameConversationRequest" : {
+        "type" : "object",
+        "description" : "Tên mới của phiên hỏi đáp",
+        "properties" : {
+          "title" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "title" ]
       },
       "UpdateProfileRequest" : {
         "type" : "object",
@@ -2606,6 +2759,59 @@
           }
         },
         "required" : [ "displayName" ]
+      },
+      "UpdateProjectTierRequest" : {
+        "type" : "object",
+        "properties" : {
+          "tier" : {
+            "type" : "string",
+            "enum" : [ "FREE", "PREMIUM" ]
+          }
+        },
+        "required" : [ "tier" ]
+      },
+      "AdminProjectView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "tier" : {
+            "type" : "string",
+            "enum" : [ "FREE", "PREMIUM" ]
+          },
+          "ownerId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "ownerEmail" : {
+            "type" : "string"
+          },
+          "ownerDisplayName" : {
+            "type" : "string"
+          },
+          "memberCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "snapshotCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "conversationCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "conversationCount", "createdAt", "id", "memberCount", "name", "ownerDisplayName", "ownerEmail", "ownerId", "snapshotCount", "tier" ]
       },
       "SnapshotFileResponse" : {
         "type" : "object",
@@ -2822,6 +3028,10 @@
           "createdAt" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "model" : {
+            "type" : "string",
+            "description" : "Model đã trả lời; chỉ có ở lượt của Agent"
           }
         },
         "required" : [ "claims", "content", "contradictingShortIds", "createdAt", "id", "ordinal", "role", "suggestedNextChecks" ]

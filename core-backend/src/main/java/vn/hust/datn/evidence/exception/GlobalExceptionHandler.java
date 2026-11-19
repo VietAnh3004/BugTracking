@@ -127,6 +127,12 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT, "admin-action-not-allowed", "Thao tác quản trị không được phép", ex.getMessage(), request);
     }
 
+    @ExceptionHandler(PremiumModelNotAllowedException.class)
+    public ProblemDetail handlePremiumModelNotAllowed(PremiumModelNotAllowedException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.FORBIDDEN, "premium-model-not-allowed", "Không được dùng model Premium", ex.getMessage(), request);
+    }
+
     @ExceptionHandler(EmailAlreadyUsedException.class)
     public ProblemDetail handleEmailAlreadyUsed(EmailAlreadyUsedException ex, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "email-already-used", "Email đã được đăng ký", ex.getMessage(), request);

@@ -16,20 +16,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import vn.hust.datn.evidence.domain.AgentModel;
 import vn.hust.datn.evidence.domain.Claim;
 import vn.hust.datn.evidence.domain.ClaimCitation;
 import vn.hust.datn.evidence.domain.Conversation;
 import vn.hust.datn.evidence.domain.Message;
 import vn.hust.datn.evidence.domain.MessageRole;
+import vn.hust.datn.evidence.domain.ProjectTier;
 import vn.hust.datn.evidence.dto.ChatMessageResponse;
 import vn.hust.datn.evidence.dto.ConversationResponse;
 import vn.hust.datn.evidence.dto.CreateConversationRequest;
 import vn.hust.datn.evidence.exception.AgentUnavailableException;
+import vn.hust.datn.evidence.exception.PremiumModelNotAllowedException;
 import vn.hust.datn.evidence.exception.ResourceNotFoundException;
 import vn.hust.datn.evidence.repository.ClaimCitationRepository;
 import vn.hust.datn.evidence.repository.ClaimRepository;
 import vn.hust.datn.evidence.repository.ConversationRepository;
 import vn.hust.datn.evidence.repository.MessageRepository;
+import vn.hust.datn.evidence.repository.ProjectRepository;
 import vn.hust.datn.evidence.service.agent.AgentAnswer;
 import vn.hust.datn.evidence.service.agent.AgentClient;
 import vn.hust.datn.evidence.service.citation.AnswerDraft;
@@ -60,6 +64,7 @@ public class ConversationService {
     private final ClaimCitationRepository claimCitationRepository;
     private final ConversationPersistenceService persistence;
     private final EvidenceQueryService evidenceQueryService;
+    private final ProjectRepository projectRepository;
     private final AgentClient agentClient;
     private final CitationValidator citationValidator;
     private final Executor agentExecutor;
@@ -81,6 +86,7 @@ public class ConversationService {
             ClaimCitationRepository claimCitationRepository,
             ConversationPersistenceService persistence,
             EvidenceQueryService evidenceQueryService,
+            ProjectRepository projectRepository,
             AgentClient agentClient,
             CitationValidator citationValidator,
             @Qualifier("agentExecutor") Executor agentExecutor) {
@@ -90,6 +96,7 @@ public class ConversationService {
         this.claimCitationRepository = claimCitationRepository;
         this.persistence = persistence;
         this.evidenceQueryService = evidenceQueryService;
+        this.projectRepository = projectRepository;
         this.agentClient = agentClient;
         this.citationValidator = citationValidator;
         this.agentExecutor = agentExecutor;
@@ -119,15 +126,43 @@ public class ConversationService {
         conversation.setTitle(title(request.title(), focus));
         conversation.setCreatedAt(now);
         conversation.setUpdatedAt(now);
-        return ConversationResponse.from(conversationRepository.save(conversation));
+        return ConversationResponse.from(conversationRepository.save(conversation), tierOf(runId));
     }
 
     @Transactional(readOnly = true)
     public List<ConversationResponse> list(UUID runId, UUID ownerId) {
         evidenceQueryService.requireRunReadableBy(runId, ownerId);
-        return conversationRepository.findByAnalysisRunIdAndOwnerIdOrderByUpdatedAtDesc(runId, ownerId).stream()
-                .map(ConversationResponse::from)
+        ProjectTier tier = tierOf(runId);
+        return conversationRepository.findByAnalysisRunIdAndOwnerIdAndDeletedAtIsNullOrderByUpdatedAtDesc(runId, ownerId).stream()
+                .map(conversation -> ConversationResponse.from(conversation, tier))
                 .toList();
+    }
+
+    /**
+     * Đổi tên phiên. Không đụng {@code updatedAt}: danh sách sắp theo lần hoạt động gần nhất, mà đổi
+     * tên không phải hoạt động hỏi đáp — nếu nhảy lên đầu thì phiên vừa sửa tên "nhảy" khỏi chỗ cũ.
+     */
+    @Transactional
+    public ConversationResponse rename(UUID conversationId, UUID ownerId, String title) {
+        Conversation conversation = requireOwned(conversationId, ownerId);
+        conversation.setTitle(title.strip());
+        return ConversationResponse.from(conversationRepository.save(conversation), tierOf(conversation.getAnalysisRunId()));
+    }
+
+    /**
+     * Xoá phiên = ẨN (V15), giữ nguyên dữ liệu để đo thực nghiệm. Lượt đang chạy bị huỷ trước: nếu
+     * không, câu trả lời của nó vẫn được ghi vào một phiên người dùng đã thấy biến mất.
+     */
+    @Transactional
+    public void delete(UUID conversationId, UUID ownerId) {
+        Conversation conversation = requireOwned(conversationId, ownerId);
+        ActiveTurn turn = activeTurns.get(conversationId);
+        if (turn != null) {
+            turn.cancel();
+        }
+        conversation.setDeletedAt(OffsetDateTime.now());
+        conversationRepository.save(conversation);
+        log.info("nguoi dung {} xoa (an) hoi thoai {}", ownerId, conversationId);
     }
 
     @Transactional(readOnly = true)
@@ -145,7 +180,20 @@ public class ConversationService {
      * giây sẽ làm cạn pool luồng của Tomcat trước khi cạn bất cứ thứ gì khác.
      */
     public SseEmitter ask(UUID conversationId, UUID ownerId, String question) {
+        return ask(conversationId, ownerId, question, AgentModel.FREE);
+    }
+
+    /**
+     * @param model model người dùng chọn cho câu này; null = FREE. PREMIUM mà dự án chưa Premium thì
+     *     ném {@link PremiumModelNotAllowedException} (403) TRƯỚC khi mở luồng SSE và trước khi ghi
+     *     câu hỏi — hạng đọc lại ở mỗi câu nên admin hạ hạng là có hiệu lực ngay.
+     */
+    public SseEmitter ask(UUID conversationId, UUID ownerId, String question, AgentModel model) {
         Conversation conversation = requireOwned(conversationId, ownerId);
+        AgentModel chosen = model == null ? AgentModel.FREE : model;
+        if (chosen == AgentModel.PREMIUM && tierOf(conversation.getAnalysisRunId()) != ProjectTier.PREMIUM) {
+            throw new PremiumModelNotAllowedException();
+        }
         List<Map<String, String>> history = historyOf(conversation.getId());
         persistence.appendUserMessage(conversation.getId(), question);
 
@@ -163,7 +211,7 @@ public class ConversationService {
         // Trình duyệt ngắt kết nối (đóng tab, rời trang) mà container phát hiện được: huỷ luôn.
         emitter.onError(error -> turn.cancel());
 
-        agentExecutor.execute(() -> stream(emitter, conversation, question, history, turn));
+        agentExecutor.execute(() -> stream(emitter, conversation, question, history, chosen, turn));
         return emitter;
     }
 
@@ -185,12 +233,13 @@ public class ConversationService {
             Conversation conversation,
             String question,
             List<Map<String, String>> history,
+            AgentModel model,
             ActiveTurn turn) {
         List<AgentAnswer.Trace> traces = new ArrayList<>();
         try {
             agentClient.analyze(
                     AgentClient.AnalyzeRequest.of(
-                            conversation.getAnalysisRunId(), question, conversation.getFocusShortId(), history),
+                            conversation.getAnalysisRunId(), question, conversation.getFocusShortId(), history, model),
                     event -> handle(emitter, conversation, traces, event, turn),
                     turn::attach);
             emitter.complete();
@@ -353,8 +402,13 @@ public class ConversationService {
 
     private Conversation requireOwned(UUID conversationId, UUID ownerId) {
         return conversationRepository
-                .findByIdAndOwnerId(conversationId, ownerId)
+                .findByIdAndOwnerIdAndDeletedAtIsNull(conversationId, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("conversation", conversationId));
+    }
+
+    /** Hạng dự án chứa run; run không có dự án (không xảy ra) coi là FREE — hướng an toàn. */
+    private ProjectTier tierOf(UUID runId) {
+        return projectRepository.findTierByRunId(runId).orElse(ProjectTier.FREE);
     }
 
     /** Lịch sử gửi cho agent: chỉ vai và nội dung, không kèm nhận định hay trích dẫn. */
@@ -376,7 +430,8 @@ public class ConversationService {
                     List.of(),
                     List.of(),
                     List.of(),
-                    message.getCreatedAt());
+                    message.getCreatedAt(),
+                    null);
         }
 
         List<ChatMessageResponse.ClaimView> claims = claimRepository.findByMessageIdOrderByOrdinal(message.getId()).stream()
@@ -393,7 +448,8 @@ public class ConversationService {
                 message.getSuggestedNextChecks(),
                 message.getContradictingShortIds(),
                 claims,
-                message.getCreatedAt());
+                message.getCreatedAt(),
+                message.getModel());
     }
 
     private ChatMessageResponse.ClaimView toClaimView(Claim claim) {

@@ -12,6 +12,7 @@ import { SnapshotList } from '@/features/snapshots/components/SnapshotList';
 import { UploadZone } from '@/features/snapshots/components/UploadZone';
 import { InfoTip } from '@/shared/ui/InfoTip';
 import { PageHeader } from '@/shared/ui/PageHeader';
+import { StatusBadge } from '@/shared/ui/StatusBadge';
 import { CARD } from '@/shared/ui/styles';
 
 export function ProjectDetailPage() {
@@ -39,6 +40,9 @@ function ProjectDetail({ projectId }: { projectId: string }) {
         description={
           project.data?.description ??
           'Chọn một snapshot để duyệt mã nguồn, chạy phân tích và xem cảnh báo.'
+        }
+        meta={
+          project.data?.tier === 'PREMIUM' ? <StatusBadge tone="ok" label="Premium" /> : undefined
         }
       />
 

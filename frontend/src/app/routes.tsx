@@ -26,6 +26,7 @@ import { NarrowContent } from '@/app/layouts/NarrowContent';
 import { RootLayout } from '@/app/layouts/RootLayout';
 import { WideContent } from '@/app/layouts/WideContent';
 import { AdminLoginPage } from '@/features/admin/pages/AdminLoginPage';
+import { AdminProjectsPage } from '@/features/admin/pages/AdminProjectsPage';
 import { AdminUsersPage } from '@/features/admin/pages/AdminUsersPage';
 import { AdminRoute } from '@/features/auth/components/AdminRoute';
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
@@ -85,7 +86,10 @@ export const routes: RouteObject[] = [
         children: [
           {
             element: <WideContent />,
-            children: [{ path: 'admin', element: <AdminUsersPage /> }],
+            children: [
+              { path: 'admin', element: <AdminUsersPage /> },
+              { path: 'admin/projects', element: <AdminProjectsPage /> },
+            ],
           },
         ],
       },

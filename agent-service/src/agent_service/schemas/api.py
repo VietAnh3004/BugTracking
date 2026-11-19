@@ -29,6 +29,9 @@ class AnalyzeRequest(BaseModel):
     # Cảnh báo đang bàn tới. Không bắt buộc: người dùng hỏi được ở phạm vi cả run.
     focus_short_id: str | None = None
     history: list[HistoryTurn] = Field(default_factory=list)
+    # Model nào trả lời lượt này. core-backend đã kiểm quyền của dự án trước khi gửi; mặc định
+    # "free" để request cũ (không có trường này) vẫn chạy như trước.
+    model_tier: Literal["free", "premium"] = "free"
 
 
 class EmbedRequest(BaseModel):

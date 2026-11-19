@@ -66,6 +66,11 @@ export function ProjectList() {
                 {project.name}
                 <IconArrowRight className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
               </Link>
+              {project.tier === 'PREMIUM' ? (
+                <span className="ml-2 align-middle">
+                  <StatusBadge tone="ok" label="Premium" />
+                </span>
+              ) : null}
               {project.description ? (
                 <p className="text-ink-muted mt-0.5 mb-0 text-sm">{project.description}</p>
               ) : null}

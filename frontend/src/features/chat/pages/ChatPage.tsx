@@ -3,13 +3,15 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { AgentProgress } from '@/features/chat/components/AgentProgress';
 import { ChatMessageItem } from '@/features/chat/components/ChatMessageItem';
+import { ConversationPanel } from '@/features/chat/components/ConversationPanel';
+import type { AgentModel } from '@/features/chat/api/chatApi';
 import { useAskAgent } from '@/features/chat/hooks/useAskAgent';
 import {
   useConversations,
   useCreateConversation,
   useMessages,
 } from '@/features/chat/hooks/useConversation';
-import { IconArrowLeft, IconChat } from '@/shared/ui/icons';
+import { IconArrowLeft, IconChat, IconEdit, IconTrash } from '@/shared/ui/icons';
 import { buttonClass, CARD, INPUT } from '@/shared/ui/styles';
 import { EmptyState, ErrorState, LoadingState } from '@/shared/ui/states';
 
@@ -34,16 +36,37 @@ export function ChatPage() {
   const { ask, stop, steps, isStreaming, stopped, error } = useAskAgent(selectedId);
 
   const [draft, setDraft] = useState('');
+  // Khung đổi tên / xoá đang mở (nếu có) cho phiên đang chọn.
+  const [panel, setPanel] = useState<'rename' | 'delete' | null>(null);
+  // Mặc định model miễn phí: Premium tốn tiền thật nên phải là lựa chọn chủ động của người dùng.
+  const [model, setModel] = useState<AgentModel>('FREE');
+  // Hạng của dự án chứa phiên đang mở. Chỉ dự án PREMIUM mới có ô chọn; backend vẫn kiểm lại.
+  const canChooseModel =
+    conversations.data?.find((conversation) => conversation.id === selectedId)?.projectTier ===
+    'PREMIUM';
   const bottom = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.data, steps]);
 
+  const selectedConversation = (conversations.data ?? []).find(
+    (conversation) => conversation.id === selectedId,
+  );
+
   function selectConversation(id: string): void {
     const next = new URLSearchParams(searchParams);
     next.set('conversation', id);
     setSearchParams(next, { replace: true });
+    // Khung đang mở là của phiên cũ: đóng đi để không đổi tên/xoá nhầm phiên khác.
+    setPanel(null);
+  }
+
+  function clearSelection(): void {
+    const next = new URLSearchParams(searchParams);
+    next.delete('conversation');
+    setSearchParams(next, { replace: true });
+    setPanel(null);
   }
 
   async function startConversation(): Promise<void> {
@@ -58,7 +81,8 @@ export function ChatPage() {
       return;
     }
     setDraft('');
-    await ask(question);
+    // Dự án Free không gửi trường model (backend mặc định FREE) dù state có đang là PREMIUM.
+    await ask(question, canChooseModel ? model : undefined);
   }
 
   return (
@@ -96,6 +120,27 @@ export function ChatPage() {
                 </option>
               ))}
             </select>
+            {/* Đang chờ câu trả lời thì khoá: xoá giữa chừng làm câu trả lời rơi vào phiên đã biến mất. */}
+            <button
+              type="button"
+              aria-label="Đổi tên phiên"
+              title={isStreaming ? 'Bấm Dừng trước khi đổi tên phiên' : 'Đổi tên phiên'}
+              disabled={selectedConversation === undefined || isStreaming}
+              onClick={() => setPanel(panel === 'rename' ? null : 'rename')}
+              className={buttonClass('secondary')}
+            >
+              <IconEdit />
+            </button>
+            <button
+              type="button"
+              aria-label="Xoá phiên này"
+              title={isStreaming ? 'Bấm Dừng trước khi xoá phiên' : 'Xoá phiên'}
+              disabled={selectedConversation === undefined || isStreaming}
+              onClick={() => setPanel(panel === 'delete' ? null : 'delete')}
+              className={buttonClass('dangerOutline')}
+            >
+              <IconTrash />
+            </button>
             <button
               type="button"
               onClick={() => void startConversation()}
@@ -107,6 +152,18 @@ export function ChatPage() {
           </div>
         </div>
       </header>
+
+      {panel !== null && selectedConversation !== undefined ? (
+        <ConversationPanel
+          // key theo phiên + chế độ: chuyển phiên hay chế độ thì khởi tạo lại ô nhập, không giữ tên cũ.
+          key={`${panel}-${selectedConversation.id}`}
+          mode={panel}
+          conversation={selectedConversation}
+          runId={runId}
+          onClose={() => setPanel(null)}
+          onDeleted={clearSelection}
+        />
+      ) : null}
 
       <div className={`${CARD} bg-surface-muted flex-1 overflow-y-auto p-4 sm:p-4`}>
         {selectedId === '' ? (
@@ -163,6 +220,23 @@ export function ChatPage() {
         <label htmlFor="question" className="sr-only">
           Câu hỏi
         </label>
+        {canChooseModel ? (
+          <div className="flex flex-col gap-1 self-stretch">
+            <label htmlFor="agent-model" className="text-ink-subtle text-2xs font-medium">
+              Model
+            </label>
+            <select
+              id="agent-model"
+              value={model}
+              onChange={(event) => setModel(event.target.value as AgentModel)}
+              disabled={isStreaming}
+              className="border-border-strong bg-surface-sunken text-ink focus:border-brand focus:ring-brand-ring rounded-md border px-2 py-1.5 text-xs outline-none focus:ring-2 disabled:opacity-60"
+            >
+              <option value="FREE">Gemini · miễn phí</option>
+              <option value="PREMIUM">Claude Sonnet 5 · Premium</option>
+            </select>
+          </div>
+        ) : null}
         <textarea
           id="question"
           value={draft}

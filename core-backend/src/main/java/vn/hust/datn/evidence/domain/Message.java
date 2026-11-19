@@ -53,6 +53,10 @@ public class Message {
     @Column(nullable = false)
     private String content;
 
+    /** Model đã trả lời (lấy từ trace); null với câu hỏi của người dùng. */
+    @Column
+    private String model;
+
     @Enumerated(EnumType.STRING)
     @Column
     private ClaimVerdict verdict;

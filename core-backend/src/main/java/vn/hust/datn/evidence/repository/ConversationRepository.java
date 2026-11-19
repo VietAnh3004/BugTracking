@@ -19,7 +19,15 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
      */
     Optional<Conversation> findByIdAndOwnerId(UUID id, UUID ownerId);
 
-    List<Conversation> findByAnalysisRunIdAndOwnerIdOrderByUpdatedAtDesc(UUID analysisRunId, UUID ownerId);
+    /**
+     * Như {@link #findByIdAndOwnerId} nhưng phiên đã bị người dùng xoá (V15) coi như không tồn tại.
+     * Mọi thao tác của người dùng trên một phiên ({@code ConversationService}) dùng method này; method
+     * không lọc chỉ để chỗ cần thấy cả phiên đã ẩn (kiểm liên kết của một review đã ghi từ trước).
+     */
+    Optional<Conversation> findByIdAndOwnerIdAndDeletedAtIsNull(UUID id, UUID ownerId);
+
+    List<Conversation> findByAnalysisRunIdAndOwnerIdAndDeletedAtIsNullOrderByUpdatedAtDesc(
+            UUID analysisRunId, UUID ownerId);
 
     /**
      * Bước BẮT BUỘC trước khi xoá project — xem {@code ProjectService.delete}. FK

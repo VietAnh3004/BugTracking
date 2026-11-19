@@ -19,6 +19,7 @@ interface TextFieldProps {
   autoComplete?: string;
   required?: boolean;
   placeholder?: string;
+  maxLength?: number;
   /** `id` của phần mô tả đi kèm (vd danh sách yêu cầu mật khẩu) — gắn vào `aria-describedby`. */
   describedBy?: string;
 }
@@ -32,6 +33,7 @@ export function TextField({
   autoComplete,
   required = true,
   placeholder,
+  maxLength,
   describedBy,
 }: TextFieldProps) {
   return (
@@ -46,6 +48,7 @@ export function TextField({
         required={required}
         autoComplete={autoComplete}
         placeholder={placeholder}
+        maxLength={maxLength}
         aria-describedby={describedBy}
         onChange={(event) => onChange(event.target.value)}
         className={INPUT}

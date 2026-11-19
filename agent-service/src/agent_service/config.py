@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     # biến chưa đặt dưới dạng "" chứ không phải vắng mặt.
     llm_base_url: str | None = Field(default=None, description="Base URL API tương thích OpenAI")
 
+    # Model "Premium" cho dự án được admin nâng hạng. Cùng định dạng với LLM_*; thiếu API key thì
+    # tier premium TẮT (không âm thầm rơi về model free — xem ``premium_enabled``). Chuỗi rỗng =
+    # chưa đặt, vì docker-compose truyền biến chưa đặt dưới dạng "".
+    premium_llm_provider: LlmProviderName = Field(default="anthropic")
+    premium_llm_api_key: str | None = Field(default=None)
+    premium_llm_model: str = Field(default="claude-sonnet-5", min_length=1)
+    premium_llm_base_url: str | None = Field(default=None)
+
     # KHÔNG mặc định 0.0. Họ model Claude 5 (và Opus 4.7 trở đi) TỪ CHỐI tham số này bằng lỗi
     # 400 — đặt sẵn một giá trị nghĩa là mọi request đều hỏng ngay khi bật provider thật. Để
     # None nghĩa là "không gửi", và tính ổn định giữa các lần chạy được báo cáo bằng cách chạy
@@ -86,6 +94,39 @@ class Settings(BaseSettings):
     def effective_embedding_api_key(self) -> str:
         """Key cho embedding: EMBEDDING_API_KEY nếu có, không thì dùng chung LLM_API_KEY."""
         return self.embedding_api_key or self.llm_api_key
+
+    @field_validator("premium_llm_api_key", "premium_llm_base_url", mode="before")
+    @classmethod
+    def _blank_premium_is_unset(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @property
+    def premium_enabled(self) -> bool:
+        """Tier premium dùng được khi đã có khoá API cho nó."""
+        return bool(self.premium_llm_api_key)
+
+    def premium_view(self) -> "Settings":
+        """Bản sao cấu hình với ``llm_*`` thay bằng ``premium_*``, để dựng provider premium.
+
+        Provider chỉ đọc ``settings.llm_*``; đổi nguồn ở ĐÂY thì không provider nào phải biết có
+        hai tier. ``llm_temperature`` bị bỏ khi premium là Anthropic vì họ Claude 5 trả 400 cho
+        tham số này, còn cấu hình free (Gemini) có thể đang đặt nó.
+        """
+        if not self.premium_enabled:
+            raise ValueError("PREMIUM_LLM_API_KEY chua dat")
+        return self.model_copy(
+            update={
+                "llm_provider": self.premium_llm_provider,
+                "llm_api_key": self.premium_llm_api_key,
+                "llm_model": self.premium_llm_model,
+                "llm_base_url": self.premium_llm_base_url,
+                "llm_temperature": None
+                if self.premium_llm_provider == "anthropic"
+                else self.llm_temperature,
+            }
+        )
 
     @field_validator("llm_base_url", mode="before")
     @classmethod

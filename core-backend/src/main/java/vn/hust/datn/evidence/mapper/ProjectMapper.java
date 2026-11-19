@@ -32,6 +32,7 @@ public interface ProjectMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "ownerId", ignore = true)
+    @Mapping(target = "tier", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Project toEntity(CreateProjectRequest request);

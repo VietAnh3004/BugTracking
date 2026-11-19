@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import vn.hust.datn.evidence.domain.ProjectRole;
+import vn.hust.datn.evidence.domain.ProjectTier;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -23,4 +24,8 @@ public record ProjectResponse(
         @Schema(
                         requiredMode = Schema.RequiredMode.REQUIRED,
                         description = "Vai trò của NGƯỜI ĐANG GỌI với dự án này: OWNER (chủ) hoặc MEMBER (được chia sẻ)")
-                ProjectRole role) {}
+                ProjectRole role,
+        @Schema(
+                        requiredMode = Schema.RequiredMode.REQUIRED,
+                        description = "Hạng dự án: FREE (chỉ model miễn phí) hoặc PREMIUM (chọn được model Premium)")
+                ProjectTier tier) {}

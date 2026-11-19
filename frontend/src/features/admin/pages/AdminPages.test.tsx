@@ -247,6 +247,129 @@ describe('trang quản lý tài khoản', () => {
   });
 });
 
+const PROJECTS = [
+  {
+    id: 'p-free',
+    name: 'du-an-free',
+    tier: 'FREE',
+    ownerId: 'u-1',
+    ownerEmail: 'sinhvien@test.local',
+    ownerDisplayName: 'Sinh Vien',
+    memberCount: 2,
+    snapshotCount: 4,
+    conversationCount: 9,
+    createdAt: '2026-11-10T00:00:00Z',
+  },
+  {
+    id: 'p-premium',
+    name: 'du-an-premium',
+    tier: 'PREMIUM',
+    ownerId: 'u-1',
+    ownerEmail: 'sinhvien@test.local',
+    ownerDisplayName: 'Sinh Vien',
+    memberCount: 0,
+    snapshotCount: 1,
+    conversationCount: 0,
+    createdAt: '2026-11-11T00:00:00Z',
+  },
+];
+
+function tierCalls(fetchSpy: ReturnType<typeof mockFetchByUrl>) {
+  return fetchSpy.mock.calls.filter(
+    ([input, init]) => String(input).includes('/admin/projects/') && init?.method === 'PATCH',
+  );
+}
+
+describe('trang quản lý dự án (Free/Premium)', () => {
+  function renderProjects(extra: Parameters<typeof mockFetchByUrl>[0] = {}) {
+    // `extra` đứng trước vì mockFetchByUrl khớp theo thứ tự khai báo (xem renderAdmin ở trên).
+    const fetchSpy = mockFetchByUrl({
+      ...extra,
+      '/api/v1/auth/refresh': { body: signedInAs('ADMIN') },
+      '/api/v1/admin/projects': { body: PROJECTS },
+      '/api/v1/admin/users': { body: USERS },
+      '/actuator/health': HEALTH,
+    });
+    return { fetchSpy, ...renderRoute('/admin/projects') };
+  }
+
+  it('hiện hạng, chủ dự án và số đếm của từng dự án', async () => {
+    renderProjects();
+
+    const free = (await screen.findByText('du-an-free')).closest('tr') as HTMLElement;
+    expect(within(free).getByText('Free')).toBeInTheDocument();
+    expect(within(free).getByText('sinhvien@test.local')).toBeInTheDocument();
+    expect(within(free).getByText('9')).toBeInTheDocument();
+    const premium = screen.getByText('du-an-premium').closest('tr') as HTMLElement;
+    expect(within(premium).getByText('Premium')).toBeInTheDocument();
+  });
+
+  it('có thanh tab chuyển giữa Tài khoản và Dự án', async () => {
+    renderProjects();
+    await screen.findByText('du-an-free');
+
+    const nav = screen.getByRole('navigation', { name: 'Mục quản trị' });
+    expect(within(nav).getByRole('link', { name: 'Tài khoản' })).toHaveAttribute('href', '/admin');
+    expect(within(nav).getByRole('link', { name: 'Dự án' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
+  it('nâng dự án Free lên Premium gọi đúng PATCH với tier PREMIUM', async () => {
+    const { fetchSpy } = renderProjects({
+      '/api/v1/admin/projects/p-free': { body: { ...PROJECTS[0], tier: 'PREMIUM' } },
+    });
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Nâng lên Premium: du-an-free' }),
+    );
+
+    await waitFor(() => expect(tierCalls(fetchSpy)).toHaveLength(1));
+    const [url, init] = tierCalls(fetchSpy)[0] ?? [];
+    expect(String(url)).toContain('/api/v1/admin/projects/p-free');
+    expect(JSON.parse(String(init?.body))).toEqual({ tier: 'PREMIUM' });
+  });
+
+  it('hạ dự án Premium về Free gọi PATCH với tier FREE', async () => {
+    const { fetchSpy } = renderProjects({
+      '/api/v1/admin/projects/p-premium': { body: { ...PROJECTS[1], tier: 'FREE' } },
+    });
+    await userEvent.click(await screen.findByRole('button', { name: 'Hạ về Free: du-an-premium' }));
+
+    await waitFor(() => expect(tierCalls(fetchSpy)).toHaveLength(1));
+    expect(JSON.parse(String(tierCalls(fetchSpy)[0]?.[1]?.body))).toEqual({ tier: 'FREE' });
+  });
+
+  it('backend từ chối thì hiện đúng lý do', async () => {
+    renderProjects({
+      '/api/v1/admin/projects/p-free': {
+        status: 404,
+        body: { title: 'Không tìm thấy', detail: 'Dự án không còn tồn tại' },
+      },
+    });
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Nâng lên Premium: du-an-free' }),
+    );
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Dự án không còn tồn tại');
+  });
+
+  it('người dùng thường vào /admin/projects thấy 404 và không gọi API quản trị', async () => {
+    const fetchSpy = mockFetchByUrl({
+      '/api/v1/auth/refresh': { body: signedInAs('USER') },
+      '/actuator/health': HEALTH,
+    });
+    renderRoute('/admin/projects');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Không tìm thấy trang' }),
+    ).toBeInTheDocument();
+    expect(fetchSpy.mock.calls.some(([input]) => String(input).includes('/api/v1/admin'))).toBe(
+      false,
+    );
+  });
+});
+
 describe('menu tài khoản', () => {
   it('admin thấy mục "Quản lý tài khoản"; người thường thì không', async () => {
     mockFetchByUrl({

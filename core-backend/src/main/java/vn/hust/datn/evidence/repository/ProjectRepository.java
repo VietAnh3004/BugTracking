@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import vn.hust.datn.evidence.domain.Project;
+import vn.hust.datn.evidence.domain.ProjectTier;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
@@ -39,6 +40,11 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     @Query(value = "SELECT p FROM Project p WHERE " + READABLE_BY,
             countQuery = "SELECT count(p) FROM Project p WHERE " + READABLE_BY)
     Page<Project> findReadable(@Param("userId") UUID userId, Pageable pageable);
+
+    /** Hạng của dự án chứa một run — đọc ở mỗi câu hỏi Agent để admin đổi hạng có hiệu lực ngay. */
+    @Query("SELECT p.tier FROM Project p, RepositorySnapshot s, AnalysisRun r "
+            + "WHERE r.id = :runId AND r.snapshotId = s.id AND s.projectId = p.id")
+    Optional<ProjectTier> findTierByRunId(@Param("runId") UUID runId);
 
     @Query("SELECT p FROM Project p WHERE p.id = :id AND " + READABLE_BY)
     Optional<Project> findReadableById(@Param("id") UUID id, @Param("userId") UUID userId);

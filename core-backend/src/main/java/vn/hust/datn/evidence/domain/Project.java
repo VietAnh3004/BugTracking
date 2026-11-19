@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -43,6 +45,11 @@ public class Project {
     private String name;
 
     private String description;
+
+    /** Hạng dự án (V14). Mặc định FREE; chỉ admin đổi — không có đường nào khác ghi cột này. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProjectTier tier = ProjectTier.FREE;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;

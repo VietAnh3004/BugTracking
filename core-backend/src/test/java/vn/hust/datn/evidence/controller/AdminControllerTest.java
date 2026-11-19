@@ -3,6 +3,7 @@ package vn.hust.datn.evidence.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -27,6 +28,7 @@ import vn.hust.datn.evidence.domain.RepositorySnapshot;
 import vn.hust.datn.evidence.domain.User;
 import vn.hust.datn.evidence.domain.Warning;
 import vn.hust.datn.evidence.domain.WarningTool;
+import vn.hust.datn.evidence.repository.UserRepository;
 import vn.hust.datn.evidence.service.account.AdminBootstrap;
 import vn.hust.datn.evidence.storage.ObjectStorageClient;
 import vn.hust.datn.evidence.testsupport.InMemoryObjectStorageClient;
@@ -61,6 +63,9 @@ class AdminControllerTest extends AbstractWebIntegrationTest {
 
     @Autowired
     private AdminBootstrap adminBootstrap;
+
+    @Autowired
+    private UserRepository userRepository;
 
     private String adminToken;
 
@@ -224,6 +229,107 @@ class AdminControllerTest extends AbstractWebIntegrationTest {
     }
 
     // ===================================== helpers =====================================
+
+    // ===================================== quản lý dự án (Free/Premium) =====================================
+
+    private ResultActions patchTier(UUID projectId, String body, String token) throws Exception {
+        return getMockMvc()
+                .perform(patch("/api/v1/admin/projects/{id}", projectId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body));
+    }
+
+    @Test
+    void nguoiThuongKhongXemHayDoiHangDuAnDuoc() throws Exception {
+        String token = registerAndLogin("thuong-hang-" + System.nanoTime() + "@x.test");
+        Project project = fixtures.project("hang-" + System.nanoTime(), fixtures.user("c-" + System.nanoTime() + "@x.test"));
+
+        getMockMvc()
+                .perform(get("/api/v1/admin/projects").header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+        patchTier(project.getId(), "{\"tier\":\"PREMIUM\"}", token).andExpect(status().isForbidden());
+        assertThat(jdbc.queryForObject("SELECT tier FROM project WHERE id = ?", String.class, project.getId()))
+                .isEqualTo("FREE");
+    }
+
+    @Test
+    void danhSachDuAnCoHangChuVaSoDemVaLocDuocTheoTen() throws Exception {
+        long stamp = System.nanoTime();
+        User owner = fixtures.user("chu-ds-" + stamp + "@x.test");
+        User member = fixtures.user("tv-ds-" + stamp + "@x.test");
+        Project project = fixtures.project("du-an-ds-" + stamp, owner);
+        fixtures.project("khac-" + stamp, owner);
+        insertMember(project.getId(), member.getId());
+        RepositorySnapshot snapshot = fixtures.readySnapshotWithFiles(project, List.of("src/A.java"));
+        insertConversation(member.getId(), fixtures.succeededRun(snapshot, 1).getId());
+
+        JsonNode projects = read(getMockMvc()
+                .perform(get("/api/v1/admin/projects").param("q", "DU-AN-DS-" + stamp)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()));
+
+        assertThat(projects).hasSize(1);
+        JsonNode row = projects.get(0);
+        assertThat(row.get("id").asText()).isEqualTo(project.getId().toString());
+        assertThat(row.get("tier").asText()).isEqualTo("FREE");
+        assertThat(row.get("ownerEmail").asText()).isEqualTo(owner.getEmail());
+        assertThat(row.get("memberCount").asInt()).isEqualTo(1);
+        assertThat(row.get("snapshotCount").asInt()).isEqualTo(1);
+        assertThat(row.get("conversationCount").asInt()).isEqualTo(1);
+    }
+
+    @Test
+    void adminNangVaHaHangDuAnVaChuDuAnThayDuocHang() throws Exception {
+        String email = "chu-hang-" + System.nanoTime() + "@x.test";
+        String ownerToken = registerAndLogin(email);
+        User owner = userRepository.findByEmailIgnoreCase(email).orElseThrow();
+        Project project = fixtures.project("nang-hang-" + System.nanoTime(), owner);
+
+        JsonNode up = read(patchTier(project.getId(), "{\"tier\":\"PREMIUM\"}", adminToken).andExpect(status().isOk()));
+        assertThat(up.get("tier").asText()).isEqualTo("PREMIUM");
+        assertThat(jdbc.queryForObject("SELECT tier FROM project WHERE id = ?", String.class, project.getId()))
+                .isEqualTo("PREMIUM");
+
+        // Chủ dự án thấy hạng qua API thường (giao diện dựa vào đây để hiện nhãn Premium).
+        JsonNode seen = read(getMockMvc()
+                .perform(get("/api/v1/projects/{id}", project.getId()).header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk()));
+        assertThat(seen.get("tier").asText()).isEqualTo("PREMIUM");
+
+        JsonNode down = read(patchTier(project.getId(), "{\"tier\":\"FREE\"}", adminToken).andExpect(status().isOk()));
+        assertThat(down.get("tier").asText()).isEqualTo("FREE");
+    }
+
+    @Test
+    void doiHangKhongHopLeHoacDuAnLaThiBaoLoi() throws Exception {
+        Project project = fixtures.project("loi-hang-" + System.nanoTime(), fixtures.user("c-" + System.nanoTime() + "@x.test"));
+
+        patchTier(project.getId(), "{\"tier\":\"GOLD\"}", adminToken).andExpect(status().isBadRequest());
+        patchTier(project.getId(), "{}", adminToken).andExpect(status().isBadRequest());
+        patchTier(UUID.randomUUID(), "{\"tier\":\"PREMIUM\"}", adminToken).andExpect(status().isNotFound());
+        assertThat(jdbc.queryForObject("SELECT tier FROM project WHERE id = ?", String.class, project.getId()))
+                .isEqualTo("FREE");
+    }
+
+    @Test
+    void hoiAgentBangPremiumTrongDuAnFreeTraVe403ProblemDetail() throws Exception {
+        String email = "hoi-" + System.nanoTime() + "@x.test";
+        String token = registerAndLogin(email);
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
+        Project project = fixtures.project("free-hoi-" + System.nanoTime(), user);
+        AnalysisRun run = fixtures.succeededRun(fixtures.readySnapshotWithFiles(project, List.of("src/A.java")), 1);
+        UUID conversation = insertConversation(user.getId(), run.getId());
+
+        JsonNode problem = read(getMockMvc()
+                .perform(post("/api/v1/conversations/{id}/messages", conversation)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"question\":\"hoi\",\"model\":\"PREMIUM\"}"))
+                .andExpect(status().isForbidden()));
+
+        assertThat(problem.get("type").asText()).endsWith("premium-model-not-allowed");
+    }
 
     private String login(String email, String password) throws Exception {
         return read(postJson("/api/v1/auth/login", "{\"email\": \"%s\", \"password\": \"%s\"}".formatted(email, password))

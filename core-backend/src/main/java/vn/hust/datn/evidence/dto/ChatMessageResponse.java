@@ -34,7 +34,8 @@ public record ChatMessageResponse(
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> suggestedNextChecks,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> contradictingShortIds,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<ClaimView> claims,
-        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) OffsetDateTime createdAt) {
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) OffsetDateTime createdAt,
+        @Schema(description = "Model đã trả lời; chỉ có ở lượt của Agent") String model) {
 
     /** Một nhận định của Agent kèm kết quả tra từng trích dẫn. */
     @Schema(description = "Một nhận định kèm kết quả hậu kiểm trích dẫn")

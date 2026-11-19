@@ -22,9 +22,17 @@ export function ChatMessageItem({ message, snapshotId, runId }: ChatMessageItemP
 
   return (
     <li className="border-border bg-surface rounded-lg border p-4">
-      {message.verdict != null && (
-        <VerdictBadge verdict={message.verdict} downgradedFrom={message.downgradedFromVerdict} />
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {message.verdict != null && (
+          <VerdictBadge verdict={message.verdict} downgradedFrom={message.downgradedFromVerdict} />
+        )}
+        {/* Model nào trả lời: người dùng đổi model từng câu nên phải nhìn lại được câu nào do model nào. */}
+        {message.model != null && (
+          <span className="text-ink-subtle ml-auto font-mono text-xs" title="Model đã trả lời">
+            {message.model}
+          </span>
+        )}
+      </div>
 
       <p className="text-ink mt-3 text-sm whitespace-pre-wrap">{message.content}</p>
 

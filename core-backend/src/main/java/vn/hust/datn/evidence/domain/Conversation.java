@@ -53,4 +53,13 @@ public class Conversation {
 
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+
+    /**
+     * Thời điểm người dùng xoá phiên (V15); {@code null} = còn hiển thị. Xoá là ẨN chứ không xoá dòng:
+     * {@code llm_trace} của phiên là số liệu thực nghiệm không tái tạo được. Mọi truy vấn phục vụ
+     * NGƯỜI DÙNG phải loại dòng này ra ({@code ...AndDeletedAtIsNull}); truy vấn đo thực nghiệm thì
+     * cố ý KHÔNG lọc.
+     */
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }

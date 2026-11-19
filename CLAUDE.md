@@ -581,6 +581,17 @@ Chạy lại analyzer làm `docs/samples/` hiện ra "đã sửa" trong git kể
   theo ĐƯỜNG DẪN ở `SecurityConfig` (`hasRole("ADMIN")`), không theo annotation từng method. Xoá tài khoản
   đi qua `ProjectService.deleteWithContents` để dọn MinIO đúng cách; nhãn ground truth người-gán-thứ-hai
   được GIỮ. Test đổi/tắt admin phải khôi phục lại vì DB test dùng chung (xem `AdminBootstrapTest`).
+- **Hạng dự án (`project.tier` FREE/PREMIUM) quyết định model Agent được dùng — chỉ admin đổi.** Quyền
+  gắn với DỰ ÁN (chủ + mọi thành viên), không với người. `ConversationService.ask` đọc lại hạng ở MỖI
+  câu và trả 403 nếu chọn `PREMIUM` trong dự án Free (kiểm ở backend, không tin giao diện); không chọn
+  thì mặc định FREE. agent-service dựng hai provider lúc khởi động (`LLM_*` = free, `PREMIUM_LLM_*` =
+  premium); premium thiếu khoá thì trả sự kiện `error`, KHÔNG rơi về model free. Model đã trả lời ghi ở
+  `message.model` và `llm_trace.model`.
+- **Người dùng xoá phiên hỏi Agent = ẨN (`conversation.deleted_at`, V15), KHÔNG xoá dòng.** `llm_trace` của
+  phiên là số liệu thực nghiệm không tái tạo được, mà xoá cứng sẽ kéo theo nó qua CASCADE. Mọi truy vấn phục
+  vụ NGƯỜI DÙNG dùng `...AndDeletedAtIsNull` (`ConversationRepository`); truy vấn đo thực nghiệm
+  (`RunMetricsService`) cố ý KHÔNG lọc. Dữ liệu chỉ bị dọn thật khi xoá dự án/tài khoản. Đổi tên không đụng
+  `updated_at` (không phải hoạt động hỏi đáp).
 - **Không trả entity JPA ra API** — luôn qua DTO.
 - **Schema chỉ đổi qua Flyway**, `ddl-auto: validate`.
 - **Không gọi `fetch` trực tiếp trong component React** — qua `apiClient`.

@@ -466,6 +466,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conversations/{conversationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Xoá một phiên hỏi đáp (ẩn khỏi người dùng, dữ liệu thực nghiệm được giữ) */
+        delete: operations["delete_1"];
+        options?: never;
+        head?: never;
+        /** Đổi tên một phiên hỏi đáp */
+        patch: operations["rename"];
+        trace?: never;
+    };
     "/api/v1/auth/me": {
         parameters: {
             query?: never;
@@ -480,6 +498,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["updateMe"];
+        trace?: never;
+    };
+    "/api/v1/admin/projects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["changeProjectTier"];
         trace?: never;
     };
     "/api/v1/snapshots/{snapshotId}": {
@@ -540,7 +574,7 @@ export interface paths {
         get: operations["get_1"];
         put?: never;
         post?: never;
-        delete: operations["delete_1"];
+        delete: operations["delete_2"];
         options?: never;
         head?: never;
         patch?: never;
@@ -731,6 +765,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listProjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{id}/members/{userId}": {
         parameters: {
             query?: never;
@@ -895,6 +945,7 @@ export interface components {
             method?: "LINE_EXACT" | "LINE_NEAREST_EXECUTABLE" | "RANGE_OVERLAP" | "METHOD_AGGREGATE" | "STACK_FRAME" | "NAMING_CONVENTION" | "SYMBOL_MATCH" | "CROSS_TOOL_AGREEMENT";
             /** Format: double */
             weight?: number;
+            snippet?: string;
         };
         GetCoverageRequest: {
             /** Format: uuid */
@@ -991,6 +1042,11 @@ export interface components {
              * @enum {string}
              */
             role: "OWNER" | "MEMBER";
+            /**
+             * @description Hạng dự án: FREE (chỉ model miễn phí) hoặc PREMIUM (chọn được model Premium)
+             * @enum {string}
+             */
+            tier: "FREE" | "PREMIUM";
         };
         SnapshotResponse: {
             /** Format: uuid */
@@ -1025,6 +1081,11 @@ export interface components {
         /** @description Câu hỏi gửi cho Agent */
         AskRequest: {
             question: string;
+            /**
+             * @description Model trả lời câu này; bỏ trống = FREE. PREMIUM chỉ hợp lệ trong dự án Premium, nếu không backend trả 403
+             * @enum {string}
+             */
+            model?: "FREE" | "PREMIUM";
         };
         SseEmitter: {
             /** Format: int64 */
@@ -1141,9 +1202,41 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /**
+             * @description Hạng của dự án chứa hội thoại; PREMIUM thì giao diện cho chọn model từng câu
+             * @enum {string}
+             */
+            projectTier: "FREE" | "PREMIUM";
+        };
+        /** @description Tên mới của phiên hỏi đáp */
+        RenameConversationRequest: {
+            title: string;
         };
         UpdateProfileRequest: {
             displayName: string;
+        };
+        UpdateProjectTierRequest: {
+            /** @enum {string} */
+            tier: "FREE" | "PREMIUM";
+        };
+        AdminProjectView: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            tier: "FREE" | "PREMIUM";
+            /** Format: uuid */
+            ownerId: string;
+            ownerEmail: string;
+            ownerDisplayName: string;
+            /** Format: int32 */
+            memberCount: number;
+            /** Format: int32 */
+            snapshotCount: number;
+            /** Format: int32 */
+            conversationCount: number;
+            /** Format: date-time */
+            createdAt: string;
         };
         SnapshotFileResponse: {
             path: string;
@@ -1242,6 +1335,8 @@ export interface components {
             claims: components["schemas"]["ClaimView"][];
             /** Format: date-time */
             createdAt: string;
+            /** @description Model đã trả lời; chỉ có ở lượt của Agent */
+            model?: string;
         };
         /** @description Một Evidence ID được trích dẫn, kèm kết quả tra */
         CitationView: {
@@ -2438,6 +2533,52 @@ export interface operations {
             };
         };
     };
+    delete_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    rename: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameConversationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConversationResponse"];
+                };
+            };
+        };
+    };
     me: {
         parameters: {
             query?: never;
@@ -2478,6 +2619,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    changeProjectTier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProjectTierRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminProjectView"];
                 };
             };
         };
@@ -2574,7 +2741,7 @@ export interface operations {
             };
         };
     };
-    delete_1: {
+    delete_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2840,6 +3007,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AdminUserView"][];
+                };
+            };
+        };
+    };
+    listProjects: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminProjectView"][];
                 };
             };
         };

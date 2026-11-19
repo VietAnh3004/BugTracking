@@ -76,6 +76,8 @@ public class ConversationPersistenceService {
         message.setRole(MessageRole.ASSISTANT);
         message.setContent(validated.summary());
         message.setVerdict(validated.verdict());
+        // Mọi vòng của một lượt dùng cùng một model; lấy vòng đầu để giao diện ghi nhãn "trả lời bởi".
+        message.setModel(traces.isEmpty() ? null : traces.get(0).model());
         message.setDowngradedFromVerdict(validated.downgradedFrom());
         message.setSuggestedNextChecks(List.copyOf(validated.suggestedNextChecks()));
         message.setContradictingShortIds(List.copyOf(validated.contradictingShortIds()));
@@ -133,7 +135,8 @@ public class ConversationPersistenceService {
                 saved.getSuggestedNextChecks(),
                 saved.getContradictingShortIds(),
                 List.copyOf(claimViews),
-                saved.getCreatedAt());
+                saved.getCreatedAt(),
+                saved.getModel());
     }
 
     /**

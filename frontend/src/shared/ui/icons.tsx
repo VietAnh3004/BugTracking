@@ -28,12 +28,14 @@ import {
   LogOut,
   MessageSquare,
   Package,
+  Pencil,
   Play,
   RefreshCw,
   Search,
   Settings,
   ShieldCheck,
   UserCog,
+  Trash2,
   TriangleAlert,
   Upload,
   X,
@@ -160,6 +162,14 @@ export function IconRetry(props: IconProps) {
 
 export function IconCopy(props: IconProps) {
   return <AppIcon icon={Copy} {...props} />;
+}
+
+export function IconEdit(props: IconProps) {
+  return <AppIcon icon={Pencil} {...props} />;
+}
+
+export function IconTrash(props: IconProps) {
+  return <AppIcon icon={Trash2} {...props} />;
 }
 
 export function IconClose(props: IconProps) {

@@ -17,7 +17,16 @@ REQUIRED_ENV = {
     "LLM_MODEL": "claude-sonnet-5",
 }
 
-OPTIONAL_ENV = ("LLM_TEMPERATURE", "MAX_TOOL_ITERATIONS", "PROMPT_VERSION", "LLM_MAX_TOKENS")
+OPTIONAL_ENV = (
+    "LLM_TEMPERATURE",
+    "MAX_TOOL_ITERATIONS",
+    "PROMPT_VERSION",
+    "LLM_MAX_TOKENS",
+    "PREMIUM_LLM_PROVIDER",
+    "PREMIUM_LLM_API_KEY",
+    "PREMIUM_LLM_MODEL",
+    "PREMIUM_LLM_BASE_URL",
+)
 
 
 @pytest.fixture(autouse=True)
@@ -83,3 +92,42 @@ def test_so_vong_goi_tool_bi_chan_tren(monkeypatch: pytest.MonkeyPatch) -> None:
 
     with pytest.raises(ValidationError):
         Settings(_env_file=None)  # type: ignore[call-arg]
+
+
+def _load(monkeypatch: pytest.MonkeyPatch, **extra: str) -> Settings:
+    for name, value in {**REQUIRED_ENV, **extra}.items():
+        monkeypatch.setenv(name, value)
+    return Settings(_env_file=None)  # type: ignore[call-arg]
+
+
+def test_premium_tat_khi_khong_co_khoa(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert _load(monkeypatch).premium_enabled is False
+    # docker-compose truyen bien chua dat duoi dang chuoi rong.
+    assert _load(monkeypatch, PREMIUM_LLM_API_KEY="  ").premium_enabled is False
+
+
+def test_premium_view_thay_llm_bang_premium(monkeypatch: pytest.MonkeyPatch) -> None:
+    settings = _load(
+        monkeypatch,
+        LLM_PROVIDER="openai",
+        LLM_MODEL="gemini-3.5-flash-lite",
+        LLM_BASE_URL="https://example.test/v1/",
+        LLM_TEMPERATURE="0.3",
+        PREMIUM_LLM_API_KEY="khoa-claude",
+    )
+
+    premium = settings.premium_view()
+
+    assert premium.llm_provider == "anthropic"
+    assert premium.llm_model == "claude-sonnet-5"
+    assert premium.llm_api_key == "khoa-claude"
+    assert premium.llm_base_url is None, "base url cua Gemini khong duoc ro sang Claude"
+    assert premium.llm_temperature is None, "Claude 5 tra 400 cho temperature"
+    # Ban goc khong bi doi.
+    assert settings.llm_model == "gemini-3.5-flash-lite"
+    assert settings.llm_temperature == 0.3
+
+
+def test_premium_view_khi_chua_bat_thi_hong_ro_rang(monkeypatch: pytest.MonkeyPatch) -> None:
+    with pytest.raises(ValueError, match="PREMIUM_LLM_API_KEY"):
+        _load(monkeypatch).premium_view()

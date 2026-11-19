@@ -34,7 +34,8 @@ ANSWER = {
 def client(settings: Settings) -> TestClient:
     """Nạp app với provider giả, bỏ qua lifespan thật (nó sẽ đi dựng provider Anthropic)."""
     app.state.settings = settings
-    app.state.provider = ScriptedProvider(
+    app.state.providers = {}
+    app.state.providers["free"] = ScriptedProvider(
         [
             LlmResponse(
                 content=None,
@@ -130,3 +131,73 @@ def test_health_bao_ca_phien_ban_prompt(client: TestClient) -> None:
 
     assert body["status"] == "ok"
     assert body["prompt_version"] == "v1"
+
+
+def _premium_provider() -> ScriptedProvider:
+    return ScriptedProvider(
+        [LlmResponse(content="da du bang chung"), LlmResponse(content=json.dumps(ANSWER))],
+        model="claude-sonnet-5",
+    )
+
+
+@respx.mock
+def test_tier_premium_dung_provider_premium(client: TestClient) -> None:
+    premium = _premium_provider()
+    app.state.providers["premium"] = premium
+    try:
+        response = client.post(
+            "/analyze",
+            json={"analysis_run_id": RUN_ID, "question": "hoi", "model_tier": "premium"},
+        )
+    finally:
+        del app.state.providers["premium"]
+
+    _, payload = _frames(response.text)[-1]
+    assert _frames(response.text)[-1][0] == EventType.ANSWER.value
+    assert premium.calls, "provider premium phai duoc goi"
+    assert {t["model"] for t in payload["traces"]} == {"claude-sonnet-5"}
+
+
+@respx.mock
+def test_khong_gui_tier_thi_dung_free(client: TestClient) -> None:
+    premium = _premium_provider()
+    app.state.providers["premium"] = premium
+    respx.post(f"{BASE}/get_warning").mock(return_value=httpx.Response(200, json={}))
+    try:
+        client.post("/analyze", json={"analysis_run_id": RUN_ID, "question": "hoi"})
+    finally:
+        del app.state.providers["premium"]
+
+    assert premium.calls == []
+
+
+def test_premium_chua_cau_hinh_thi_bao_loi_chu_khong_roi_ve_free(client: TestClient) -> None:
+    app.state.providers.pop("premium", None)
+
+    response = client.post(
+        "/analyze", json={"analysis_run_id": RUN_ID, "question": "hoi", "model_tier": "premium"}
+    )
+
+    frames = _frames(response.text)
+    assert [name for name, _ in frames] == [EventType.ERROR.value]
+    assert "PREMIUM_LLM_API_KEY" in frames[0][1]["message"]
+    assert app.state.providers["free"].calls == [], "khong duoc am tham goi model free"
+
+
+def test_tier_la_gia_tri_la_bi_tu_choi(client: TestClient) -> None:
+    response = client.post(
+        "/analyze", json={"analysis_run_id": RUN_ID, "question": "hoi", "model_tier": "gold"}
+    )
+    assert response.status_code == 422
+
+
+def test_get_code_context_noi_dung_cho_model_biet_ma_nam_o_snippet() -> None:
+    """Mô tả tool phải khớp thứ backend thật sự trả, không hứa thứ nó không có.
+
+    Lỗi gốc: tool được mô tả là "lấy đoạn mã" nhưng kết quả chỉ có dòng tóm tắt, và schema còn mời
+    model chỉnh `context_lines` (không có tác dụng) nên nó gọi lại vô ích tới hết ngân sách vòng.
+    """
+    from agent_service.tools.schemas import GET_CODE_CONTEXT
+
+    assert "snippet" in GET_CODE_CONTEXT["description"]
+    assert "context_lines" not in GET_CODE_CONTEXT["input_schema"]["properties"]

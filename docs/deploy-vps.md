@@ -212,6 +212,15 @@ có admin (trang `/admin` không vào được). Đổi giá trị trong `.env.v
 hiệu lực: mật khẩu được băm lại, mọi phiên cũ của admin bị thu hồi, và tên đăng nhập cũ (nếu đổi) bị hạ về
 người dùng thường. Không ai khác thành admin được: đăng ký và đăng nhập Google luôn tạo tài khoản thường.
 
+**Hạng dự án Free/Premium và model Premium (`PREMIUM_LLM_*`).** Mỗi dự án có hạng `FREE` (mặc định) hoặc
+`PREMIUM`; chỉ admin đổi, ở tab "Dự án" của trang quản trị (`/admin/projects`). Dự án Free chỉ hỏi Agent
+bằng model `LLM_*` (Gemini miễn phí); dự án Premium cho chủ và mọi thành viên chọn **từng câu hỏi** giữa
+Gemini (mặc định) và model Premium. Quyền gắn với DỰ ÁN, không với người. Model Premium khai bằng
+`PREMIUM_LLM_PROVIDER` / `PREMIUM_LLM_API_KEY` / `PREMIUM_LLM_MODEL` (mặc định `anthropic` / `claude-sonnet-5`)
+trong `.env.vps` — **tự điền khoá Claude, đừng commit**. Để trống khoá thì tier premium tắt: hỏi Premium báo
+lỗi rõ ràng chứ không âm thầm dùng Gemini. Mỗi câu Premium tốn tiền thật (~13k token vào + ~0,7k token ra,
+5 lượt gọi/câu) nên chỉ nâng hạng cho dự án thật sự cần; hạ về Free có hiệu lực từ câu hỏi kế tiếp.
+
 **Dựng hai image analyzer** — làm một lần, dù sandbox tắt mặc định: lúc bật để demo, chúng phải
 nằm sẵn trong Docker của host (core-backend ra lệnh cho daemon của host chạy chúng). Để tới hôm
 demo mới dựng thì mất thêm 5-15 phút đúng lúc không có thời gian.

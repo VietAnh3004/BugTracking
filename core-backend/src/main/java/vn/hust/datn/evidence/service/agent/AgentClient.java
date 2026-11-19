@@ -186,10 +186,21 @@ public class AgentClient {
             @com.fasterxml.jackson.annotation.JsonProperty("analysis_run_id") UUID analysisRunId,
             String question,
             @com.fasterxml.jackson.annotation.JsonProperty("focus_short_id") String focusShortId,
-            List<Map<String, String>> history) {
+            List<Map<String, String>> history,
+            @com.fasterxml.jackson.annotation.JsonProperty("model_tier") String modelTier) {
 
         public static AnalyzeRequest of(UUID runId, String question, String focusShortId, List<Map<String, String>> history) {
-            return new AnalyzeRequest(runId, question, focusShortId, history == null ? new ArrayList<>() : history);
+            return of(runId, question, focusShortId, history, vn.hust.datn.evidence.domain.AgentModel.FREE);
+        }
+
+        public static AnalyzeRequest of(
+                UUID runId,
+                String question,
+                String focusShortId,
+                List<Map<String, String>> history,
+                vn.hust.datn.evidence.domain.AgentModel model) {
+            return new AnalyzeRequest(
+                    runId, question, focusShortId, history == null ? new ArrayList<>() : history, model.wireValue());
         }
     }
 }

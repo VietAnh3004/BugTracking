@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { type ChatMessage, askAgent, cancelTurn } from '@/features/chat/api/chatApi';
+import {
+  type AgentModel,
+  type ChatMessage,
+  askAgent,
+  cancelTurn,
+} from '@/features/chat/api/chatApi';
 import { chatKeys } from '@/features/chat/hooks/useConversation';
 
 /** Một dòng tiến trình hiện ra trong lúc chờ. */
@@ -60,7 +65,7 @@ export function useAskAgent(conversationId: string) {
   );
 
   const ask = useCallback(
-    async (question: string): Promise<void> => {
+    async (question: string, model?: AgentModel): Promise<void> => {
       // Một lượt mới huỷ lượt cũ: hai stream cùng ghi vào một cache sẽ trộn hai câu trả lời.
       // Phía server, câu hỏi mới tự huỷ lượt cũ của cùng hội thoại (ConversationService.ask).
       inFlight.current?.abort();
@@ -107,6 +112,7 @@ export function useAskAgent(conversationId: string) {
             onError: (message) => setError(message),
           },
           controller.signal,
+          model,
         );
       } catch (cause) {
         // Huỷ có chủ đích không phải lỗi: đừng hiện thông báo đỏ cho một thao tác người dùng

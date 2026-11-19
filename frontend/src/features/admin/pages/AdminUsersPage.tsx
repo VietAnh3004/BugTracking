@@ -8,6 +8,7 @@
 
 import { Fragment, useEffect, useState } from 'react';
 
+import { AdminTabs } from '@/features/admin/components/AdminTabs';
 import { useAdminUsers } from '@/features/admin/hooks/useAdminUsers';
 import { DeleteUserPanel } from '@/features/admin/components/DeleteUserPanel';
 import { ApiError } from '@/shared/lib/apiClient';
@@ -36,6 +37,7 @@ export function AdminUsersPage() {
 
   return (
     <section className="flex flex-col gap-4">
+      <AdminTabs />
       <PageHeader
         title="Quản lý tài khoản"
         description="Xoá một tài khoản là xoá cả dự án, snapshot, bằng chứng và hội thoại của họ. Không hoàn tác được."

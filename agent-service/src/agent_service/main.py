@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from agent_service.agent.events import AgentEvent
+from agent_service.agent.events import AgentEvent, ErrorEvent
 from agent_service.agent.loop import AgentLoop
 from agent_service.config import Settings, get_settings
 from agent_service.embeddings.gemini import EmbeddingError, GeminiEmbedder
@@ -33,7 +33,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logging.basicConfig(level=settings.log_level)
 
     app.state.settings = settings
-    app.state.provider = build_provider(settings)
+    # Hai tier, dựng cả hai lúc khởi động (cấu hình premium sai thì chết ngay, không đợi tới
+    # câu hỏi đầu tiên của một dự án Premium). Premium thiếu khoá = không có khoá "premium".
+    providers = {"free": build_provider(settings)}
+    if settings.premium_enabled:
+        providers["premium"] = build_provider(settings.premium_view())
+    app.state.providers = providers
     app.state.tool_client = EvidenceToolClient(settings)
     app.state.embedder = (
         GeminiEmbedder(
@@ -48,9 +53,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
 
     logger.info(
-        "agent-service khoi dong: provider=%s model=%s core_api=%s prompt=%s",
+        "agent-service khoi dong: provider=%s model=%s premium_model=%s core_api=%s prompt=%s",
         settings.llm_provider,
         settings.llm_model,
+        settings.premium_llm_model if settings.premium_enabled else "(chua cau hinh)",
         settings.core_api_url,
         settings.prompt_version,
     )
@@ -75,6 +81,8 @@ class HealthResponse(BaseModel):
     status: Literal["ok"]
     provider: str
     model: str
+    # None = tier premium chưa bật (thiếu PREMIUM_LLM_API_KEY).
+    premium_model: str | None = None
     prompt_version: str
 
 
@@ -90,6 +98,7 @@ async def health(http_request: Request) -> HealthResponse:
         status="ok",
         provider=settings.llm_provider,
         model=settings.llm_model,
+        premium_model=settings.premium_llm_model if settings.premium_enabled else None,
         prompt_version=settings.prompt_version,
     )
 
@@ -131,9 +140,20 @@ async def analyze(request: AnalyzeRequest, http_request: Request) -> StreamingRe
     Không có CORS ở đây: người gọi là core-backend, server-to-server.
     """
     state = http_request.app.state
-    loop = AgentLoop(state.provider, state.tool_client, state.settings)
+    provider = state.providers.get(request.model_tier)
 
     async def stream() -> AsyncIterator[str]:
+        if provider is None:
+            # Không rơi về model free: người dùng đã chọn Sonnet thì câu trả lời mà thực ra do
+            # Gemini sinh ra là sai lệch số liệu, tệ hơn một thông báo lỗi.
+            yield _sse(
+                ErrorEvent(
+                    message="Model Premium chua duoc cau hinh tren may chu "
+                    "(thieu PREMIUM_LLM_API_KEY). Hay hoi bang model Free."
+                )
+            )
+            return
+        loop = AgentLoop(provider, state.tool_client, state.settings)
         async for event in loop.run(
             analysis_run_id=str(request.analysis_run_id),
             question=request.question,

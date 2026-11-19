@@ -7,7 +7,9 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,6 +23,7 @@ import vn.hust.datn.evidence.dto.AskRequest;
 import vn.hust.datn.evidence.dto.ChatMessageResponse;
 import vn.hust.datn.evidence.dto.ConversationResponse;
 import vn.hust.datn.evidence.dto.CreateConversationRequest;
+import vn.hust.datn.evidence.dto.RenameConversationRequest;
 import vn.hust.datn.evidence.service.ConversationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -62,6 +65,22 @@ public class ConversationController {
         return conversationService.list(runId, currentUser.id());
     }
 
+    @PatchMapping("/conversations/{conversationId}")
+    @Operation(summary = "Đổi tên một phiên hỏi đáp")
+    public ConversationResponse rename(
+            @PathVariable UUID conversationId,
+            @Valid @RequestBody RenameConversationRequest request,
+            @AuthenticationPrincipal CurrentUser currentUser) {
+        return conversationService.rename(conversationId, currentUser.id(), request.title());
+    }
+
+    @DeleteMapping("/conversations/{conversationId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Xoá một phiên hỏi đáp (ẩn khỏi người dùng, dữ liệu thực nghiệm được giữ)")
+    public void delete(@PathVariable UUID conversationId, @AuthenticationPrincipal CurrentUser currentUser) {
+        conversationService.delete(conversationId, currentUser.id());
+    }
+
     @GetMapping("/conversations/{conversationId}/messages")
     @Operation(summary = "Toàn bộ lượt của một phiên, đã qua hậu kiểm trích dẫn")
     public List<ChatMessageResponse> messages(
@@ -88,7 +107,7 @@ public class ConversationController {
             @PathVariable UUID conversationId,
             @Valid @RequestBody AskRequest request,
             @AuthenticationPrincipal CurrentUser currentUser) {
-        return conversationService.ask(conversationId, currentUser.id(), request.question());
+        return conversationService.ask(conversationId, currentUser.id(), request.question(), request.model());
     }
 
     /**

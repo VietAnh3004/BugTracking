@@ -7,6 +7,9 @@ export type Conversation = components['schemas']['ConversationResponse'];
 export type ChatMessage = components['schemas']['ChatMessageResponse'];
 export type Claim = components['schemas']['ClaimView'];
 export type Citation = components['schemas']['CitationView'];
+/** Model người dùng chọn cho một câu hỏi. PREMIUM chỉ hợp lệ trong dự án Premium (backend kiểm lại). */
+export type AgentModel = NonNullable<components['schemas']['AskRequest']['model']>;
+export type ProjectTier = Conversation['projectTier'];
 export type Verdict = NonNullable<ChatMessage['verdict']>;
 export type CitationResolution = Citation['resolution'];
 
@@ -22,6 +25,14 @@ export function createConversation(
     focusShortId,
     title: null,
   });
+}
+
+export function renameConversation(conversationId: string, title: string): Promise<Conversation> {
+  return apiClient.patch<Conversation>(`/api/v1/conversations/${conversationId}`, { title });
+}
+
+export function deleteConversation(conversationId: string): Promise<void> {
+  return apiClient.delete<void>(`/api/v1/conversations/${conversationId}`);
 }
 
 export function getMessages(conversationId: string): Promise<ChatMessage[]> {
@@ -75,9 +86,10 @@ export function askAgent(
   question: string,
   callbacks: AskCallbacks,
   signal?: AbortSignal,
+  model?: AgentModel,
 ): Promise<void> {
   return streamSse(
-    { path: `/api/v1/conversations/${conversationId}/messages`, body: { question }, signal },
+    { path: `/api/v1/conversations/${conversationId}/messages`, body: { question, model }, signal },
     (frame) => dispatch(frame, callbacks),
   );
 }
