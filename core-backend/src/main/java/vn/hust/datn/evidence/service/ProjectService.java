@@ -165,7 +165,17 @@ public class ProjectService {
      */
     @Transactional
     public void delete(UUID id, UUID ownerId) {
-        Project project = getOwned(id, ownerId);
+        deleteWithContents(getOwned(id, ownerId));
+    }
+
+    /**
+     * Phần thân của {@link #delete}, KHÔNG kiểm chủ sở hữu — dành cho nơi đã tự có thẩm quyền
+     * (admin xoá cả tài khoản, {@code AdminUserService}). Gọi trong transaction của người gọi: object
+     * storage vẫn chỉ dọn SAU KHI transaction đó commit.
+     */
+    @Transactional
+    public void deleteWithContents(Project project) {
+        UUID id = project.getId();
         List<String> storagePrefixes = snapshotRepository.findStorageKeysByProjectId(id);
 
         conversationRepository.deleteByProjectId(id);

@@ -94,6 +94,10 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, PublicAuthEndpoints.GET_PATHS.toArray(String[]::new))
                         .permitAll()
+                        // Quản trị: chặn theo ĐƯỜNG DẪN ở đây, không theo annotation từng method — endpoint
+                        // admin mới thêm dưới /api/v1/admin tự được bảo vệ. Người thường nhận 403.
+                        .requestMatchers("/api/v1/admin/**")
+                        .hasRole("ADMIN")
                         .requestMatchers("/api/v1/openapi", "/api/v1/openapi/**", "/swagger-ui.html", "/swagger-ui/**")
                         .permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info")

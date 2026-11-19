@@ -1,5 +1,6 @@
 package vn.hust.datn.evidence.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import vn.hust.datn.evidence.domain.User;
+import vn.hust.datn.evidence.domain.UserRole;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
 
@@ -17,6 +19,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmailIgnoreCase(@Param("email") String email);
 
     Optional<User> findByGoogleSubject(String googleSubject);
+
+    List<User> findByRole(UserRole role);
 
     @Query("SELECT count(u) > 0 FROM User u WHERE lower(u.email) = lower(:email)")
     boolean existsByEmailIgnoreCase(@Param("email") String email);

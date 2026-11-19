@@ -1668,6 +1668,35 @@
         }
       }
     },
+    "/api/v1/admin/users" : {
+      "get" : {
+        "tags" : [ "admin-controller" ],
+        "operationId" : "listUsers",
+        "parameters" : [ {
+          "name" : "q",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminUserView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{id}/members/{userId}" : {
       "delete" : {
         "tags" : [ "projects" ],
@@ -1682,6 +1711,26 @@
           }
         }, {
           "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}" : {
+      "delete" : {
+        "tags" : [ "admin-controller" ],
+        "operationId" : "deleteUser",
+        "parameters" : [ {
+          "name" : "id",
           "in" : "path",
           "required" : true,
           "schema" : {
@@ -3418,6 +3467,46 @@
           }
         },
         "required" : [ "ordinal", "pathRaw", "primary" ]
+      },
+      "AdminUserView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "emailVerified" : {
+            "type" : "boolean"
+          },
+          "hasPassword" : {
+            "type" : "boolean"
+          },
+          "googleLinked" : {
+            "type" : "boolean"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "ownedProjectCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "conversationCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "conversationCount", "createdAt", "displayName", "email", "emailVerified", "googleLinked", "hasPassword", "id", "ownedProjectCount", "role" ]
       }
     },
     "securitySchemes" : {

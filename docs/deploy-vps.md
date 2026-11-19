@@ -203,6 +203,15 @@ nano infra/.env.vps                        # thay MỌI dòng change-me
 
 `JWT_SECRET` và `SERVICE_TOKEN` phải **khác nhau** và **khác bản trên máy dev**.
 
+**Tài khoản quản trị (`ADMIN_USERNAME` / `ADMIN_PASSWORD`).** Một tài khoản duy nhất, đăng nhập ở
+`https://vsleuth.id.vn/admin/login` (không có link nào trỏ tới — tự gõ địa chỉ). Trong trang quản trị
+admin xem và **xoá** được mọi tài khoản; xoá một tài khoản là xoá luôn dự án, snapshot, bằng chứng, file
+trên MinIO và hội thoại của họ. Vì VPS ra Internet mà tài khoản này có quyền đó, **mật khẩu phải là chuỗi
+ngẫu nhiên dài** (`openssl rand -base64 24`), không dùng lại mật khẩu trên máy dev. Để trống cả hai = không
+có admin (trang `/admin` không vào được). Đổi giá trị trong `.env.vps` rồi `up -d core-backend` là có
+hiệu lực: mật khẩu được băm lại, mọi phiên cũ của admin bị thu hồi, và tên đăng nhập cũ (nếu đổi) bị hạ về
+người dùng thường. Không ai khác thành admin được: đăng ký và đăng nhập Google luôn tạo tài khoản thường.
+
 **Dựng hai image analyzer** — làm một lần, dù sandbox tắt mặc định: lúc bật để demo, chúng phải
 nằm sẵn trong Docker của host (core-backend ra lệnh cho daemon của host chạy chúng). Để tới hôm
 demo mới dựng thì mất thêm 5-15 phút đúng lúc không có thời gian.

@@ -1,5 +1,6 @@
 package vn.hust.datn.evidence.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,6 +24,9 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     Page<Project> findByOwnerId(UUID ownerId, Pageable pageable);
 
     Optional<Project> findByIdAndOwnerId(UUID id, UUID ownerId);
+
+    /** Mọi dự án một người SỞ HỮU — dùng khi admin xoá tài khoản (không phân trang). */
+    List<Project> findAllByOwnerId(UUID ownerId);
 
     /**
      * Dự án người dùng ĐỌC được: sở hữu, hoặc là thành viên (V10). Cùng nguyên tắc với

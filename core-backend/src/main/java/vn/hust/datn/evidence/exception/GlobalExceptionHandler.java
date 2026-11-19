@@ -121,6 +121,12 @@ public class GlobalExceptionHandler {
         return problem(HttpStatus.BAD_REQUEST, "invalid-review", "Quyết định không hợp lệ", ex.getMessage(), request);
     }
 
+    @ExceptionHandler(AdminActionNotAllowedException.class)
+    public ProblemDetail handleAdminActionNotAllowed(AdminActionNotAllowedException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.CONFLICT, "admin-action-not-allowed", "Thao tác quản trị không được phép", ex.getMessage(), request);
+    }
+
     @ExceptionHandler(EmailAlreadyUsedException.class)
     public ProblemDetail handleEmailAlreadyUsed(EmailAlreadyUsedException ex, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "email-already-used", "Email đã được đăng ký", ex.getMessage(), request);

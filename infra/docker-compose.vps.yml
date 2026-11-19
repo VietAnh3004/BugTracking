@@ -110,6 +110,10 @@ services:
       MAIL_FROM: ${MAIL_FROM:-}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-VSleuth}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      # Tài khoản quản trị DUY NHẤT (trang /admin). Trống cả hai = không có admin. Giá trị thật chỉ ở
+      # .env — không bao giờ in ra log hay commit.
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       # ======================================================================================
       # DOCKER SANDBOX — TẮT ở đây, CHỈ BẬT LÚC DEMO (chốt với người dùng 18/11/2026).
       #

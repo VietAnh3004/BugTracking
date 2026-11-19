@@ -115,6 +115,11 @@ app:
     expiration: ${JWT_EXPIRATION:PT15M}
     refresh-expiration: ${JWT_REFRESH_EXPIRATION:P14D}
     issuer: ${JWT_ISSUER:datn-hust-evidence-agent}
+  admin:
+    # Tài khoản quản trị DUY NHẤT. Để trống CẢ HAI = không có admin. Giá trị thật chỉ nằm trong
+    # infra/.env* (gitignored) — xem AdminProperties/AdminBootstrap.
+    username: ${ADMIN_USERNAME:}
+    password: ${ADMIN_PASSWORD:}
   security:
     # Bí mật chia sẻ cho agent-service gọi /api/v1/tools/** — KHÔNG phải JWT (ADR 0005 điểm 2).
     service-token: ${SERVICE_TOKEN}
