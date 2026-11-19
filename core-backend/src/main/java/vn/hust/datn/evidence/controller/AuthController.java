@@ -146,10 +146,11 @@ public class AuthController {
         return refreshTokenService.refresh(request.refreshToken(), userAgent);
     }
 
-    // Không nhận @AuthenticationPrincipal: SecurityConfig.apiChain đã bắt buộc JWT hợp lệ cho
-    // path này (không nằm trong whitelist), sở hữu refreshToken hợp lệ trong body là đủ để đăng
-    // xuất - không cần đối chiếu với danh tính JWT.
+    // Công khai như /refresh: sở hữu refreshToken trong body là bằng chứng đủ để đăng xuất. Từng đòi
+    // JWT còn hạn — bấm "Đăng xuất" sau 15 phút không thao tác thì 401 và refresh token không bị
+    // thu hồi. Xem PublicAuthEndpoints.
     @PostMapping("/logout")
+    @SecurityRequirements
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(@Valid @RequestBody RefreshRequest request) {
         refreshTokenService.logout(request.refreshToken());

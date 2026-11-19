@@ -59,7 +59,8 @@ export function setAccessToken(token: string | null): void {
 export interface AuthHooks {
   /**
    * Đổi refresh token lấy access token mới. Trả `null` khi không có gì để đổi (chưa đăng nhập).
-   * Ném lỗi khi refresh token đã hết hạn hoặc bị thu hồi.
+   * Ném `ApiError` 4xx khi refresh token đã hết hạn hoặc bị thu hồi; ném lỗi khác (mất mạng, 5xx)
+   * khi chưa biết — xem `isSessionRejected`.
    */
   refresh: () => Promise<{ accessToken: string } | null>;
   /** Phiên đã chết hẳn: dọn token, xoá cache, đặt trạng thái `anonymous`. KHÔNG điều hướng ở đây. */
@@ -87,6 +88,18 @@ export function setAuthHooks(hooks: AuthHooks | null): void {
  */
 let inFlightRefresh: Promise<boolean> | null = null;
 
+/**
+ * Lỗi refresh có nghĩa là "phiên đã chết thật" hay chỉ là "lúc này chưa gọi được"?
+ *
+ * Chỉ 4xx từ backend (refresh token sai, hết hạn, bị thu hồi) mới là câu trả lời dứt khoát. Mất
+ * mạng, backend đang khởi động lại, lỗi 5xx: refresh token có thể vẫn còn hạn — xoá nó đi lúc đó
+ * là tự đăng xuất người dùng vì một trục trặc vài giây. Trước 18/11/2026 mọi lỗi đều bị coi là
+ * phiên hết hạn.
+ */
+export function isSessionRejected(error: unknown): boolean {
+  return error instanceof ApiError && error.status >= 400 && error.status < 500;
+}
+
 function refreshOnce(): Promise<boolean> {
   if (inFlightRefresh !== null) {
     return inFlightRefresh;
@@ -107,8 +120,12 @@ function refreshOnce(): Promise<boolean> {
       accessToken = tokens.accessToken;
       return true;
     })
-    .catch(() => {
-      hooks.onSessionExpired();
+    .catch((error: unknown) => {
+      // Lỗi tạm thời: GIỮ phiên. Request gốc nhận lại lỗi 401 của nó và hiện lỗi như mọi lỗi
+      // khác; lượt 401 kế tiếp sẽ thử refresh lại.
+      if (isSessionRejected(error)) {
+        hooks.onSessionExpired();
+      }
       return false;
     })
     .finally(() => {
@@ -157,22 +174,30 @@ export function refreshAccessToken(): Promise<boolean> {
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
   /**
-   * Tắt cơ chế tự refresh cho request này. BẮT BUỘC dùng cho mọi endpoint CÔNG KHAI của
-   * `/api/v1/auth/**` (đăng nhập, refresh, quên mật khẩu…): chính `/auth/refresh` mà nhận 401 lại
-   * đi gọi `/auth/refresh` là đệ quy vô hạn. Các endpoint `/auth/me…` của người đã đăng nhập thì
-   * KHÔNG dùng — access token hết hạn giữa chừng vẫn phải được refresh như mọi API khác.
+   * Đánh dấu endpoint CÔNG KHAI của `/api/v1/auth/**` (đăng nhập, refresh, đăng xuất, quên mật
+   * khẩu…). Hai hệ quả, cả hai đều bắt buộc:
+   *
+   * - Không tự refresh khi gặp 401: chính `/auth/refresh` mà nhận 401 lại đi gọi `/auth/refresh`
+   *   là đệ quy vô hạn.
+   * - KHÔNG gửi header Authorization. Backend thấy Bearer token là kiểm, kể cả ở endpoint công
+   *   khai — gửi kèm access token vừa hết hạn thì `/auth/refresh` bị chặn 401 trước khi tới nơi
+   *   xử lý. Lỗi có thật 18/11/2026: người dùng bị đẩy về trang đăng nhập sau mỗi 15 phút dùng liên
+   *   tục. Backend nay cũng bỏ qua header ở đây (PublicAuthEndpoints), phía này là lớp thứ hai.
+   *
+   * Các endpoint `/auth/me…` của người đã đăng nhập thì KHÔNG dùng — access token hết hạn giữa
+   * chừng vẫn phải được refresh như mọi API khác.
    */
   skipAuthRefresh?: boolean;
 }
 
 function sendRequest(path: string, options: RequestOptions): Promise<Response> {
-  const { body, headers, skipAuthRefresh: _skipAuthRefresh, ...rest } = options;
+  const { body, headers, skipAuthRefresh, ...rest } = options;
 
   return fetch(resolveUrl(path), {
     ...rest,
     headers: {
       ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-      ...authorizationHeader(),
+      ...(skipAuthRefresh === true ? {} : authorizationHeader()),
       ...headers,
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),

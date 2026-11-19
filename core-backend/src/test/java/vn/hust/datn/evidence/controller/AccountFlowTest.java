@@ -7,18 +7,26 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.web.servlet.ResultActions;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import vn.hust.datn.evidence.AbstractWebIntegrationTest;
+import vn.hust.datn.evidence.config.properties.JwtProperties;
 import vn.hust.datn.evidence.service.account.GoogleIdentity;
 import vn.hust.datn.evidence.testsupport.FakeGoogleIdTokenVerifier;
 import vn.hust.datn.evidence.testsupport.RecordingAccountMailer;
@@ -41,6 +49,12 @@ class AccountFlowTest extends AbstractWebIntegrationTest {
 
     @Autowired
     private RecordingAccountMailer mailer;
+
+    @Autowired
+    private JwtEncoder jwtEncoder;
+
+    @Autowired
+    private JwtProperties jwtProperties;
 
     @Autowired
     private FakeGoogleIdTokenVerifier google;
@@ -323,7 +337,68 @@ class AccountFlowTest extends AbstractWebIntegrationTest {
                 .andExpect(status().isConflict());
     }
 
+    // ============================ access token hết hạn giữa phiên ============================
+
+    /**
+     * Lỗi có thật 18/11/2026: access token hết hạn giữa phiên → frontend gọi /auth/refresh KÈM token
+     * hết hạn đó trong header Authorization → filter Bearer chặn 401 trước controller → người dùng
+     * bị đẩy về trang đăng nhập sau mỗi 15 phút, refresh token còn hạn mà không được dùng.
+     */
+    @Test
+    void refreshKemAccessTokenHetHanVanDoiDuocPhienMoi() throws Exception {
+        JsonNode session = verifyAndRead(register());
+        String expired = expiredAccessTokenFor(session.at("/user/id").asText());
+
+        // Token được ký đúng khoá, chỉ hết hạn: endpoint cần đăng nhập vẫn phải từ chối nó.
+        getMockMvc()
+                .perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + expired))
+                .andExpect(status().isUnauthorized());
+
+        getMockMvc()
+                .perform(post("/api/v1/auth/refresh")
+                        .header("Authorization", "Bearer " + expired)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\": \"%s\"}".formatted(session.get("refreshToken").asText())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").exists());
+    }
+
+    /**
+     * Đăng xuất lúc access token đã hết hạn vẫn phải THU HỒI refresh token phía server — trước đây
+     * nhận 401, frontend bỏ qua lỗi, và refresh token còn sống thêm 14 ngày trong DB.
+     */
+    @Test
+    void dangXuatKemAccessTokenHetHanVanThuHoiRefreshToken() throws Exception {
+        JsonNode session = verifyAndRead(register());
+        String expired = expiredAccessTokenFor(session.at("/user/id").asText());
+        String refreshToken = session.get("refreshToken").asText();
+
+        getMockMvc()
+                .perform(post("/api/v1/auth/logout")
+                        .header("Authorization", "Bearer " + expired)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\": \"%s\"}".formatted(refreshToken)))
+                .andExpect(status().isNoContent());
+
+        refresh(refreshToken).andExpect(status().isUnauthorized());
+    }
+
     // ===================================== helpers =====================================
+
+    /** Access token ký đúng khoá và đúng issuer như TokenService, nhưng đã hết hạn 1 phút trước. */
+    private String expiredAccessTokenFor(String userId) {
+        Instant past = Instant.now().minus(Duration.ofHours(1));
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer(jwtProperties.issuer())
+                .subject(userId)
+                .issuedAt(past)
+                .expiresAt(Instant.now().minus(Duration.ofMinutes(1)))
+                .claim("role", "USER")
+                .build();
+        return jwtEncoder
+                .encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
+                .getTokenValue();
+    }
 
     private String register() throws Exception {
         String email = "tai-khoan-%s@test.local".formatted(UUID.randomUUID());

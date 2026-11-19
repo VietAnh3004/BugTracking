@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import * as authApi from '@/features/auth/api/authApi';
 import { AuthContext, type AuthStatus } from '@/features/auth/context/AuthContext';
-import { setAccessToken, setAuthHooks } from '@/shared/lib/apiClient';
+import { isSessionRejected, setAccessToken, setAuthHooks } from '@/shared/lib/apiClient';
 import { clearRefreshToken, readRefreshToken, writeRefreshToken } from '@/shared/lib/tokenStorage';
 
 import type { CurrentUser } from '@/features/auth/api/authApi';
@@ -86,10 +86,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authApi
       .refresh(storedToken)
       .then(applyTokens)
-      .catch(() => {
+      .catch((error: unknown) => {
         // Refresh token hết hạn hoặc đã bị thu hồi — dọn sạch rồi coi như chưa đăng nhập. Không
         // hiện lỗi: với người dùng thì đây chỉ là "phiên cũ đã hết", không phải sự cố.
-        resetSession();
+        if (isSessionRejected(error)) {
+          resetSession();
+          return;
+        }
+        // Mất mạng / backend đang khởi động lại: chưa biết phiên còn sống không. Vẫn phải cho
+        // người dùng thấy trang đăng nhập (không có access token thì không gọi được gì), nhưng
+        // GIỮ refresh token — tải lại trang khi backend lên là vào lại được, không phải đăng nhập.
+        setStatus('anonymous');
       });
   }, [applyTokens, resetSession]);
 

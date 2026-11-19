@@ -20,6 +20,7 @@ import vn.hust.datn.evidence.config.properties.SecurityProperties;
 import vn.hust.datn.evidence.config.security.CurrentUserAuthenticationConverter;
 import vn.hust.datn.evidence.config.security.ProblemDetailAccessDeniedHandler;
 import vn.hust.datn.evidence.config.security.ProblemDetailAuthenticationEntryPoint;
+import vn.hust.datn.evidence.config.security.PublicAuthEndpoints;
 import vn.hust.datn.evidence.config.security.ServiceTokenAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
@@ -86,18 +87,12 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // Đi cặp với @SecurityRequirements rỗng trong AuthController — xem Javadoc ở đó.
+                // Danh sách endpoint công khai nằm ở PublicAuthEndpoints — dùng chung với
+                // bearerTokenResolver bên dưới, xem Javadoc ở đó.
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
-                                HttpMethod.POST,
-                                "/api/v1/auth/register",
-                                "/api/v1/auth/login",
-                                "/api/v1/auth/refresh",
-                                "/api/v1/auth/verify-email",
-                                "/api/v1/auth/resend-verification",
-                                "/api/v1/auth/forgot-password",
-                                "/api/v1/auth/reset-password",
-                                "/api/v1/auth/google")
+                                HttpMethod.POST, PublicAuthEndpoints.POST_PATHS.toArray(String[]::new))
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/config")
+                        .requestMatchers(HttpMethod.GET, PublicAuthEndpoints.GET_PATHS.toArray(String[]::new))
                         .permitAll()
                         .requestMatchers("/api/v1/openapi", "/api/v1/openapi/**", "/swagger-ui.html", "/swagger-ui/**")
                         .permitAll()
@@ -112,7 +107,12 @@ public class SecurityConfig {
                 // ưu tiên theo request-matcher, đứng TRƯỚC entry point "mặc định" khai ở
                 // exceptionHandling(). Không khai ở đây thì 401 rơi vào entry point gốc của
                 // Spring Security (không trả JSON), làm test JsonPath rỗng "json can not be null".
+                //
+                // bearerTokenResolver: permitAll KHÔNG ngăn được filter Bearer kiểm token — một
+                // access token hết hạn gửi kèm /auth/refresh vẫn bị chặn 401 trước controller. Bỏ
+                // qua header ở endpoint công khai; xem PublicAuthEndpoints.
                 .oauth2ResourceServer(oauth2 -> oauth2.authenticationEntryPoint(authenticationEntryPoint())
+                        .bearerTokenResolver(PublicAuthEndpoints.bearerTokenResolver())
                         .jwt(jwt -> jwt.decoder(jwtDecoder).jwtAuthenticationConverter(currentUserAuthenticationConverter)))
                 .exceptionHandling(
                         ex -> ex.authenticationEntryPoint(authenticationEntryPoint()).accessDeniedHandler(accessDeniedHandler()));

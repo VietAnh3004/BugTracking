@@ -127,7 +127,9 @@ describe('tự làm mới access token', () => {
     } as Response);
     const onSessionExpired = vi.fn();
     setAuthHooks({
-      refresh: () => Promise.reject(new Error('refresh token đã bị thu hồi')),
+      // Đúng thứ authApi.refresh ném khi backend từ chối refresh token: ApiError 401.
+      refresh: () =>
+        Promise.reject(new ApiError(401, { title: 'Refresh token không hợp lệ', status: 401 })),
       onSessionExpired,
     });
 
@@ -135,6 +137,28 @@ describe('tự làm mới access token', () => {
 
     expect(onSessionExpired).toHaveBeenCalledTimes(1);
     expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).status).toBe(401);
+  });
+
+  /**
+   * Mất mạng / backend đang khởi động lại lúc refresh: refresh token có thể vẫn còn hạn. Xoá phiên
+   * lúc đó là tự đăng xuất người dùng vì một trục trặc vài giây.
+   */
+  it.each([
+    ['mất mạng', new TypeError('Failed to fetch')],
+    ['backend lỗi 5xx', new ApiError(503, { title: 'Service Unavailable', status: 503 })],
+  ])('refresh hỏng vì %s thì GIỮ phiên, chỉ request đó báo lỗi', async (_label, failure) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: () => Promise.resolve({ title: 'Unauthorized' }),
+    } as Response);
+    const onSessionExpired = vi.fn();
+    setAuthHooks({ refresh: () => Promise.reject(failure), onSessionExpired });
+
+    const error = await apiClient.get('/api/v1/projects').catch((e: unknown) => e);
+
+    expect(onSessionExpired).not.toHaveBeenCalled();
     expect((error as ApiError).status).toBe(401);
   });
 
@@ -166,5 +190,43 @@ describe('tự làm mới access token', () => {
     await apiClient.get('/api/v1/projects');
 
     expect(secondRefresh).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * Lỗi có thật 18/11/2026: gọi /auth/refresh KÈM access token vừa hết hạn thì backend chặn 401 ngay
+ * ở filter Bearer, refresh token còn hạn mà không được dùng — người dùng bị đẩy về trang đăng nhập
+ * sau mỗi 15 phút dùng liên tục.
+ */
+describe('header Authorization', () => {
+  function headersOfLastCall(stub: ReturnType<typeof vi.spyOn>): Record<string, string> {
+    const init = stub.mock.calls.at(-1)?.[1] as RequestInit | undefined;
+    return (init?.headers ?? {}) as Record<string, string>;
+  }
+
+  function okFetch() {
+    return vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({}),
+    } as Response);
+  }
+
+  it('endpoint công khai (skipAuthRefresh) KHÔNG mang access token, kể cả khi đang có', async () => {
+    const stub = okFetch();
+    setAccessToken('access-token-da-het-han');
+
+    await apiClient.post('/api/v1/auth/refresh', { refreshToken: 'r' }, { skipAuthRefresh: true });
+
+    expect(headersOfLastCall(stub)).not.toHaveProperty('Authorization');
+  });
+
+  it('endpoint cần đăng nhập vẫn mang access token', async () => {
+    const stub = okFetch();
+    setAccessToken('access-token-hop-le');
+
+    await apiClient.get('/api/v1/projects');
+
+    expect(headersOfLastCall(stub)).toHaveProperty('Authorization', 'Bearer access-token-hop-le');
   });
 });

@@ -882,7 +882,8 @@
           "204" : {
             "description" : "No Content"
           }
-        }
+        },
+        "security" : [ ]
       }
     },
     "/api/v1/auth/login" : {
