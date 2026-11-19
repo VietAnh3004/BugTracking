@@ -12,51 +12,56 @@ import { ApiError } from '@/shared/lib/apiClient';
 import { IconArrowRight, IconBox } from '@/shared/ui/icons';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
 import { CARD } from '@/shared/ui/styles';
+import { EmptyState, ErrorState, LoadingState } from '@/shared/ui/states';
 
 export function ProjectList() {
   const { data, isPending, isError, error } = useProjects();
 
   if (isPending) {
-    return <StatusBadge tone="neutral" label="Đang tải danh sách dự án…" />;
+    return <LoadingState label="Đang tải danh sách dự án…" shape="lines" rows={4} />;
   }
 
   if (isError) {
-    const reason =
-      error instanceof ApiError
-        ? `HTTP ${error.status}: ${error.message}`
-        : 'Không gọi được backend';
-    return <StatusBadge tone="danger" label={reason} />;
+    return (
+      <ErrorState
+        title="Không tải được danh sách dự án."
+        message={
+          error instanceof ApiError
+            ? `HTTP ${error.status}: ${error.message}`
+            : 'Không gọi được backend'
+        }
+        hint="Kiểm tra trạng thái backend ở chân trang rồi tải lại trang."
+      />
+    );
   }
 
   if (data.items === undefined || data.items.length === 0) {
     return (
-      <div className="border-border-strong bg-surface flex flex-col items-center rounded-xl border border-dashed px-6 py-12 text-center">
-        <span className="bg-surface-sunken text-ink-muted mb-3 grid size-11 place-items-center rounded-xl">
-          <IconBox className="size-5" />
-        </span>
-        <StatusBadge tone="neutral" label="Chưa có dự án nào." />
-        <p className="text-ink-muted mt-2 mb-0 text-sm">
-          Tạo dự án đầu tiên ở khung bên cạnh để bắt đầu.
-        </p>
+      <div className={CARD}>
+        <EmptyState
+          icon={<IconBox className="size-5" />}
+          title="Chưa có dự án nào."
+          description="Tạo dự án đầu tiên ở khung bên cạnh, rồi tải mã nguồn dạng zip lên để phân tích."
+        />
       </div>
     );
   }
 
   return (
-    <ul className="m-0 grid list-none gap-3 p-0">
+    // Một danh sách dày trong MỘT khung, ngăn bằng đường kẻ — kiểu danh sách repo của IDE, không
+    // phải lưới thẻ rời nhau kiểu landing page.
+    <ul className={`${CARD} divide-border m-0 list-none divide-y p-0`}>
       {data.items.map((project) => (
         <li
           key={project.id}
-          className={`${CARD} group hover:border-brand-ring flex flex-wrap items-center justify-between gap-x-4 gap-y-3 p-4 transition-colors`}
+          className="group hover:bg-surface-sunken flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 transition-colors"
         >
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="bg-brand-subtle text-brand grid size-10 shrink-0 place-items-center rounded-lg">
-              <IconBox className="size-5" />
-            </span>
+          <div className="flex min-w-0 items-start gap-2.5">
+            <IconBox className="text-ink-subtle mt-0.5 size-4" />
             <div className="min-w-0">
               <Link
                 to={`/projects/${project.id}`}
-                className="text-ink hover:text-brand inline-flex items-center gap-1 text-base font-semibold"
+                className="text-ink hover:text-brand inline-flex items-center gap-1 text-sm font-semibold"
               >
                 {project.name}
                 <IconArrowRight className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />

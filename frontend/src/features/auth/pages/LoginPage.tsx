@@ -48,7 +48,7 @@ export function LoginPage() {
         <>
           {notVerified ? (
             <div
-              className="mt-4 flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900"
+              className="border-warning/30 bg-warning/10 text-warning mt-4 flex flex-col gap-2 rounded-lg border px-3 py-3 text-sm"
               role="alert"
             >
               <p className="m-0">

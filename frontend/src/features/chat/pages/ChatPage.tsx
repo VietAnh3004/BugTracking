@@ -11,6 +11,7 @@ import {
 } from '@/features/chat/hooks/useConversation';
 import { IconArrowLeft, IconChat } from '@/shared/ui/icons';
 import { buttonClass, CARD, INPUT } from '@/shared/ui/styles';
+import { EmptyState, ErrorState, LoadingState } from '@/shared/ui/states';
 
 /**
  * Hỏi đáp với Agent về một lần phân tích.
@@ -61,19 +62,19 @@ export function ChatPage() {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-11rem)] min-h-[32rem] w-full max-w-4xl flex-col gap-4">
-      <header className="flex flex-col gap-3">
+    <div className="mx-auto flex h-[calc(100vh-10rem)] min-h-[32rem] w-full max-w-4xl flex-col gap-3">
+      <header className="flex flex-col gap-2">
         <Link
           to={`/snapshots/${snapshotId}/runs/${runId}/warnings`}
-          className="text-ink-muted hover:text-brand inline-flex items-center gap-1 self-start text-sm font-medium"
+          className="text-ink-subtle hover:text-brand inline-flex items-center gap-1 self-start text-xs font-medium"
         >
           <IconArrowLeft className="size-3.5" />
           Về bảng cảnh báo
         </Link>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-ink m-0 text-2xl font-semibold tracking-tight">Hỏi Agent</h1>
-            <p className="text-ink-muted mt-1 mb-0 text-sm">
+            <h1 className="text-ink m-0 text-xl font-semibold tracking-tight">Hỏi Agent</h1>
+            <p className="text-ink-muted mt-0.5 mb-0 text-sm">
               Mọi nhận định đều kèm Evidence ID đã được đối chiếu với kho bằng chứng.
             </p>
           </div>
@@ -107,18 +108,21 @@ export function ChatPage() {
         </div>
       </header>
 
-      <div className={`${CARD} bg-surface-muted flex-1 overflow-y-auto p-4 sm:p-5`}>
+      <div className={`${CARD} bg-surface-muted flex-1 overflow-y-auto p-4 sm:p-4`}>
         {selectedId === '' ? (
-          <div className="text-ink-muted flex h-full flex-col items-center justify-center gap-3 text-center text-sm">
-            <span className="bg-brand-subtle text-brand grid size-12 place-items-center rounded-xl">
-              <IconChat className="size-6" />
-            </span>
-            <p className="m-0 max-w-sm">
-              Chưa có phiên nào được chọn. Bấm <strong>Phiên mới</strong> để bắt đầu.
-            </p>
+          <div className="flex h-full items-center justify-center">
+            <EmptyState
+              icon={<IconChat className="size-5" />}
+              title="Chưa có phiên nào được chọn."
+              description={
+                <>
+                  Chọn một phiên cũ ở ô phía trên, hoặc bấm <strong>Phiên mới</strong> để bắt đầu.
+                </>
+              }
+            />
           </div>
         ) : messages.isPending ? (
-          <p className="text-ink-muted text-sm">Đang tải lịch sử…</p>
+          <LoadingState label="Đang tải lịch sử…" shape="lines" rows={4} />
         ) : (
           <ul className="space-y-3">
             {(messages.data ?? []).map((message) => (
@@ -143,12 +147,13 @@ export function ChatPage() {
         )}
 
         {error != null && (
-          <p
-            role="alert"
-            className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-          >
-            {error}
-          </p>
+          <div className="mt-3">
+            <ErrorState
+              title="Lượt hỏi không hoàn tất."
+              message={error}
+              hint="Câu hỏi vẫn nằm trong lịch sử — gửi lại để hỏi tiếp."
+            />
+          </div>
         )}
 
         <div ref={bottom} />
@@ -165,7 +170,7 @@ export function ChatPage() {
           rows={2}
           disabled={selectedId === '' || isStreaming}
           placeholder="Ví dụ: có test nào liên quan tới cảnh báo này không?"
-          className="text-ink placeholder:text-ink-subtle disabled:bg-surface-muted flex-1 resize-none rounded-lg border-0 bg-transparent px-3 py-2 text-sm outline-none"
+          className="text-ink placeholder:text-ink-subtle flex-1 resize-none rounded-md border-0 bg-transparent px-2.5 py-1.5 text-sm outline-none disabled:opacity-60"
         />
         {isStreaming ? (
           // Đang chạy thì nút chính là "Dừng", không phải một nút "Đang hỏi…" bị khoá: người dùng

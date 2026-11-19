@@ -38,38 +38,47 @@ export function WarningTable({ warnings, snapshotId, runId, reviewByShortId }: W
   return (
     // `overflow-x-auto` + `min-w`: dưới ngưỡng đó thì bảng tự cuộn ngang, KHÔNG bóp cột cho vừa.
     <div className={`${CARD} overflow-x-auto`}>
-      <table className="w-full min-w-[60rem] table-fixed border-collapse text-sm">
+      <table className="w-full min-w-[64rem] table-fixed border-collapse text-sm">
         {/*
          * `table-fixed` + colgroup là bắt buộc chứ không phải trang trí. Ở chế độ `table-auto` mặc
          * định, trình duyệt chia chỗ theo chiều rộng TỐI THIỂU của nội dung — mà cột Vị trí dùng
-         * `break-all` nên chiều rộng tối thiểu của nó là ĐÚNG MỘT KÝ TỰ. Cột Tóm tắt (một câu dài,
+         * `break-all` nên chiều rộng tối thiểu của nó là ĐÚNG MỘT KÝ TỰ. Cột Mô tả (một câu dài,
          * ngắt theo từ nên tối thiểu lớn hơn hẳn) chiếm hết chỗ, còn đường dẫn rơi dọc từng chữ cái
          * và kéo hàng cao vống lên. Chốt cứng chiều rộng thì bố cục không còn phụ thuộc nội dung.
+         *
+         * Thứ tự cột theo thứ người đọc cần TRƯỚC (19/11/2026): mức độ → ở đâu → là gì → luật nào.
          */}
         <colgroup>
-          <col className="w-28" />
+          <col className="w-24" />
           <col className="w-72" />
-          <col className="w-64" />
           <col />
-          <col className="w-36" />
+          <col className="w-64" />
+          <col className="w-32" />
         </colgroup>
         <thead>
-          <tr className="border-border bg-surface-muted text-ink-muted border-b text-left text-xs tracking-wider uppercase">
-            <th className="py-2.5 pr-3 pl-4 font-semibold">Mức</th>
-            <th className="py-2.5 pr-3 font-semibold">Luật · công cụ</th>
-            <th className="py-2.5 pr-3 font-semibold">Vị trí</th>
-            <th className="py-2.5 pr-3 font-semibold">Mô tả</th>
-            <th className="py-2.5 pr-4 font-semibold">Đánh giá</th>
+          <tr className="border-border text-ink-subtle text-2xs border-b text-left font-medium tracking-wider uppercase">
+            <th className="py-2 pr-3 pl-3 font-medium">Mức</th>
+            <th className="py-2 pr-3 font-medium">Vị trí</th>
+            <th className="py-2 pr-3 font-medium">Mô tả</th>
+            <th className="py-2 pr-3 font-medium">Luật · công cụ</th>
+            <th className="py-2 pr-3 font-medium">Đánh giá</th>
           </tr>
         </thead>
         <tbody className="divide-border divide-y">
           {warnings.map((warning) => (
-            <tr key={warning.evidenceId} className="hover:bg-surface-muted/70 align-top">
-              <td className="py-3 pr-3 pl-4">
+            <tr key={warning.evidenceId} className="hover:bg-surface-sunken align-top">
+              <td className="py-2 pr-3 pl-3">
                 <SeverityBadge severity={warning.severityNormalized} />
               </td>
-              <td className="py-3 pr-3">
-                <span className="text-ink block font-mono text-xs font-medium break-all">
+              <td className="py-2 pr-3">
+                <WarningLocation warning={warning} snapshotId={snapshotId} />
+              </td>
+              {/* Bảng hiện bản rút gọn; câu đầy đủ (như Agent đọc) vẫn xem được khi rê chuột. */}
+              <td className="text-ink py-2 pr-3" title={warning.summary}>
+                {displaySummary(warning.summary)}
+              </td>
+              <td className="py-2 pr-3">
+                <span className="text-ink-muted block font-mono text-xs break-all">
                   {warning.ruleIdNormalized}
                 </span>
                 {/*
@@ -79,12 +88,12 @@ export function WarningTable({ warnings, snapshotId, runId, reviewByShortId }: W
                  * tại.
                  *
                  * Cũng là chỗ dạy người dùng rằng Evidence ID bấm được — đúng affordance mà
-                 * citation của chatbot sẽ dùng lại ở tuần 12-13.
+                 * citation của chatbot dùng lại.
                  */}
-                <span className="mt-1.5 flex flex-wrap items-center gap-2">
+                <span className="mt-1 flex flex-wrap items-center gap-2">
                   <Link
                     to={`/snapshots/${snapshotId}/runs/${runId}/evidence/${warning.shortId}`}
-                    className="bg-brand-subtle text-brand hover:bg-brand-solid rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold transition-colors hover:text-white"
+                    className="bg-brand-subtle text-brand hover:bg-brand-solid text-2xs rounded-sm px-1.5 py-0.5 font-mono font-semibold transition-colors hover:text-white"
                     title="Mở Evidence Explorer: ngữ cảnh mã, test liên quan và độ phủ"
                   >
                     {warning.shortId}
@@ -92,14 +101,7 @@ export function WarningTable({ warnings, snapshotId, runId, reviewByShortId }: W
                   <span className="text-ink-subtle text-xs">{warning.tool}</span>
                 </span>
               </td>
-              <td className="py-3 pr-3">
-                <WarningLocation warning={warning} snapshotId={snapshotId} />
-              </td>
-              {/* Bảng hiện bản rút gọn; câu đầy đủ (như Agent đọc) vẫn xem được khi rê chuột. */}
-              <td className="text-ink py-3 pr-3 leading-relaxed" title={warning.summary}>
-                {displaySummary(warning.summary)}
-              </td>
-              <td className="py-3 pr-4">
+              <td className="py-2 pr-3">
                 <DecisionBadge decision={reviewByShortId?.get(warning.shortId)} />
               </td>
             </tr>
@@ -138,13 +140,16 @@ function WarningLocation({ warning, snapshotId }: { warning: Warning; snapshotId
   const dir = lastSlash === -1 ? '' : warning.filePath.slice(0, lastSlash + 1);
   const fileName = warning.filePath.slice(lastSlash + 1);
 
+  // Tên file + dòng HIỆN TRÊN, sáng và đậm — thứ mắt quét tìm đầu tiên; thư mục mờ ở dưới. Đảo
+  // bằng `flex-col-reverse` chứ KHÔNG đảo thứ tự DOM: trình đọc màn hình (và tên truy cập của
+  // link) vẫn đọc ra đúng một đường dẫn liền mạch `src/.../App.java:42`.
   return (
     <Link
       to={`/snapshots/${snapshotId}/files/${toFilePathUrl(warning.filePath)}${hash}`}
-      className="group block font-mono text-xs"
+      className="group flex flex-col-reverse font-mono text-xs"
     >
-      {dir === '' ? null : <span className="text-ink-subtle block break-all">{dir}</span>}
-      <span className="text-brand block font-medium break-all group-hover:underline">
+      {dir === '' ? null : <span className="text-ink-subtle mt-0.5 break-all">{dir}</span>}
+      <span className="text-brand font-medium break-all group-hover:underline">
         {fileName}
         {suffix}
       </span>

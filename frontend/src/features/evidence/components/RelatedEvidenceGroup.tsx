@@ -38,7 +38,7 @@ export function RelatedEvidenceGroup({
     <section className="mb-6 last:mb-0">
       <h3 className="text-ink-muted mt-0 mb-2.5 flex items-center gap-2 text-xs font-semibold tracking-wider uppercase">
         {title}{' '}
-        <span className="bg-surface-sunken text-ink-muted rounded-full px-2 py-0.5 text-[11px] tabular-nums">
+        <span className="bg-surface-sunken text-ink-muted text-2xs rounded-sm px-1.5 py-0.5">
           ({items.length})
         </span>
       </h3>

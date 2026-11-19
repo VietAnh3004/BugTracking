@@ -20,7 +20,7 @@ export function ProjectDetailPage() {
   // Không thể xảy ra với route `/projects/:projectId`, nhưng `useParams` khai kiểu optional nên
   // phải xử lý tường minh thay vì dùng `!`.
   if (projectId === undefined) {
-    return <p className="text-red-700">Thiếu định danh dự án trên đường dẫn.</p>;
+    return <p className="text-danger">Thiếu định danh dự án trên đường dẫn.</p>;
   }
 
   return <ProjectDetail projectId={projectId} />;
@@ -30,7 +30,7 @@ function ProjectDetail({ projectId }: { projectId: string }) {
   const project = useProject(projectId);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <PageHeader
         back={{ to: '/projects', label: 'Tất cả dự án' }}
         // Tên dự án chưa về thì để tiêu đề trung tính chứ không để trống: một khoảng trắng ở chỗ
@@ -42,7 +42,7 @@ function ProjectDetail({ projectId }: { projectId: string }) {
         }
       />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section className={`${CARD} overflow-hidden`}>
           <div className="border-border border-b px-5 py-4">
             <div className="flex items-center gap-1.5">
@@ -56,8 +56,8 @@ function ProjectDetail({ projectId }: { projectId: string }) {
         </section>
 
         {project.data?.role === 'OWNER' ? (
-          <div className="flex flex-col gap-6">
-            <section className={`${CARD} p-5`}>
+          <div className="flex flex-col gap-4">
+            <section className={`${CARD} p-4`}>
               <div className="mb-4 flex items-center gap-1.5">
                 <h2 className="text-ink m-0 text-base font-semibold">Tải mã nguồn lên</h2>
                 <InfoTip label="Giải thích: Tải mã nguồn lên">
@@ -70,7 +70,7 @@ function ProjectDetail({ projectId }: { projectId: string }) {
             <MembersPanel projectId={projectId} />
           </div>
         ) : project.data?.role === 'MEMBER' ? (
-          <section className={`${CARD} text-ink-muted p-5 text-sm`}>
+          <section className={`${CARD} text-ink-muted p-4 text-sm`}>
             <h2 className="text-ink mt-0 mb-1 text-base font-semibold">Dự án được chia sẻ</h2>
             Bạn là thành viên: xem mã và bằng chứng, hỏi Agent, đánh giá, và gán nhãn với vai trò
             người gán thứ hai. Chỉ chủ dự án tải mã và chạy phân tích được.

@@ -21,9 +21,13 @@ import { Navigate, type RouteObject } from 'react-router-dom';
 
 import { NotFoundPage } from '@/app/NotFoundPage';
 import { RouteErrorBoundary } from '@/app/RouteErrorBoundary';
+import { StyleguidePage } from '@/app/StyleguidePage';
 import { NarrowContent } from '@/app/layouts/NarrowContent';
 import { RootLayout } from '@/app/layouts/RootLayout';
 import { WideContent } from '@/app/layouts/WideContent';
+import { AdminLoginPage } from '@/features/admin/pages/AdminLoginPage';
+import { AdminUsersPage } from '@/features/admin/pages/AdminUsersPage';
+import { AdminRoute } from '@/features/auth/components/AdminRoute';
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
 import { PublicOnlyRoute } from '@/features/auth/components/PublicOnlyRoute';
 import { AccountPage } from '@/features/auth/pages/AccountPage';
@@ -69,6 +73,27 @@ export const routes: RouteObject[] = [
           { path: 'verify-email', element: <VerifyEmailPage /> },
           { path: 'reset-password', element: <ResetPasswordPage /> },
         ],
+      },
+      {
+        // Khu vực quản trị. `/admin/login` công khai (không link nào trỏ tới); mọi thứ còn lại sau
+        // `AdminRoute` — người không phải ADMIN thấy 404 thường, xem guard.
+        element: <NarrowContent />,
+        children: [{ path: 'admin/login', element: <AdminLoginPage /> }],
+      },
+      {
+        element: <AdminRoute />,
+        children: [
+          {
+            element: <WideContent />,
+            children: [{ path: 'admin', element: <AdminUsersPage /> }],
+          },
+        ],
+      },
+      {
+        // Trang kiểm giao diện cho người phát triển — không có link nào trỏ tới, không cần đăng
+        // nhập, không gọi API. Xem `StyleguidePage`.
+        element: <WideContent />,
+        children: [{ path: 'styleguide', element: <StyleguidePage /> }],
       },
       {
         element: <ProtectedRoute />,

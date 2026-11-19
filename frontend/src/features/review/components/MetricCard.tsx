@@ -18,12 +18,12 @@ export function MetricCard({
   children: ReactNode;
 }) {
   return (
-    <section className={`${CARD} p-5`}>
+    <section className={`${CARD} p-4`}>
       <div className="flex items-center gap-1.5">
-        <h2 className="text-ink m-0 text-base font-semibold">{title}</h2>
+        <h2 className="text-ink m-0 text-sm font-semibold">{title}</h2>
         {note === undefined ? null : <InfoTip label={`Giải thích: ${title}`}>{note}</InfoTip>}
       </div>
-      <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{children}</dl>
+      <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{children}</dl>
     </section>
   );
 }
@@ -37,7 +37,7 @@ export function MetricCard({
 export function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
   const missing = value === CHUA_CO;
   return (
-    <div className="bg-surface-muted rounded-lg px-3 py-2.5">
+    <div className="bg-surface-sunken rounded-md px-3 py-2">
       <dt className="text-ink-muted flex items-center gap-1 text-xs">
         {label}
         {hint === undefined ? null : <InfoTip label={`Giải thích: ${label}`}>{hint}</InfoTip>}

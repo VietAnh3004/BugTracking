@@ -30,14 +30,16 @@ export function CodeLine({ lineNumber, text, highlighted, segments }: CodeLinePr
   return (
     <div
       id={`L${String(lineNumber)}`}
-      className={`flex scroll-mt-24 ${highlighted ? 'bg-line-highlight shadow-[inset_3px_0_0_var(--color-sev-medium)]' : ''}`}
+      className={`flex scroll-mt-24 ${highlighted ? 'bg-line-highlight shadow-[inset_2px_0_0_var(--color-warning)]' : ''}`}
     >
       {/*
         `select-none` là bắt buộc, không phải trang trí: thiếu nó thì bôi đen nhiều dòng để copy sẽ
         dính cả số dòng vào clipboard — ai cũng thấy ngay khi demo. `tabular-nums` giữ các chữ số
         cùng bề rộng để cột số dòng không nhấp nháy khi cuộn.
       */}
-      <span className="text-ink-subtle w-14 shrink-0 pr-4 text-right tabular-nums select-none">
+      <span
+        className={`bg-code-gutter border-border mr-4 w-14 shrink-0 border-r pr-3 text-right select-none ${highlighted ? 'text-ink' : 'text-ink-subtle'}`}
+      >
         {lineNumber}
       </span>
       {/* `whitespace-pre` giữ nguyên thụt lề của mã nguồn; `break-words` để dòng dài không tràn ngang. */}

@@ -30,14 +30,13 @@ export function CheckInboxNotice({
 }: CheckInboxNoticeProps) {
   return (
     <section className="mx-auto w-full max-w-md pt-4 sm:pt-10">
-      <div className={`${CARD} flex flex-col items-center gap-4 p-6 text-center sm:p-8`}>
-        <span className="grid size-12 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
-          <IconCheck className="size-6" />
-        </span>
+      <div className={`${CARD} flex flex-col items-center gap-3 p-4 text-center sm:p-6`}>
+        {/* Icon mang NGHĨA (đã gửi xong), không trang trí — nên giữ icon, bỏ ô nền to. */}
+        <IconCheck className="text-success size-6" />
         <h2 className="text-ink m-0 text-xl font-semibold tracking-tight">{title}</h2>
         <div className="text-ink-muted flex flex-col gap-2 text-sm">{children}</div>
         {onResend === undefined ? null : resent ? (
-          <p className="m-0 text-sm font-medium text-emerald-700" role="status">
+          <p className="text-success m-0 text-sm font-medium" role="status">
             Đã gửi lại. Nếu vẫn không thấy, kiểm tra hộp thư Spam.
           </p>
         ) : (

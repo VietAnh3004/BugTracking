@@ -19,7 +19,7 @@ import { ArtifactUploadPanel } from '@/features/warnings/components/ArtifactUplo
 import { SandboxRunButton, SandboxRunStatus } from '@/features/warnings/components/SandboxRun';
 import { useAnalysisRuns, useSandboxRun } from '@/features/warnings/hooks/useWarnings';
 import { ApiError } from '@/shared/lib/apiClient';
-import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
+import { ErrorState, LoadingState } from '@/shared/ui/states';
 import { IconAlert, IconUpload } from '@/shared/ui/icons';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
@@ -40,7 +40,7 @@ export function SnapshotBrowserLayout() {
   const isOwner = project.data?.role === 'OWNER';
 
   if (snapshot.isPending || files.isPending) {
-    return <FullPageSpinner label="Đang tải cây file…" />;
+    return <LoadingState label="Đang tải cây file…" shape="lines" rows={10} />;
   }
 
   if (files.isError) {
@@ -91,9 +91,9 @@ export function SnapshotBrowserLayout() {
       <div className="grid items-start gap-4 md:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]">
         <nav
           aria-label="Cây file"
-          className={`${CARD} max-h-[75vh] overflow-auto p-2 md:sticky md:top-20`}
+          className={`${CARD} max-h-[calc(100vh-5rem)] overflow-auto p-1.5 md:sticky md:top-16`}
         >
-          <p className="text-ink-muted m-0 px-2 pt-1 pb-2 text-xs font-semibold tracking-wider uppercase">
+          <p className="text-ink-subtle text-2xs m-0 px-2 pt-1 pb-1.5 font-medium tracking-wider uppercase">
             Tệp tin
           </p>
           <FileTree nodes={tree} snapshotId={snapshotId} activePath={activePath} />
@@ -130,7 +130,7 @@ function LatestRunLink({ snapshotId }: { snapshotId: string }) {
       to={`/snapshots/${snapshotId}/runs/${latest.id}/warnings`}
       className={buttonClass('secondary')}
     >
-      <IconAlert className="text-sev-medium size-4" />
+      <IconAlert className="text-warning size-4" />
       Cảnh báo ({latest.findingCount})
     </Link>
   );
@@ -142,7 +142,17 @@ function SnapshotLoadError({ error }: { error: unknown }) {
     return <StatusBadge tone="warning" label="Snapshot chưa giải nén xong, thử lại sau ít phút." />;
   }
   if (error instanceof ApiError && error.status === 404) {
-    return <StatusBadge tone="danger" label="Không tìm thấy snapshot này." />;
+    return (
+      <ErrorState
+        title="Không tìm thấy snapshot này."
+        hint="Snapshot có thể đã bị xoá cùng dự án. Quay lại danh sách dự án để mở lại."
+      />
+    );
   }
-  return <StatusBadge tone="danger" label="Không tải được snapshot." />;
+  return (
+    <ErrorState
+      title="Không tải được snapshot."
+      hint="Kiểm tra trạng thái backend ở chân trang rồi tải lại trang."
+    />
+  );
 }

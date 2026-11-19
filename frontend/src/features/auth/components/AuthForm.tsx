@@ -5,7 +5,6 @@
  * Thuần trình bày: không gọi API, không biết `useLogin`/`useRegister` tồn tại.
  */
 
-import { IconLogo } from '@/shared/ui/icons';
 import { buttonClass, CARD } from '@/shared/ui/styles';
 
 import type { FormEvent, ReactNode } from 'react';
@@ -37,11 +36,8 @@ export function AuthForm({
 }: AuthFormProps) {
   return (
     <section className="mx-auto w-full max-w-md pt-4 sm:pt-10">
-      <div className={`${CARD} p-6 sm:p-8`}>
-        <div className="mb-6 flex flex-col items-center text-center">
-          <span className="bg-brand-subtle text-brand mb-4 grid size-12 place-items-center rounded-xl">
-            <IconLogo className="size-6" />
-          </span>
+      <div className={`${CARD} p-4`}>
+        <div className="mb-5 flex flex-col items-center text-center">
           <h2 className="text-ink m-0 text-xl font-semibold tracking-tight">{title}</h2>
           {subtitle === undefined ? null : (
             <p className="text-ink-muted mt-1 mb-0 text-sm">{subtitle}</p>
@@ -54,7 +50,7 @@ export function AuthForm({
           {/* role="alert" để trình đọc màn hình thông báo ngay, và để test tìm lỗi theo vai trò. */}
           {errorMessage !== null ? (
             <p
-              className="m-0 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+              className="border-danger/30 bg-danger/10 text-danger m-0 rounded-lg border px-3 py-2 text-sm"
               role="alert"
             >
               {errorMessage}

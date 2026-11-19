@@ -45,7 +45,9 @@ export function mockFetchByUrl(routes: Record<string, MockResponse>) {
 }
 
 /** Bộ token giả đúng shape `AuthTokensResponse` của backend. */
-export function fakeAuthTokens(overrides: { displayName?: string } = {}) {
+export function fakeAuthTokens(
+  overrides: { displayName?: string; role?: 'USER' | 'ADMIN'; email?: string } = {},
+) {
   return {
     accessToken: 'access-token-gia',
     tokenType: 'Bearer',
@@ -53,9 +55,9 @@ export function fakeAuthTokens(overrides: { displayName?: string } = {}) {
     refreshToken: 'refresh-token-gia',
     user: {
       id: '00000000-0000-0000-0000-000000000001',
-      email: 'nguoidung@test.local',
+      email: overrides.email ?? 'nguoidung@test.local',
       displayName: overrides.displayName ?? 'Nguoi Dung Test',
-      role: 'USER' as const,
+      role: overrides.role ?? ('USER' as const),
       createdAt: '2026-01-01T00:00:00Z',
       emailVerified: true,
       hasPassword: true,

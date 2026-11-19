@@ -79,9 +79,7 @@ export function ResetPasswordPage() {
     return (
       <section className="mx-auto w-full max-w-md pt-4 sm:pt-10">
         <div className={`${CARD} flex flex-col items-center gap-4 p-6 text-center sm:p-8`}>
-          <span className="grid size-12 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
-            <IconCheck className="size-6" />
-          </span>
+          <IconCheck className="text-success size-6" />
           <h2 className="text-ink m-0 text-xl font-semibold tracking-tight">Đã đặt mật khẩu mới</h2>
           <p className="text-ink-muted m-0 text-sm">
             Mọi phiên đăng nhập cũ đã bị đăng xuất. Đăng nhập lại bằng mật khẩu mới.

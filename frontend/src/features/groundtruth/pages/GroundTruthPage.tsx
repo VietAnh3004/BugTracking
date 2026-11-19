@@ -21,7 +21,7 @@ import {
   useSaveLabel,
 } from '@/features/groundtruth/hooks/useGroundTruth';
 import { ApiError } from '@/shared/lib/apiClient';
-import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
+import { ErrorState, LoadingState } from '@/shared/ui/states';
 import { IconDownload, IconUpload } from '@/shared/ui/icons';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
@@ -39,10 +39,16 @@ export function GroundTruthPage() {
   const fileInput = useRef<HTMLInputElement>(null);
 
   if (sheet.isPending) {
-    return <FullPageSpinner label="Đang tải danh sách cảnh báo…" />;
+    return <LoadingState label="Đang tải danh sách cảnh báo…" shape="table" />;
   }
   if (sheet.isError) {
-    return <StatusBadge tone="danger" label="Không tải được bảng gán nhãn." />;
+    return (
+      <ErrorState
+        title="Không tải được bảng gán nhãn."
+        message={sheet.error instanceof ApiError ? sheet.error.message : undefined}
+        hint="Kiểm tra trạng thái backend ở chân trang rồi tải lại trang."
+      />
+    );
   }
 
   const { rows, role } = sheet.data;
@@ -105,7 +111,7 @@ export function GroundTruthPage() {
       {importLabels.isSuccess ? (
         <div
           role="status"
-          className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900"
+          className="border-success/30 bg-success/10 text-success rounded-xl border px-4 py-3 text-sm"
         >
           Đã nạp {importLabels.data.labelsWritten} nhãn từ {importLabels.data.entriesMatched} mục
           khớp.
@@ -126,7 +132,7 @@ export function GroundTruthPage() {
       {importLabels.isError ? (
         <p
           role="alert"
-          className="m-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="border-danger/30 bg-danger/10 text-danger m-0 rounded-lg border px-4 py-3 text-sm"
         >
           {importLabels.error instanceof ApiError
             ? (importLabels.error.problem.detail ?? importLabels.error.message)
@@ -134,7 +140,7 @@ export function GroundTruthPage() {
         </p>
       ) : null}
       {save.isError ? (
-        <p role="alert" className="m-0 text-sm text-red-700">
+        <p role="alert" className="text-danger m-0 text-sm">
           Không lưu được nhãn: {save.error.message}
         </p>
       ) : null}

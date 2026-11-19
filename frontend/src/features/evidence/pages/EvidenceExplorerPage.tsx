@@ -22,7 +22,7 @@ import { ReviewPanel } from '@/features/review/components/ReviewPanel';
 import { RelatedEvidenceGroup } from '@/features/evidence/components/RelatedEvidenceGroup';
 import { useEvidenceDetail } from '@/features/evidence/hooks/useEvidenceDetail';
 import { ApiError } from '@/shared/lib/apiClient';
-import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
+import { ErrorState, LoadingState } from '@/shared/ui/states';
 import { IconArrowLeft } from '@/shared/ui/icons';
 
 export function EvidenceExplorerPage() {
@@ -34,16 +34,16 @@ export function EvidenceExplorerPage() {
   const { data, isPending, isError, error } = useEvidenceDetail(runId, shortId);
 
   return (
-    <article className="flex flex-col gap-5">
+    <article className="flex flex-col gap-4">
       <Link
         to={`/snapshots/${snapshotId}/runs/${runId}/warnings`}
-        className="text-ink-muted hover:text-brand inline-flex items-center gap-1 self-start text-sm font-medium"
+        className="text-ink-subtle hover:text-brand inline-flex items-center gap-1 self-start text-xs font-medium"
       >
         <IconArrowLeft className="size-3.5" />
         Về danh sách cảnh báo
       </Link>
 
-      {isPending ? <FullPageSpinner label="Đang tải bằng chứng…" /> : null}
+      {isPending ? <LoadingState label="Đang tải bằng chứng…" shape="detail" /> : null}
       {isError ? <EvidenceError error={error} /> : null}
 
       {data === undefined ? null : (
@@ -53,7 +53,7 @@ export function EvidenceExplorerPage() {
           {data.relatedTotal === 0 ? (
             <EmptyEvidenceNotice locationResolved={data.filePath != null} />
           ) : (
-            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
+            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
               <div>
                 <RelatedEvidenceGroup
                   title="Ngữ cảnh mã nguồn"
@@ -139,11 +139,9 @@ function EvidenceError({ error }: { error: unknown }) {
           : 'Không tải được bằng chứng.';
 
   return (
-    <p
-      className="m-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-      role="alert"
-    >
-      {message}
-    </p>
+    <ErrorState
+      title={message}
+      hint="Mở lại bằng chứng từ danh sách cảnh báo của đúng lần phân tích — Evidence ID chỉ có nghĩa trong lần phân tích đã sinh ra nó."
+    />
   );
 }

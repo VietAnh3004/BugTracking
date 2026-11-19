@@ -11,7 +11,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
+import { LoadingState } from '@/shared/ui/states';
 
 interface LocationState {
   from?: { pathname: string };
@@ -22,7 +22,7 @@ export function PublicOnlyRoute() {
   const location = useLocation();
 
   if (status === 'bootstrapping') {
-    return <FullPageSpinner label="Đang kiểm tra phiên đăng nhập…" />;
+    return <LoadingState label="Đang kiểm tra phiên đăng nhập…" shape="lines" rows={3} />;
   }
 
   if (status === 'authenticated') {

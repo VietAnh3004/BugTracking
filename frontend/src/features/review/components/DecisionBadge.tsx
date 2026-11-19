@@ -8,12 +8,12 @@ import type { ReviewDecision } from '@/features/review/api/reviewApi';
  * chứng"). Tô cùng màu là gộp hai tín hiệu cải tiến hoàn toàn khác nhau.
  */
 const STYLES: Record<ReviewDecision, { label: string; className: string }> = {
-  ACCEPT: { label: 'Đúng là lỗi', className: 'bg-red-50 text-red-700 ring-red-600/20' },
-  REJECT: { label: 'Báo nhầm', className: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' },
-  UNCERTAIN: { label: 'Chưa quyết', className: 'bg-amber-50 text-amber-800 ring-amber-600/20' },
+  ACCEPT: { label: 'Đúng là lỗi', className: 'bg-danger/10 text-danger ring-danger/25' },
+  REJECT: { label: 'Báo nhầm', className: 'bg-success/10 text-success ring-success/25' },
+  UNCERTAIN: { label: 'Chưa quyết', className: 'bg-warning/10 text-warning ring-warning/25' },
   INSUFFICIENT_EVIDENCE: {
     label: 'Thiếu bằng chứng',
-    className: 'bg-slate-100 text-slate-700 ring-slate-500/20',
+    className: 'bg-surface-sunken text-ink-muted ring-border-strong',
   },
 };
 
@@ -26,7 +26,7 @@ export function DecisionBadge({ decision }: { decision?: ReviewDecision }) {
   const style = STYLES[decision];
   return (
     <span
-      className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset ${style.className}`}
+      className={`inline-flex h-5 items-center rounded-sm px-1.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset ${style.className}`}
     >
       {style.label}
     </span>

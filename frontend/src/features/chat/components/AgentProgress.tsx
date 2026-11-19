@@ -19,12 +19,12 @@ export function AgentProgress({ steps, isStreaming }: AgentProgressProps) {
   }
 
   return (
-    <div className="border-brand-ring bg-brand-subtle/60 rounded-xl border p-3" aria-live="polite">
+    <div className="border-border bg-surface rounded-lg border p-3" aria-live="polite">
       <p className="text-brand text-xs font-semibold">Agent đang truy xuất bằng chứng</p>
       <ol className="mt-2 space-y-1">
         {steps.map((step) => (
           <li key={step.id} className="flex items-baseline gap-2 text-xs">
-            <span className={step.failed ? 'text-amber-700' : 'text-ink'}>{step.label}</span>
+            <span className={step.failed ? 'text-warning' : 'text-ink'}>{step.label}</span>
             {step.detail != null && <span className="text-ink-muted font-mono">{step.detail}</span>}
           </li>
         ))}

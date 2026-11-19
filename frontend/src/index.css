@@ -1,99 +1,140 @@
 /*
- * Tailwind CSS v4 — cấu hình CSS-first, KHÔNG có tailwind.config.js.
+ * Design tokens của VSleuth — Tailwind CSS v4, cấu hình CSS-first (KHÔNG có tailwind.config.js).
  *
- * v4 bỏ file config JS: mọi token khai trong khối `@theme` dưới đây và tự động trở thành utility
- * class (`--color-brand` ⇒ `bg-brand`, `text-brand`, `border-brand`...). Đổi lại, `@theme` là
- * nguồn sự thật DUY NHẤT cho màu — không hardcode mã hex trong component (§1bis: không hardcode).
+ * Mọi token trong `@theme` tự thành utility class (`--color-brand` ⇒ `bg-brand`, `text-brand`...).
+ * `@theme` là nguồn sự thật DUY NHẤT cho màu, cỡ chữ, bo góc — không hardcode mã hex trong component.
  *
- * GIAO DIỆN TỐI, và chỉ tối (từ 19/11/2026): người dùng là lập trình viên, đọc mã nguồn hàng giờ
- * trong khung xem mã — nền trắng chói và lệch hẳn với IDE họ đang dùng. Không làm công tắc
- * sáng/tối: hai bộ token là hai lần kiểm tương phản cho mọi màn hình, mà chưa ai cần bản sáng.
- * Muốn thêm lại bản sáng = một khối ghi đè đúng các biến dưới đây, không phải sửa component.
+ * Hướng thiết kế (19/11/2026) — công cụ cho lập trình viên, kiểu IDE:
+ *   - Tín hiệu trước, nhiễu sau: cảnh báo, file:line, mức độ phải thấy ngay; không có gì trang trí.
+ *   - Nền xám TRUNG TÍNH 4 lớp, phân tách bằng viền 1px tương phản thấp, KHÔNG bằng đổ bóng.
+ *   - Một màu accent (indigo) cho hành động chính. Mọi màu khác mang NGHĨA (mức độ, kết luận của
+ *     Agent, test pass/fail, trạng thái chạy) và luôn đi kèm chữ hoặc icon.
+ *   - Chữ thân 13px, số thẳng cột (tabular-nums), bo góc 4–8px, chuyển động ≤ 150ms.
+ *
+ * CHỈ có giao diện tối: người dùng đọc mã hàng giờ trong khung xem mã, nền trắng chói và lệch với
+ * IDE họ dùng. Muốn thêm bản sáng = một khối ghi đè đúng các biến dưới đây, không sửa component.
+ *
+ * Mọi cặp chữ/nền dưới đây đã đo tương phản WCAG trên CẢ BỐN lớp nền (kể cả `surface-raised`,
+ * lớp sáng nhất): đều ≥ 4.5:1. Đổi màu thì đo lại.
  */
 
 @import 'tailwindcss';
 
 @theme {
   /*
-   * Font chữ: ưu tiên Inter nếu máy có, rơi về font hệ thống. Không tải web font từ CDN — frontend
-   * phải chạy được trên server không ra Internet (ADR 0002), và font hệ thống của Windows/macOS
-   * đều hiển thị tiếng Việt có dấu đầy đủ.
+   * Font đóng gói cùng app qua @fontsource (import ở main.tsx), KHÔNG tải từ CDN — frontend phải
+   * chạy được trên server không ra Internet (ADR 0002). Cả hai đều có bộ ký tự tiếng Việt.
    */
   --font-sans:
-    'Inter', 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue',
-    Arial, sans-serif;
+    'Inter Variable', 'Inter', 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system,
+    sans-serif;
+  /* Mã nguồn phải là monospace THẬT: khung xem mã canh số dòng theo cột. */
+  --font-mono:
+    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
 
   /*
-   * Nền và đường viền — xám ngả lạnh, gần bảng màu tối của GitHub/VS Code để mắt người dùng không
-   * phải đổi chế độ khi chuyển qua lại với IDE. Thứ tự sáng dần: muted (nền trang) < surface (thẻ)
-   * < sunken (ô chìm, hover). Tên giữ nguyên từ bản sáng để không phải sửa component; "sunken" ở
-   * nền tối là SÁNG hơn thẻ một chút — vẫn đúng vai "khác nền thẻ để nổi lên".
+   * Thang cỡ chữ 11 / 12 / 13 / 14 / 16 / 20 / 24px. GHI ĐÈ thang mặc định của Tailwind (vốn 12 /
+   * 14 / 16 / 18...): `text-sm` thành 13px, `text-base` thành 14px — cả ứng dụng dày hơn một bậc
+   * như IDE mà không phải sửa từng component.
    */
-  --color-surface: #161b22;
-  --color-surface-muted: #0d1117;
-  --color-surface-sunken: #21262d;
-  --color-border: #30363d;
-  --color-border-strong: #3d444d;
-  --color-ink: #e6edf3;
-  --color-ink-muted: #9da7b3;
-  --color-ink-subtle: #848d97;
+  --text-2xs: 11px;
+  --text-2xs--line-height: 16px;
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 13px;
+  --text-sm--line-height: 20px;
+  --text-base: 14px;
+  --text-base--line-height: 20px;
+  --text-lg: 16px;
+  --text-lg--line-height: 24px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+
+  /* Bo góc nhỏ, sắc: 4–8px. `rounded-xl`/`2xl` cũ (12/16px, kiểu landing page) nay cũng ra 8px. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
 
   /*
-   * Màu thương hiệu TÁCH HAI VAI. Trên nền tối không có một màu nào vừa đọc được làm CHỮ trên nền
-   * (cần sáng) vừa làm NỀN cho chữ trắng (cần đậm) — tương phản trắng/nền-trang chỉ ~18:1, không đủ
-   * chia cho hai mức 4.5:1. Nên:
+   * Ưu tiên viền hơn bóng: bóng nhỏ trên nền tối gần như vô hình, chỉ làm bẩn mép. Chỉ lớp nổi
+   * (menu, tooltip) giữ bóng, để tách khỏi nội dung bên dưới.
+   */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.5);
+
+  /*
+   * Nền 4 lớp, sáng dần: muted (nền trang) < surface (thẻ, panel) < sunken (ô nhập, hover, dòng
+   * chọn) < raised (menu, tooltip). Tên "sunken" giữ từ bản sáng để không sửa component; ở nền tối
+   * nó SÁNG hơn thẻ — vẫn đúng vai "khác nền thẻ để nổi lên".
+   */
+  --color-surface-muted: #0a0a0b;
+  --color-surface: #111113;
+  --color-surface-sunken: #18181b;
+  --color-surface-raised: #1f1f23;
+  --color-border: #27272a;
+  --color-border-strong: #3f3f46;
+  --color-ink: #ededef;
+  --color-ink-muted: #a1a1aa;
+  --color-ink-subtle: #8a8a93;
+
+  /*
+   * Accent DUY NHẤT, TÁCH HAI VAI. Trên nền tối không màu nào vừa đọc được làm CHỮ (cần sáng) vừa
+   * làm NỀN cho chữ trắng (cần đậm):
    *   - brand / brand-hover: chữ, link, viền, vòng focus — bản sáng.
    *   - brand-solid / brand-solid-hover: nền có chữ trắng (nút chính, tin nhắn của người dùng).
-   * Dùng `bg-brand` cho mảng màu KHÔNG có chữ (thanh tiến trình); có chữ trắng thì `bg-brand-solid`.
+   * `bg-brand` chỉ cho mảng màu KHÔNG có chữ (thanh tiến trình).
    */
-  --color-brand: #8b93ff;
-  --color-brand-hover: #b4b9ff;
-  --color-brand-subtle: #20214a;
-  --color-brand-ring: #3d3f8f;
+  --color-brand: #8b8fff;
+  --color-brand-hover: #b0b3ff;
+  --color-brand-subtle: #1c1b3a;
+  --color-brand-ring: #3b3a7a;
   --color-brand-solid: #4f46e5;
-  --color-brand-solid-hover: #6157f0;
+  --color-brand-solid-hover: #5b54ec;
 
-  /* Nút nguy hiểm (xoá): nền đỏ đặc + chữ trắng — cùng lý do tách như brand-solid. */
+  /*
+   * Màu NGỮ NGHĨA — mỗi màu một nghĩa, giống nhau ở mọi màn hình, luôn kèm chữ/icon:
+   *   danger  — lỗi, test hỏng, thao tác phá huỷ
+   *   warning — cần chú ý (liên kết yếu, dữ liệu thiếu)
+   *   success — đã xong, test qua, kiểm chứng được
+   *   info    — thông tin trung tính
+   * Biến thể nền mờ: `/10`–`/15` (vd `bg-danger/10`) cho badge và tô dòng.
+   */
+  --color-danger: #f87171;
+  --color-warning: #e0a42f;
+  --color-success: #4ade80;
+  --color-info: #60a5fa;
+
+  /* Nút phá huỷ: nền đỏ đặc + chữ trắng (5.0:1) — cùng lý do tách như brand-solid. */
   --color-danger-solid: #c93c37;
   --color-danger-solid-hover: #b62f2b;
 
-  /* Source viewer: nền khối mã và dải làm nổi dòng được evidence trỏ tới (#L42). */
-  --color-code-bg: #0d1117;
-  --color-code-gutter: #161b22;
+  /* Khung xem mã: nền khối mã, cột số dòng, dải tô dòng được bằng chứng trỏ tới (#L42). */
+  --color-code-bg: #0a0a0b;
+  --color-code-gutter: #111113;
   --color-line-highlight: #3a3112;
-
-  /*
-   * Font mã nguồn phải là monospace THẬT: source viewer canh số dòng theo cột, font tỷ lệ làm
-   * lệch cột và code trông sai.
-   */
-  --font-mono:
-    ui-monospace, 'JetBrains Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
 }
 
 /*
- * Màu mức độ nghiêm trọng, ánh xạ 1-1 với enum WarningSeverity của backend.
+ * Màu mức độ nghiêm trọng, ánh xạ 1-1 với enum WarningSeverity của backend, khớp màu ngữ nghĩa ở
+ * trên: HIGH = danger, MEDIUM = cam (giữa danger và warning), LOW = warning, INFO = info.
  *
- * `static` (khác khối `@theme` ở trên) buộc Tailwind LUÔN sinh ra bốn biến này, kể cả khi chưa
- * component nào dùng tới. Mặc định v4 tree-shake token không được utility class nào tham chiếu —
- * đã kiểm chứng: build đầu tiên của D1 chỉ giữ lại đúng hai biến được `var()` gọi trực tiếp trong
- * `body`, tám biến còn lại bị loại sạch khỏi CSS.
- *
- * Vì sao riêng nhóm này cần `static`: màu severity là thứ DUY NHẤT sẽ được tra theo dữ liệu chạy
- * (`warning.severityNormalized` từ API). Tailwind quét source bằng phân tích TĨNH trên văn bản,
- * nên class ghép động kiểu `` `bg-sev-${severity.toLowerCase()}` `` KHÔNG BAO GIỜ được sinh ra —
- * và hỏng IM LẶNG: phần tử vẫn render, chỉ là không có màu. Hai cách dùng đúng, đều an toàn nhờ
- * `static`:
- *   1. bảng tra chứa TÊN CLASS NGUYÊN VĂN — `{ HIGH: 'bg-sev-high', MEDIUM: 'bg-sev-medium', … }`
- *      (scanner đọc được vì chuỗi hiện nguyên hình trong source);
- *   2. hoặc `style={{ backgroundColor: 'var(--color-sev-high)' }}` khi cần dựng động thật sự.
- * Tuyệt đối không ghép chuỗi để tạo tên class Tailwind.
+ * `static` buộc Tailwind LUÔN sinh ra bốn biến này. Mặc định v4 tree-shake token không được utility
+ * class nào tham chiếu, mà màu severity là thứ DUY NHẤT tra theo dữ liệu chạy
+ * (`warning.severityNormalized`). Tailwind quét source bằng phân tích TĨNH, nên class ghép động
+ * (tiền tố bg-sev- nối với severity) KHÔNG BAO GIỜ được sinh ra — và hỏng IM LẶNG. Hai cách đúng:
+ *   1. bảng tra chứa TÊN CLASS NGUYÊN VĂN — `{ HIGH: 'bg-sev-high', MEDIUM: 'bg-sev-medium', … }`;
+ *   2. hoặc `style={{ backgroundColor: 'var(--color-sev-high)' }}`.
  */
 @theme static {
-  /* Bản sáng của từng màu: nhãn mức độ là chữ màu trên nền tối (nền là chính màu đó ở độ mờ 10%), màu đậm không đọc được. */
-  --color-sev-high: #f85149;
+  --color-sev-high: #f87171;
   --color-sev-medium: #f0883e;
-  --color-sev-low: #d29922;
-  --color-sev-info: #58a6ff;
+  --color-sev-low: #e0a42f;
+  --color-sev-info: #60a5fa;
 }
 
 /*
@@ -101,16 +142,13 @@
  * `-500` giữ nguyên. SINH TỰ ĐỘNG từ node_modules/tailwindcss/theme.css (Tailwind 4.3.3) — đừng sửa
  * tay từng dòng.
  *
- * Vì sao: ~40 component dùng thẳng màu Tailwind cho thông báo và huy hiệu theo khuôn "nền nhạt + viền
- * nhạt + chữ đậm" (`bg-red-50 border-red-200 text-red-700`). Đảo thang giữ nguyên Ý NGHĨA khuôn đó
- * trên nền tối — nền thành đỏ rất tối, chữ thành đỏ sáng — mà không phải sửa từng file.
+ * Vì sao: nhiều component dùng thẳng màu Tailwind theo khuôn "nền nhạt + viền nhạt + chữ đậm"
+ * (`bg-red-50 border-red-200 text-red-700`). Đảo thang giữ nguyên Ý NGHĨA khuôn đó trên nền tối —
+ * nền thành đỏ rất tối, chữ thành đỏ sáng — mà không phải sửa từng file.
  *
- * Hệ quả phải nhớ khi viết component mới:
- *   - Viết như đang làm giao diện SÁNG (`bg-amber-50 text-amber-800`); kết quả tự đúng trên nền tối.
- *   - Mảng màu ĐẶC có chữ trắng thì KHÔNG dùng thang này (`bg-red-600 text-white` sẽ ra đỏ nhạt +
- *     chữ trắng): dùng token `*-solid` ở trên.
- *   - Chỉ các họ màu liệt kê dưới đây được đảo. Dùng họ khác (purple, indigo, pink...) thì thêm vào
- *     script sinh khối này, nếu không nó hiện màu của giao diện sáng.
+ * Component MỚI: ưu tiên màu ngữ nghĩa ở trên (`text-danger`, `bg-danger/10`). Nếu dùng thang
+ * Tailwind thì viết như đang làm giao diện SÁNG; mảng màu ĐẶC có chữ trắng thì dùng token `*-solid`
+ * (`bg-red-600 text-white` sẽ ra đỏ nhạt + chữ trắng). Chỉ các họ màu dưới đây được đảo.
  */
 @theme {
   --color-slate-50: oklch(12.9% 0.042 264.695);
@@ -124,6 +162,18 @@
   --color-slate-800: oklch(92.9% 0.013 255.508);
   --color-slate-900: oklch(96.8% 0.007 247.896);
   --color-slate-950: oklch(98.4% 0.003 247.858);
+
+  --color-zinc-50: oklch(14.1% 0.005 285.823);
+  --color-zinc-100: oklch(21% 0.006 285.885);
+  --color-zinc-200: oklch(27.4% 0.006 286.033);
+  --color-zinc-300: oklch(37% 0.013 285.805);
+  --color-zinc-400: oklch(44.2% 0.017 285.786);
+  --color-zinc-500: oklch(55.2% 0.016 285.938);
+  --color-zinc-600: oklch(70.5% 0.015 286.067);
+  --color-zinc-700: oklch(87.1% 0.006 286.286);
+  --color-zinc-800: oklch(92% 0.004 286.32);
+  --color-zinc-900: oklch(96.7% 0.001 286.375);
+  --color-zinc-950: oklch(98.5% 0 none);
 
   --color-red-50: oklch(25.8% 0.092 26.042);
   --color-red-100: oklch(39.6% 0.141 25.723);
@@ -259,7 +309,7 @@
 }
 
 :root {
-  /* Thanh cuộn, ô nhập, select, date picker gốc của trình duyệt cũng vẽ theo nền tối. */
+  /* Thanh cuộn, ô nhập, select gốc của trình duyệt cũng vẽ theo nền tối. */
   color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -272,14 +322,51 @@ body {
   background-color: var(--color-surface-muted);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  /* Số thẳng cột ở MỌI nơi: thời gian, đếm cảnh báo, số dòng, tỉ lệ trong báo cáo. */
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Mã nguồn: tắt ligature. Đây là khung đọc BẰNG CHỨNG — `!=` hiện thành `≠` hay `->` thành mũi tên
+ * là hiện khác ký tự thật trong file, dễ đọc nhầm đúng chỗ cần soi.
+ */
+code,
+pre,
+kbd,
+samp,
+.font-mono {
+  font-variant-ligatures: none;
+}
+
+::selection {
+  background-color: var(--color-brand-ring);
 }
 
 /*
  * Vòng focus cho người dùng bàn phím. `:focus-visible` (không phải `:focus`) để bấm chuột không
  * hiện viền — nhưng Tab thì luôn thấy mình đang đứng ở đâu.
  */
-:where(a, button, select, summary, [tabindex]):focus-visible {
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 4px;
+}
+
+/* Hiệu ứng chờ của skeleton — chậm và dịu. */
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* Người đặt "giảm chuyển động" trong hệ điều hành: tắt hẳn mọi hiệu ứng. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

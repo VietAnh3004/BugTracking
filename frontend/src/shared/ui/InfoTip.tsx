@@ -105,7 +105,7 @@ export function InfoTip({ label, children }: InfoTipProps) {
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         onClick={() => setPinned((value) => !value)}
-        className={`inline-grid size-4 shrink-0 cursor-help place-items-center rounded-full border text-[10px] leading-none font-semibold transition-colors ${
+        className={`text-2xs inline-grid size-4 shrink-0 cursor-help place-items-center rounded-full border leading-none font-semibold transition-colors ${
           open
             ? 'border-brand text-brand bg-brand-subtle'
             : 'border-border-strong text-ink-subtle hover:border-brand hover:text-brand'

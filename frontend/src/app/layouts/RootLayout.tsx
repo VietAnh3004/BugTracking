@@ -27,20 +27,20 @@ export function RootLayout() {
 
   return (
     <div className="flex min-h-screen flex-col font-sans">
-      <header className="border-border bg-surface/90 sticky top-0 z-30 border-b backdrop-blur">
-        <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
-          <Link to="/projects" className="group flex min-w-0 items-center gap-3">
-            <span className="bg-brand-solid grid size-9 shrink-0 place-items-center rounded-lg text-white shadow-sm">
-              <IconLogo className="size-5" />
-            </span>
-            <span className="min-w-0">
-              <h1 className="text-ink group-hover:text-brand m-0 truncate text-[15px] leading-tight font-semibold">
+      {/*
+       * Thanh trên cùng gọn kiểu IDE (48px): tên sản phẩm + tài khoản, không gì khác. Không có ô logo
+       * tô màu — icon đứng trần, màu accent chỉ để nhận diện chứ không trang trí.
+       */}
+      <header className="border-border bg-surface-muted/95 sticky top-0 z-30 border-b backdrop-blur-sm">
+        <div className="mx-auto flex h-12 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
+          <Link to="/projects" className="group flex min-w-0 items-center gap-2.5">
+            <IconLogo className="text-brand size-5" />
+            <h1 className="m-0 flex min-w-0 items-baseline gap-2 text-sm leading-none">
+              <span className="text-ink group-hover:text-brand font-semibold">VSleuth</span>
+              <span className="text-ink-subtle hidden truncate font-normal md:inline">
                 Nền tảng phân tích chương trình dựa trên bằng chứng
-              </h1>
-              <p className="text-ink-muted m-0 hidden truncate text-xs sm:block">
-                Đồ án tốt nghiệp — Nguyễn Việt Anh, 20224923
-              </p>
-            </span>
+              </span>
+            </h1>
           </Link>
 
           {status === 'authenticated' && user !== null ? (
@@ -51,13 +51,16 @@ export function RootLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 sm:py-8">
+      <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-5 sm:px-6">
         <Outlet />
       </main>
 
-      <footer className="border-border bg-surface border-t">
-        <div className="mx-auto w-full max-w-[1400px] px-4 py-3 sm:px-6">
+      <footer className="border-border border-t">
+        <div className="mx-auto flex w-full max-w-[1400px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-2.5 sm:px-6">
           <BackendStatus />
+          <p className="text-ink-subtle m-0 text-xs">
+            Đồ án tốt nghiệp — Nguyễn Việt Anh, 20224923
+          </p>
         </div>
       </footer>
     </div>

@@ -27,7 +27,7 @@ export function AccountPage() {
     return null;
   }
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <PageHeader
         title="Tài khoản"
         description="Thông tin hiển thị với thành viên khác và cách bạn đăng nhập."
@@ -42,7 +42,7 @@ export function AccountPage() {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className={`${CARD} flex flex-col gap-4 p-5 sm:p-6`}>
+    <section className={`${CARD} flex flex-col gap-4 p-4`}>
       <h2 className={`${SECTION_LABEL} m-0`}>{title}</h2>
       {children}
     </section>
@@ -232,12 +232,14 @@ function PasswordSection({ user }: { user: CurrentUser }) {
 
 function Badge({ tone, children }: { tone: 'good' | 'warn' | 'neutral'; children: ReactNode }) {
   const tones = {
-    good: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    warn: 'bg-amber-50 text-amber-800 border-amber-200',
+    good: 'bg-success/10 text-success border-success/30',
+    warn: 'bg-warning/10 text-warning border-warning/30',
     neutral: 'bg-surface-muted text-ink-muted border-border',
   } as const;
   return (
-    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${tones[tone]}`}>
+    <span
+      className={`inline-flex h-5 items-center rounded-sm border px-1.5 text-xs font-medium ${tones[tone]}`}
+    >
       {children}
     </span>
   );
@@ -247,7 +249,7 @@ function Feedback({ success, error }: { success: string | null; error: string | 
   if (error !== null) {
     return (
       <p
-        className="m-0 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+        className="border-danger/30 bg-danger/10 text-danger m-0 rounded-lg border px-3 py-2 text-sm"
         role="alert"
       >
         {error}
@@ -256,7 +258,7 @@ function Feedback({ success, error }: { success: string | null; error: string | 
   }
   if (success !== null) {
     return (
-      <p className="m-0 text-sm font-medium text-emerald-700" role="status">
+      <p className="text-success m-0 text-sm font-medium" role="status">
         {success}
       </p>
     );

@@ -38,7 +38,7 @@ export function CitationChip({ citation, snapshotId, runId }: CitationChipProps)
       <Link
         to={`/snapshots/${snapshotId}/runs/${runId}/evidence/${citation.shortId}`}
         title={explanation}
-        className="bg-brand-subtle text-brand ring-brand/20 hover:bg-brand-solid inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-semibold ring-1 transition-colors ring-inset hover:text-white"
+        className="bg-brand-subtle text-brand ring-brand/20 hover:bg-brand-solid inline-flex h-5 items-center rounded-sm px-1.5 font-mono text-xs font-semibold ring-1 transition-colors ring-inset hover:text-white"
       >
         {citation.shortId}
       </Link>
@@ -48,10 +48,10 @@ export function CitationChip({ citation, snapshotId, runId }: CitationChipProps)
   return (
     <span
       title={explanation}
-      className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-xs text-amber-800 ring-1 ring-amber-600/20 ring-inset"
+      className="bg-warning/10 text-warning ring-warning/25 inline-flex h-5 items-center gap-1 rounded-sm px-1.5 text-xs ring-1 ring-inset"
     >
       <span className="font-mono">{citation.citedShortIdRaw}</span>
-      <span className="text-amber-700">· {LABELS[citation.resolution]}</span>
+      <span className="text-warning">· {LABELS[citation.resolution]}</span>
     </span>
   );
 }

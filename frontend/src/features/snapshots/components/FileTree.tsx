@@ -92,13 +92,13 @@ function TreeItem({ node, snapshotId, depth, expanded, onToggle }: TreeItemProps
           type="button"
           onClick={() => onToggle(node.path)}
           aria-expanded={isOpen}
-          className="text-ink hover:bg-surface-sunken flex w-full cursor-pointer items-center gap-1.5 rounded-md py-1 pr-2 text-left text-[13px]"
+          className="text-ink hover:bg-surface-sunken flex w-full cursor-pointer items-center gap-1.5 rounded-sm py-0.5 pr-2 text-left text-sm"
           style={indent}
         >
           <IconChevronRight
             className={`text-ink-subtle size-3.5 transition-transform ${isOpen ? 'rotate-90' : ''}`}
           />
-          <IconFolder className="text-brand/70 size-4" />
+          <IconFolder className="text-ink-subtle size-4" />
           <span className="truncate font-medium">{node.name}</span>
         </button>
 
@@ -126,7 +126,7 @@ function TreeItem({ node, snapshotId, depth, expanded, onToggle }: TreeItemProps
         to={`/snapshots/${snapshotId}/files/${toFilePathUrl(node.path)}`}
         style={indent}
         className={({ isActive }) =>
-          `flex items-center gap-1.5 truncate rounded-md py-1 pr-2 text-[13px] ${
+          `flex items-center gap-1.5 truncate rounded-sm py-0.5 pr-2 text-sm ${
             isActive
               ? 'bg-brand-subtle text-brand font-semibold'
               : 'text-ink-muted hover:bg-surface-sunken hover:text-ink'

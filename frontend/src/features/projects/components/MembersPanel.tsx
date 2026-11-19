@@ -31,7 +31,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
   }
 
   return (
-    <section className={`${CARD} p-5`}>
+    <section className={`${CARD} p-4`}>
       <div className="mb-4 flex items-center gap-1.5">
         <h2 className="text-ink m-0 text-base font-semibold">Thành viên</h2>
         <InfoTip label="Giải thích: Thành viên">
@@ -59,7 +59,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
         </button>
       </form>
       {add.isError ? (
-        <p role="alert" className="mt-2 mb-0 text-sm text-red-700">
+        <p role="alert" className="text-danger mt-2 mb-0 text-sm">
           {add.error instanceof ApiError
             ? (add.error.problem.detail ?? add.error.message)
             : 'Không gọi được backend.'}

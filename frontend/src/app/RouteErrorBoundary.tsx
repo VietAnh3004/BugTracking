@@ -17,10 +17,10 @@ export function RouteErrorBoundary() {
 
   return (
     <div className="mx-auto max-w-[880px] px-4 py-10 font-sans sm:px-6" role="alert">
-      <div className={`${CARD} p-6 sm:p-8`}>
-        <h1 className="text-ink mt-0 mb-2 text-2xl font-semibold">{title}</h1>
+      <div className={`${CARD} p-4`}>
+        <h1 className="text-ink mt-0 mb-2 text-xl font-semibold">{title}</h1>
         <p className="text-ink-muted m-0 text-sm break-words">{detail}</p>
-        <Link to="/projects" className={`${buttonClass('primary')} mt-6`}>
+        <Link to="/projects" className={`${buttonClass('primary')} mt-5`}>
           Về danh sách dự án
         </Link>
       </div>

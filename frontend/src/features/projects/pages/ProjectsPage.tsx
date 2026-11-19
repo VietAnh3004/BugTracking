@@ -14,18 +14,18 @@ import { CARD } from '@/shared/ui/styles';
 
 export function ProjectsPage() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <PageHeader
         title="Dự án"
         description="Mỗi dự án chứa các snapshot mã nguồn đã tải lên và kết quả phân tích của chúng."
       />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <section aria-label="Danh sách dự án">
           <ProjectList />
         </section>
 
-        <section className={`${CARD} p-5`}>
+        <section className={`${CARD} p-4`}>
           <div className="mb-4 flex items-center gap-1.5">
             <h2 className="text-ink m-0 text-base font-semibold">Tạo dự án mới</h2>
             <InfoTip label="Giải thích: Tạo dự án mới">

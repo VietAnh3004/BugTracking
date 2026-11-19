@@ -124,5 +124,14 @@ export function GoogleSignInButton({
       </p>
     );
   }
-  return <div ref={container} className="flex min-h-11 w-full justify-center" />;
+  // `color-scheme: light` RIÊNG cho khung này là bắt buộc, không phải trang trí. Nút Google nằm
+  // trong một iframe khác origin, mà trang của Google bên trong không khai color-scheme (= sáng).
+  // Trang của ta khai `color-scheme: dark` (src/index.css); khi chế độ màu của phần tử iframe và
+  // của trang bên trong LỆCH nhau, trình duyệt tô iframe một nền TRẮNG ĐẶC thay vì trong suốt —
+  // ra một khung trắng bao quanh nút (gặp thật 19/11/2026, ngay sau khi chuyển sang giao diện tối).
+  // Cho khung này về chế độ sáng thì hai bên khớp, iframe trong suốt trở lại; nút vẫn tối nhờ
+  // `theme: 'filled_black'` ở trên.
+  return (
+    <div ref={container} className="flex min-h-11 w-full justify-center [color-scheme:light]" />
+  );
 }

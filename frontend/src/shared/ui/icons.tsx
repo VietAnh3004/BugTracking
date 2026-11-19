@@ -1,182 +1,167 @@
 /**
- * Bộ icon nét mảnh, vẽ tay bằng SVG nội tuyến — không kéo thêm thư viện icon chỉ để có chục hình.
+ * Bộ icon của ứng dụng — Lucide, nét 1.5, mặc định 16px.
+ *
+ * Component gọi `IconX` của file này, KHÔNG import thẳng từ `lucide-react`: một chỗ duy nhất quyết
+ * định nét, cỡ mặc định và thuộc tính truy cập, nên đổi bộ icon về sau không phải sửa hàng chục
+ * file. Tên `IconX` giữ nguyên từ bộ SVG tự vẽ trước đây (thay ngày 19/11/2026).
  *
  * Mọi icon đều `aria-hidden`: chúng đi kèm chữ, không thay chữ. Nhờ vậy tên truy cập của nút và
  * liên kết vẫn là đúng chữ hiển thị (test tìm theo vai trò + tên không đổi), và trình đọc màn hình
- * không đọc ra những thứ như "graphic".
+ * không đọc ra những thứ như "graphic". Icon đứng MỘT MÌNH thì phần tử chứa nó phải có `aria-label`.
  */
 
-import type { ReactNode, SVGProps } from 'react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChartColumn,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  CircleAlert,
+  CodeXml,
+  Copy,
+  Download,
+  FileCode,
+  Folder,
+  Inbox,
+  Info,
+  LogOut,
+  MessageSquare,
+  Package,
+  Play,
+  RefreshCw,
+  Search,
+  Settings,
+  ShieldCheck,
+  UserCog,
+  TriangleAlert,
+  Upload,
+  X,
+} from 'lucide-react';
 
-type IconProps = SVGProps<SVGSVGElement>;
+import type { LucideIcon, LucideProps } from 'lucide-react';
 
-function Icon({ children, className = 'size-4', ...props }: IconProps & { children: ReactNode }) {
+type IconProps = LucideProps;
+
+/** Nét, cỡ mặc định và thuộc tính truy cập — áp cho mọi icon bên dưới. */
+function AppIcon({
+  icon: Lucide,
+  className = 'size-4',
+  strokeWidth = 1.5,
+  ...props
+}: IconProps & { icon: LucideIcon }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <Lucide
       aria-hidden="true"
       focusable="false"
+      strokeWidth={strokeWidth}
       className={`shrink-0 ${className}`}
       {...props}
-    >
-      {children}
-    </svg>
+    />
   );
 }
 
+export function IconShield(props: IconProps) {
+  return <AppIcon icon={UserCog} {...props} />;
+}
+
+/** Logo VSleuth: khiên + dấu tích — "cảnh báo đã được kiểm bằng chứng". */
 export function IconLogo(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6L12 3Z" />
-      <path d="m8.8 12.2 2.2 2.2 4.4-4.6" />
-    </Icon>
-  );
+  return <AppIcon icon={ShieldCheck} {...props} />;
 }
 
 export function IconArrowLeft(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M19 12H5M11 18l-6-6 6-6" />
-    </Icon>
-  );
+  return <AppIcon icon={ArrowLeft} {...props} />;
 }
 
 export function IconArrowRight(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </Icon>
-  );
+  return <AppIcon icon={ArrowRight} {...props} />;
 }
 
 export function IconChevronDown(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="m6 9 6 6 6-6" />
-    </Icon>
-  );
-}
-
-export function IconSettings(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </Icon>
-  );
-}
-
-export function IconLogout(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-    </Icon>
-  );
+  return <AppIcon icon={ChevronDown} {...props} />;
 }
 
 export function IconChevronRight(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="m9 6 6 6-6 6" />
-    </Icon>
-  );
+  return <AppIcon icon={ChevronRight} {...props} />;
+}
+
+export function IconSettings(props: IconProps) {
+  return <AppIcon icon={Settings} {...props} />;
+}
+
+export function IconLogout(props: IconProps) {
+  return <AppIcon icon={LogOut} {...props} />;
 }
 
 export function IconFolder(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4.2l2 2H19a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5v-10Z" />
-    </Icon>
-  );
+  return <AppIcon icon={Folder} {...props} />;
 }
 
 export function IconFile(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M14 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8L14 3.5Z" />
-      <path d="M14 3.5V8h4.5" />
-    </Icon>
-  );
+  return <AppIcon icon={FileCode} {...props} />;
 }
 
 export function IconUpload(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M12 15V4M7.5 8.5 12 4l4.5 4.5" />
-      <path d="M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3" />
-    </Icon>
-  );
+  return <AppIcon icon={Upload} {...props} />;
 }
 
 export function IconDownload(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5" />
-      <path d="M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3" />
-    </Icon>
-  );
+  return <AppIcon icon={Download} {...props} />;
 }
 
 export function IconPlay(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M7 5.5v13l11-6.5-11-6.5Z" />
-    </Icon>
-  );
+  return <AppIcon icon={Play} {...props} />;
 }
 
 export function IconChart(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M4 20h16M7 16v-5M12 16V7M17 16v-8" />
-    </Icon>
-  );
+  return <AppIcon icon={ChartColumn} {...props} />;
 }
 
 export function IconChat(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M5 18.5V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8.5L5 18.5Z" />
-      <path d="M9 9.5h6M9 12.5h4" />
-    </Icon>
-  );
+  return <AppIcon icon={MessageSquare} {...props} />;
 }
 
 export function IconAlert(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M12 4 2.8 19.5h18.4L12 4Z" />
-      <path d="M12 10v4M12 17h.01" />
-    </Icon>
-  );
+  return <AppIcon icon={TriangleAlert} {...props} />;
+}
+
+export function IconError(props: IconProps) {
+  return <AppIcon icon={CircleAlert} {...props} />;
+}
+
+export function IconInfo(props: IconProps) {
+  return <AppIcon icon={Info} {...props} />;
 }
 
 export function IconCode(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14" />
-    </Icon>
-  );
+  return <AppIcon icon={CodeXml} {...props} />;
 }
 
 export function IconCheck(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M4.5 12.5 9.5 17.5 19.5 6.5" />
-    </Icon>
-  );
+  return <AppIcon icon={Check} {...props} />;
 }
 
 export function IconBox(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
-      <path d="m4 7.5 8 4.5 8-4.5M12 12v9" />
-    </Icon>
-  );
+  return <AppIcon icon={Package} {...props} />;
+}
+
+export function IconSearch(props: IconProps) {
+  return <AppIcon icon={Search} {...props} />;
+}
+
+export function IconInbox(props: IconProps) {
+  return <AppIcon icon={Inbox} {...props} />;
+}
+
+export function IconRetry(props: IconProps) {
+  return <AppIcon icon={RefreshCw} {...props} />;
+}
+
+export function IconCopy(props: IconProps) {
+  return <AppIcon icon={Copy} {...props} />;
+}
+
+export function IconClose(props: IconProps) {
+  return <AppIcon icon={X} {...props} />;
 }

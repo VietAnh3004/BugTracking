@@ -17,25 +17,25 @@ const CHOICES: { value: ReviewDecision; label: string; hint: string; className: 
     value: 'ACCEPT',
     label: 'Đúng là lỗi',
     hint: 'Cảnh báo có căn cứ, nên sửa mã.',
-    className: 'border-red-300 bg-red-50 text-red-800 ring-2 ring-red-200',
+    className: 'border-danger/40 bg-danger/10 text-danger ring-2 ring-danger/30',
   },
   {
     value: 'REJECT',
     label: 'Báo nhầm',
     hint: 'Cảnh báo sai — nêu lý do trong mã ở phần ghi chú.',
-    className: 'border-emerald-300 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-200',
+    className: 'border-success/40 bg-success/10 text-success ring-2 ring-success/30',
   },
   {
     value: 'UNCERTAIN',
     label: 'Chưa quyết được',
     hint: 'Đã xem đủ bằng chứng nhưng vẫn không chắc.',
-    className: 'border-amber-300 bg-amber-50 text-amber-800 ring-2 ring-amber-200',
+    className: 'border-warning/40 bg-warning/10 text-warning ring-2 ring-warning/30',
   },
   {
     value: 'INSUFFICIENT_EVIDENCE',
     label: 'Thiếu bằng chứng',
     hint: 'Hệ thống chưa đưa ra đủ bằng chứng để phán xét.',
-    className: 'border-slate-400 bg-slate-100 text-slate-800 ring-2 ring-slate-200',
+    className: 'border-border-strong bg-surface-sunken text-ink-muted ring-2 ring-border-strong',
   },
 ];
 
@@ -79,9 +79,9 @@ export function ReviewPanel({ runId, shortId, messageId = null }: ReviewPanelPro
   }
 
   return (
-    <section className={`${CARD} p-5`}>
+    <section className={`${CARD} p-4`}>
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-ink m-0 text-base font-semibold">Đánh giá của bạn</h3>
+        <h3 className="text-ink m-0 text-sm font-semibold">Đánh giá của bạn</h3>
         {existing === undefined ? (
           <span className="text-ink-muted text-xs">Chưa đánh giá</span>
         ) : (
@@ -133,7 +133,7 @@ export function ReviewPanel({ runId, shortId, messageId = null }: ReviewPanelPro
       />
 
       {submit.isError ? (
-        <p role="alert" className="text-sev-high mt-2 text-xs">
+        <p role="alert" className="text-danger mt-2 text-xs">
           Không ghi được đánh giá: {submit.error.message}
         </p>
       ) : null}

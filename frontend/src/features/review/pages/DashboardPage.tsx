@@ -17,7 +17,7 @@ import { Metric, MetricCard } from '@/features/review/components/MetricCard';
 import { useRunMetrics } from '@/features/review/hooks/useReview';
 import { formatCount, formatDecimal, formatRatio } from '@/features/review/lib/formatMetric';
 import { ApiError } from '@/shared/lib/apiClient';
-import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
+import { ErrorState, LoadingState } from '@/shared/ui/states';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
 
@@ -39,7 +39,7 @@ export function DashboardPage() {
   const { data, isPending, isError, error } = useRunMetrics(runId);
 
   if (isPending) {
-    return <FullPageSpinner label="Đang tính chỉ số…" />;
+    return <LoadingState label="Đang tính chỉ số…" shape="lines" rows={8} />;
   }
   if (isError) {
     return <MetricsLoadError error={error} />;
@@ -48,7 +48,7 @@ export function DashboardPage() {
   const { citationQuality: citation, reviewProgress: review, groundTruth, agentCost } = data;
 
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-4">
       <PageHeader
         back={{
           to: `/snapshots/${snapshotId}/runs/${runId}/warnings`,
@@ -59,7 +59,7 @@ export function DashboardPage() {
         actions={<ExportButtons runId={runId} />}
       />
 
-      <div className="grid items-start gap-5 lg:grid-cols-2">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         <MetricCard
           title="Chất lượng trích dẫn"
           note="Mỗi nhận định của Agent phải gắn Evidence ID kiểm chứng được. Hai tỉ lệ dưới đây là thước đo trung tâm của đồ án."
@@ -204,5 +204,11 @@ function MetricsLoadError({ error }: { error: unknown }) {
       />
     );
   }
-  return <StatusBadge tone="danger" label="Không tải được chỉ số của lần phân tích." />;
+  return (
+    <ErrorState
+      title="Không tải được chỉ số của lần phân tích."
+      message={error instanceof ApiError ? error.message : undefined}
+      hint="Kiểm tra trạng thái backend ở chân trang rồi tải lại trang."
+    />
+  );
 }

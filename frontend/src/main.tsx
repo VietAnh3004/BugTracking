@@ -5,6 +5,9 @@ import { RouterProvider } from 'react-router-dom';
 import { AppProviders } from '@/app/providers';
 import { router } from '@/app/router';
 
+// Font đóng gói cùng app (không CDN — ADR 0002); nạp TRƯỚC index.css.
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
 import './index.css';
 
 const container = document.getElementById('root');

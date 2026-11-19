@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import { SeverityBadge } from '@/features/warnings/components/SeverityBadge';
 import { displaySummary } from '@/features/warnings/lib/displaySummary';
 import { toFilePathUrl, toLineHash } from '@/features/snapshots/lib/filePathUrl';
+import { IconCheck } from '@/shared/ui/icons';
 import { buttonClass, CARD, INPUT } from '@/shared/ui/styles';
 
 import type {
@@ -27,9 +28,9 @@ const VERDICT_LABELS: Record<GroundTruthVerdict, string> = {
 };
 
 const VERDICT_ACTIVE: Record<GroundTruthVerdict, string> = {
-  TRUE_POSITIVE: 'border-red-300 bg-red-50 text-red-800 ring-2 ring-red-200',
-  FALSE_POSITIVE: 'border-emerald-300 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-200',
-  UNCERTAIN: 'border-amber-300 bg-amber-50 text-amber-800 ring-2 ring-amber-200',
+  TRUE_POSITIVE: 'border-danger/40 bg-danger/10 text-danger ring-2 ring-danger/30',
+  FALSE_POSITIVE: 'border-success/40 bg-success/10 text-success ring-2 ring-success/30',
+  UNCERTAIN: 'border-warning/40 bg-warning/10 text-warning ring-2 ring-warning/30',
 };
 
 const VERDICTS: GroundTruthVerdict[] = ['TRUE_POSITIVE', 'FALSE_POSITIVE', 'UNCERTAIN'];
@@ -65,7 +66,7 @@ export function LabelRow({ row, snapshotId, runId, saving, onSave, onDelete }: L
         <span className="text-ink-subtle text-xs">{row.tool}</span>
         <Link
           to={`/snapshots/${snapshotId}/runs/${runId}/evidence/${row.shortId}`}
-          className="bg-brand-subtle text-brand rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold"
+          className="bg-brand-subtle text-brand text-2xs rounded-sm px-1.5 py-0.5 font-mono font-semibold"
         >
           {row.shortId}
         </Link>
@@ -79,7 +80,10 @@ export function LabelRow({ row, snapshotId, runId, saving, onSave, onDelete }: L
           </Link>
         )}
         {row.label == null ? null : (
-          <span className="ml-auto text-xs text-emerald-700">✓ Đã gán</span>
+          <span className="text-success ml-auto inline-flex items-center gap-1 text-xs">
+            <IconCheck className="size-3.5" />
+            Đã gán
+          </span>
         )}
       </div>
 

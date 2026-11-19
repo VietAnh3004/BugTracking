@@ -13,7 +13,7 @@ export function ChatMessageItem({ message, snapshotId, runId }: ChatMessageItemP
   if (message.role === 'USER') {
     return (
       <li className="flex justify-end">
-        <p className="bg-brand-solid m-0 max-w-[85%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm whitespace-pre-wrap text-white shadow-xs">
+        <p className="bg-brand-solid m-0 max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap text-white">
           {message.content}
         </p>
       </li>
@@ -21,7 +21,7 @@ export function ChatMessageItem({ message, snapshotId, runId }: ChatMessageItemP
   }
 
   return (
-    <li className="border-border bg-surface rounded-2xl rounded-bl-md border p-4 shadow-xs sm:p-5">
+    <li className="border-border bg-surface rounded-lg border p-4">
       {message.verdict != null && (
         <VerdictBadge verdict={message.verdict} downgradedFrom={message.downgradedFromVerdict} />
       )}

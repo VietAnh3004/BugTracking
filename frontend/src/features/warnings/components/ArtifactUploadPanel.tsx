@@ -14,7 +14,7 @@ import { Link } from 'react-router-dom';
 
 import { useIngestArtifacts } from '@/features/warnings/hooks/useWarnings';
 import { ApiError } from '@/shared/lib/apiClient';
-import { IconUpload } from '@/shared/ui/icons';
+import { IconArrowRight, IconUpload } from '@/shared/ui/icons';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
 import { buttonClass, CARD, TEXT_LINK } from '@/shared/ui/styles';
 
@@ -68,7 +68,7 @@ export function ArtifactUploadPanel({ snapshotId, onClose }: ArtifactUploadPanel
   }
 
   return (
-    <section aria-label="Nạp kết quả phân tích" className={`${CARD} flex flex-col gap-4 p-5`}>
+    <section aria-label="Nạp kết quả phân tích" className={`${CARD} flex flex-col gap-4 p-4`}>
       <div className="flex items-center justify-between gap-3">
         <h2 className="m-0 text-base font-semibold">Nạp kết quả phân tích</h2>
         <button
@@ -135,7 +135,7 @@ export function ArtifactUploadPanel({ snapshotId, onClose }: ArtifactUploadPanel
                   onClick={() => removeFile(file)}
                   disabled={ingest.isPending}
                   aria-label={`Bỏ ${file.name}`}
-                  className="cursor-pointer text-red-700 hover:underline disabled:cursor-not-allowed"
+                  className="text-danger cursor-pointer hover:underline disabled:cursor-not-allowed"
                 >
                   Bỏ
                 </button>
@@ -171,7 +171,7 @@ export function ArtifactUploadPanel({ snapshotId, onClose }: ArtifactUploadPanel
       ) : null}
 
       {ingest.isError ? (
-        <p className="m-0 text-sm text-red-700" role="alert">
+        <p className="text-danger m-0 text-sm" role="alert">
           {describeIngestError(ingest.error)}
         </p>
       ) : null}
@@ -186,7 +186,7 @@ function IngestResult({ run, snapshotId }: { run: AnalysisRun; snapshotId: strin
     return (
       <div role="alert" className="flex flex-col gap-1">
         <StatusBadge tone="danger" label="Phân tích thất bại" />
-        <p className="m-0 text-sm text-red-700">{run.errorMessage ?? 'Backend không ghi lý do.'}</p>
+        <p className="text-danger m-0 text-sm">{run.errorMessage ?? 'Backend không ghi lý do.'}</p>
       </div>
     );
   }
@@ -209,9 +209,10 @@ function IngestResult({ run, snapshotId }: { run: AnalysisRun; snapshotId: strin
       ) : null}
       <Link
         to={`/snapshots/${snapshotId}/runs/${run.id}/warnings`}
-        className={`${TEXT_LINK} self-start text-sm`}
+        className={`${TEXT_LINK} inline-flex items-center gap-1 self-start text-sm`}
       >
-        Xem danh sách cảnh báo →
+        Xem danh sách cảnh báo
+        <IconArrowRight className="size-3.5" />
       </Link>
     </div>
   );

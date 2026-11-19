@@ -13,7 +13,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useVerifyEmail } from '@/features/auth/hooks/useAccount';
 import { tokenFromHash } from '@/features/auth/lib/tokenFromHash';
 import { ApiError } from '@/shared/lib/apiClient';
-import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
+import { LoadingState } from '@/shared/ui/states';
 import { buttonClass, CARD } from '@/shared/ui/styles';
 
 export function VerifyEmailPage() {
@@ -50,7 +50,7 @@ export function VerifyEmailPage() {
   if (verify.isError) {
     return <VerifyFailed message={describeError(verify.error)} />;
   }
-  return <FullPageSpinner label="Đang xác thực email…" />;
+  return <LoadingState label="Đang xác thực email…" shape="lines" rows={3} />;
 }
 
 function VerifyFailed({ message }: { message: string }) {

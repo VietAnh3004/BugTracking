@@ -46,7 +46,7 @@ export function GoogleLoginSection({ text = 'signin_with' }: GoogleLoginSectionP
       ) : null}
       {googleLogin.isError ? (
         <p
-          className="m-0 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          className="border-danger/30 bg-danger/10 text-danger m-0 rounded-lg border px-3 py-2 text-sm"
           role="alert"
         >
           {describeGoogleError(googleLogin.error)}

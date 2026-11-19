@@ -20,14 +20,14 @@ export function ClaimCard({ claim, snapshotId, runId }: ClaimCardProps) {
   return (
     <li
       className={`rounded-xl border p-3 ${
-        unsupported ? 'border-amber-300 bg-amber-50/60' : 'border-border bg-surface-muted'
+        unsupported ? 'border-warning/40 bg-warning/5' : 'border-border bg-surface-muted'
       }`}
     >
       <p className="text-ink text-sm">{claim.text}</p>
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {claim.citations.length === 0 ? (
-          <span className="text-xs text-amber-700">Không có trích dẫn nào</span>
+          <span className="text-warning text-xs">Không có trích dẫn nào</span>
         ) : (
           claim.citations.map((citation, index) => (
             <CitationChip
@@ -48,7 +48,7 @@ export function ClaimCard({ claim, snapshotId, runId }: ClaimCardProps) {
       </div>
 
       {unsupported && (
-        <p className="mt-2 text-xs text-amber-800">
+        <p className="text-warning mt-2 text-xs">
           Nhận định này không có trích dẫn nào tra được về bằng chứng thật, nên đã bị hạ xuống “chưa
           đủ bằng chứng”.
         </p>

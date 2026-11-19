@@ -18,14 +18,14 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
+import { LoadingState } from '@/shared/ui/states';
 
 export function ProtectedRoute() {
   const { status } = useAuth();
   const location = useLocation();
 
   if (status === 'bootstrapping') {
-    return <FullPageSpinner label="Đang khôi phục phiên đăng nhập…" />;
+    return <LoadingState label="Đang khôi phục phiên đăng nhập…" shape="lines" rows={3} />;
   }
 
   if (status === 'anonymous') {

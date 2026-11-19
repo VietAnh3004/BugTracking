@@ -31,7 +31,7 @@ export function PasswordRequirements({
             key={rule.id}
             data-met={met}
             className={`flex items-center gap-2 text-xs transition-colors ${
-              met ? 'font-medium text-emerald-600' : flagUnmet ? 'text-red-600' : 'text-ink-muted'
+              met ? 'text-success font-medium' : flagUnmet ? 'text-danger' : 'text-ink-muted'
             }`}
           >
             {met ? (
@@ -39,7 +39,7 @@ export function PasswordRequirements({
             ) : (
               <span aria-hidden="true" className="grid size-3.5 shrink-0 place-items-center">
                 <span
-                  className={`size-1.5 rounded-full border-[1.5px] ${flagUnmet ? 'border-red-500' : 'border-border-strong'}`}
+                  className={`size-1.5 rounded-full border-[1.5px] ${flagUnmet ? 'border-danger/40' : 'border-border-strong'}`}
                 />
               </span>
             )}

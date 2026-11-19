@@ -43,7 +43,7 @@ export function CreateProjectForm() {
       />
 
       {createProject.isError ? (
-        <p className="m-0 text-sm text-red-700" role="alert">
+        <p className="text-danger m-0 text-sm" role="alert">
           {describeError(createProject.error)}
         </p>
       ) : null}

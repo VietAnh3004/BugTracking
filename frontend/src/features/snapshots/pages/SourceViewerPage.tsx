@@ -22,9 +22,8 @@ import { useLineTarget } from '@/features/snapshots/hooks/useLineTarget';
 import { highlightLines, languageOf } from '@/features/snapshots/lib/highlight';
 import { fromRouteParam } from '@/features/snapshots/lib/filePathUrl';
 import { ApiError } from '@/shared/lib/apiClient';
-import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
-import { IconCode, IconFile } from '@/shared/ui/icons';
-import { StatusBadge } from '@/shared/ui/StatusBadge';
+import { EmptyState, ErrorState, LoadingState } from '@/shared/ui/states';
+import { IconCode, IconFile, IconInfo } from '@/shared/ui/icons';
 import { CARD } from '@/shared/ui/styles';
 
 export function SourceViewerPage() {
@@ -45,19 +44,18 @@ export function SourceViewerPage() {
 
   if (path === '') {
     return (
-      <div
-        className={`${CARD} text-ink-muted flex flex-col items-center px-6 py-16 text-center text-sm`}
-      >
-        <span className="bg-surface-sunken mb-3 grid size-11 place-items-center rounded-xl">
-          <IconCode className="size-5" />
-        </span>
-        <p className="m-0">Chọn một file ở cây bên trái để xem nội dung.</p>
+      <div className={CARD}>
+        <EmptyState
+          icon={<IconCode className="size-5" />}
+          title="Chọn một file ở cây bên trái để xem nội dung."
+          description="Hoặc mở danh sách cảnh báo — bấm vào vị trí của một cảnh báo là nhảy thẳng tới đúng dòng."
+        />
       </div>
     );
   }
 
   if (isPending) {
-    return <FullPageSpinner label="Đang tải nội dung file…" />;
+    return <LoadingState label="Đang tải nội dung file…" shape="code" rows={18} />;
   }
 
   if (isError) {
@@ -66,21 +64,21 @@ export function SourceViewerPage() {
 
   return (
     <article className={`${CARD} min-w-0 overflow-hidden`}>
-      <header className="border-border bg-surface-muted flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5">
-        <h2 className="text-ink m-0 flex min-w-0 items-center gap-2 font-mono text-[13px] font-medium break-all">
+      <header className="border-border bg-surface flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
+        <h2 className="text-ink m-0 flex min-w-0 items-center gap-2 font-mono text-sm font-medium break-all">
           <IconFile className="text-ink-muted size-4" />
           {path}
         </h2>
-        <span className="text-ink-muted text-xs">{data.totalLines} dòng</span>
+        <span className="text-ink-subtle text-xs">{data.totalLines} dòng</span>
       </header>
 
       {data.truncated ? (
-        <p className="border-border m-0 border-b bg-amber-50 px-4 py-2 text-sm text-amber-800">
+        <p className="border-border bg-warning/5 text-warning m-0 border-b px-3 py-1.5 text-xs">
           Đang hiển thị dòng {data.fromLine}–{data.toLine} trên tổng {data.totalLines} dòng.
         </p>
       ) : null}
 
-      <div className="bg-code-bg overflow-x-auto py-2 font-mono text-[13px] leading-6">
+      <div className="bg-code-bg overflow-x-auto font-mono text-sm leading-5">
         {data.lines.map((text, index) => {
           // Số dòng thật = dòng bắt đầu của lát + vị trí trong lát. Dùng chỉ số mảng làm số dòng là
           // sai ngay khi người dùng mở một khoảng dòng bắt đầu từ giữa file.
@@ -106,23 +104,50 @@ export function SourceViewerPage() {
 
 function FileError({ error }: { error: unknown }) {
   if (!(error instanceof ApiError)) {
-    return <StatusBadge tone="danger" label="Không đọc được nội dung file." />;
-  }
-
-  const type = error.problem.type ?? '';
-  if (type.endsWith('binary-file')) {
-    return <StatusBadge tone="neutral" label="File nhị phân — không hiển thị theo dòng được." />;
-  }
-  if (type.endsWith('file-content-not-stored')) {
     return (
-      <StatusBadge
-        tone="warning"
-        label="File này vượt ngưỡng lưu trữ nên chỉ được lập chỉ mục, không có nội dung để đọc."
+      <ErrorState
+        title="Không đọc được nội dung file."
+        hint="Kiểm tra trạng thái backend ở chân trang rồi tải lại trang."
       />
     );
   }
-  if (error.status === 404) {
-    return <StatusBadge tone="danger" label="Không tìm thấy file này trong snapshot." />;
+
+  // Hai ca dưới KHÔNG phải lỗi — file tồn tại, chỉ là không có nội dung dạng dòng để hiện.
+  const type = error.problem.type ?? '';
+  if (type.endsWith('binary-file')) {
+    return (
+      <div className={CARD}>
+        <EmptyState
+          icon={<IconFile className="size-5" />}
+          title="File nhị phân — không hiển thị theo dòng được."
+          description="Analyzer không quét file nhị phân, nên không có cảnh báo nào trỏ vào đây."
+        />
+      </div>
+    );
   }
-  return <StatusBadge tone="danger" label={error.problem.detail ?? error.message} />;
+  if (type.endsWith('file-content-not-stored')) {
+    return (
+      <div className={CARD}>
+        <EmptyState
+          icon={<IconInfo className="size-5" />}
+          title="File này vượt ngưỡng lưu trữ nên chỉ được lập chỉ mục, không có nội dung để đọc."
+          description="Ngưỡng do UPLOAD_MAX_STORED_FILE_BYTES của core-backend quyết định (mặc định 2 MB)."
+        />
+      </div>
+    );
+  }
+  if (error.status === 404) {
+    return (
+      <ErrorState
+        title="Không tìm thấy file này trong snapshot."
+        hint="Đường dẫn trong URL có thể đã đổi — chọn lại file từ cây bên trái."
+      />
+    );
+  }
+  return (
+    <ErrorState
+      title="Không đọc được nội dung file."
+      message={error.problem.detail ?? error.message}
+    />
+  );
 }

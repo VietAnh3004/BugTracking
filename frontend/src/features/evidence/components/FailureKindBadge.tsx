@@ -18,12 +18,12 @@ const STYLES: Record<FailureKind, { label: string; hint: string; className: stri
   ERROR: {
     label: 'ERROR',
     hint: 'Ngoại lệ thoát ra khỏi test — thường ném từ mã production, nên stack trace trỏ về đúng dòng bị cảnh báo',
-    className: 'bg-red-100 text-red-800',
+    className: 'bg-danger/10 text-danger',
   },
   FAILURE: {
     label: 'FAILURE',
     hint: 'Assertion thất bại — ném từ chính lớp test, nên stack trace không trỏ về mã production',
-    className: 'bg-amber-100 text-amber-800',
+    className: 'bg-warning/10 text-warning',
   },
 };
 
@@ -32,7 +32,7 @@ export function FailureKindBadge({ kind }: { kind: FailureKind }) {
   return (
     <span
       title={style.hint}
-      className={`inline-flex rounded px-1.5 py-0.5 font-mono text-[11px] font-medium ${style.className}`}
+      className={`text-2xs inline-flex h-5 items-center rounded-sm px-1.5 font-mono font-medium ${style.className}`}
     >
       {style.label}
     </span>

@@ -34,7 +34,7 @@ export function EmbeddingNotice({ run, isOwner }: { run: AnalysisRun; isOwner: b
   return (
     <div
       role="status"
-      className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+      className="border-warning/30 bg-warning/10 text-warning flex flex-wrap items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm"
     >
       <p className="m-0 max-w-3xl">
         <strong>Tìm theo nghĩa chưa chạy cho lần phân tích này</strong> — Agent chỉ tìm được bằng so

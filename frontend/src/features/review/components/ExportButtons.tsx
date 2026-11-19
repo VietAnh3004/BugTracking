@@ -55,7 +55,7 @@ export function ExportButtons({ runId }: { runId: string }) {
         </button>
       </div>
       {error === null ? null : (
-        <p role="alert" className="text-sev-high mt-1 mb-0 text-xs">
+        <p role="alert" className="text-danger mt-1 mb-0 text-xs">
           {error}
         </p>
       )}

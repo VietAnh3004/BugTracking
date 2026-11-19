@@ -42,13 +42,11 @@ export function UploadZone({ projectId }: { projectId: string }) {
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
-      className={`flex flex-col items-center rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
+      className={`flex flex-col items-center rounded-lg border border-dashed px-4 py-6 text-center transition-colors ${
         dragging ? 'border-brand bg-brand-subtle' : 'border-border-strong bg-surface-muted'
       }`}
     >
-      <span className="bg-surface text-brand mb-3 grid size-11 place-items-center rounded-full shadow-xs">
-        <IconUpload className="size-5" />
-      </span>
+      <IconUpload className="text-ink-subtle mb-2 size-5" />
       <p className="text-ink-muted mt-0 mb-3 text-sm">Kéo thả file .zip của repo vào đây, hoặc</p>
 
       <label htmlFor="snapshot-file" className={buttonClass('primary')}>
@@ -81,7 +79,7 @@ export function UploadZone({ projectId }: { projectId: string }) {
       ) : null}
 
       {upload.isError ? (
-        <p className="mt-3 text-sm text-red-700" role="alert">
+        <p className="text-danger mt-3 text-sm" role="alert">
           {describeUploadError(upload.error)}
         </p>
       ) : null}

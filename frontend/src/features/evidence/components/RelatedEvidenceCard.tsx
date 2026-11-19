@@ -43,17 +43,15 @@ export function RelatedEvidenceCard({
   const dongDeNhay = item.startLine ?? (cungFileVoiNeo ? anchorStartLine : null);
 
   return (
-    <li className={`${CARD} min-w-0 p-4`}>
+    <li className={`${CARD} min-w-0 p-3`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Link
           to={`/snapshots/${snapshotId}/runs/${runId}/evidence/${item.shortId}`}
-          className="bg-brand-subtle text-brand hover:bg-brand-solid rounded px-1.5 py-0.5 font-mono text-xs font-semibold transition-colors hover:text-white"
+          className="bg-brand-subtle text-brand hover:bg-brand-solid rounded-sm px-1.5 py-0.5 font-mono text-xs font-semibold transition-colors hover:text-white"
         >
           {item.shortId}
         </Link>
-        <span className="bg-surface-sunken text-ink-muted rounded px-1.5 py-0.5 font-mono text-[10px] tracking-wide">
-          {item.type}
-        </span>
+        <span className="text-ink-subtle text-2xs font-mono tracking-wide">{item.type}</span>
       </div>
 
       {/*
@@ -65,9 +63,7 @@ export function RelatedEvidenceCard({
         đi TRÊN MÀN HÌNH. Dữ liệu trong DB không đổi — Agent vẫn đọc `summary` như cũ.
       */}
       {item.testCase != null ? null : (
-        <p className="text-ink mt-2 mb-3 text-sm leading-relaxed [overflow-wrap:anywhere]">
-          {item.summary}
-        </p>
+        <p className="text-ink mt-2 mb-2.5 text-sm [overflow-wrap:anywhere]">{item.summary}</p>
       )}
 
       {/*
@@ -77,7 +73,7 @@ export function RelatedEvidenceCard({
         phải thiếu mất một dòng.
       */}
       {item.testCase == null ? null : (
-        <dl className="bg-surface-muted text-ink-muted mt-2 mb-3 flex flex-col gap-1 rounded-lg px-3 py-2 text-xs">
+        <dl className="bg-surface-sunken text-ink-muted mt-2 mb-3 flex flex-col gap-1 rounded-md px-2.5 py-2 text-xs">
           <div className="flex gap-1">
             <dt className="font-semibold">Test:</dt>
             <dd className="font-mono break-all">

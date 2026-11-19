@@ -119,10 +119,8 @@ describe('Đăng ký', () => {
     await userEvent.type(screen.getByLabelText('Mật khẩu'), 'chi-co-chu-cai');
     await userEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
 
-    expect(screen.getByText('Có ít nhất một chữ số').closest('li')).toHaveClass('text-red-600');
-    expect(screen.getByText('Có ít nhất một chữ cái').closest('li')).toHaveClass(
-      'text-emerald-600',
-    );
+    expect(screen.getByText('Có ít nhất một chữ số').closest('li')).toHaveClass('text-danger');
+    expect(screen.getByText('Có ít nhất một chữ cái').closest('li')).toHaveClass('text-success');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Mật khẩu')).toHaveFocus();
     expect(calledWithMethod(fetchSpy, '/register', 'POST')).toBe(false);

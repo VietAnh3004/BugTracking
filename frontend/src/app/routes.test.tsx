@@ -98,6 +98,22 @@ describe('định tuyến', () => {
   });
 });
 
+describe('/styleguide', () => {
+  /**
+   * Trang kiểm giao diện phải dựng được mà KHÔNG cần đăng nhập và không gọi API nào — nó là chỗ mở
+   * ra sau mỗi lần đổi token để soi toàn bộ component, kể cả khi backend chưa chạy.
+   */
+  it('dựng được toàn bộ component mà không cần đăng nhập', async () => {
+    window.localStorage.clear();
+    renderRoute('/styleguide');
+
+    expect(await screen.findByRole('heading', { name: 'Styleguide' })).toBeInTheDocument();
+    // Dữ liệu mẫu là cảnh báo thật của vulnshop, hiện qua đúng WarningTable của ứng dụng.
+    expect(screen.getByRole('link', { name: /UserRepository\.java:35/ })).toBeInTheDocument();
+    expect(screen.getAllByRole('status').length).toBeGreaterThan(0);
+  });
+});
+
 describe('menu tài khoản', () => {
   async function openMenu() {
     const trigger = await screen.findByRole('button', { name: 'Tài khoản: Nguoi Dung Test' });

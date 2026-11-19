@@ -114,7 +114,7 @@ describe('Phân tích tự động (sandbox)', () => {
     expect(
       await screen.findByText(/Phân tích xong: 33 cảnh báo · 30 ngữ cảnh mã nguồn/, {}, POLL_WAIT),
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Xem danh sách cảnh báo →' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Xem danh sách cảnh báo' })).toHaveAttribute(
       'href',
       '/snapshots/snap-1/runs/run-1/warnings',
     );

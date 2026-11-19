@@ -10,15 +10,15 @@ import type { Verdict } from '@/features/chat/api/chatApi';
 const STYLES: Record<Verdict, { label: string; className: string }> = {
   LIKELY_TRUE_POSITIVE: {
     label: 'Nhiều khả năng là lỗi thật',
-    className: 'bg-red-100 text-red-800 ring-red-600/20',
+    className: 'bg-danger/10 text-danger ring-danger/25',
   },
   LIKELY_FALSE_POSITIVE: {
     label: 'Nhiều khả năng báo nhầm',
-    className: 'bg-emerald-100 text-emerald-800 ring-emerald-600/20',
+    className: 'bg-success/10 text-success ring-success/25',
   },
   INSUFFICIENT_EVIDENCE: {
     label: 'Chưa đủ bằng chứng',
-    className: 'bg-slate-100 text-slate-700 ring-slate-500/20',
+    className: 'bg-surface-sunken text-ink-muted ring-border-strong',
   },
 };
 
@@ -35,13 +35,13 @@ export function VerdictBadge({ verdict, downgradedFrom }: VerdictBadgeProps) {
   return (
     <span className="inline-flex flex-wrap items-center gap-2">
       <span
-        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${style.className}`}
+        className={`inline-flex h-5 items-center rounded-sm px-1.5 text-xs font-medium ring-1 ring-inset ${style.className}`}
       >
         {style.label}
       </span>
       {wasDowngraded && (
         <span
-          className="text-xs text-amber-700"
+          className="text-warning text-xs"
           title={`Agent kết luận ${STYLES[downgradedFrom].label.toLowerCase()}, nhưng không nhận định nào có trích dẫn tra được về bằng chứng thật trong lần phân tích này.`}
         >
           đã hạ cấp từ “{STYLES[downgradedFrom].label}”

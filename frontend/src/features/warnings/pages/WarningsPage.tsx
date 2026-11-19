@@ -21,8 +21,8 @@ import { WarningFilters } from '@/features/warnings/components/WarningFilters';
 import { WarningTable } from '@/features/warnings/components/WarningTable';
 import { useAnalysisRun, useWarnings } from '@/features/warnings/hooks/useWarnings';
 import { ApiError } from '@/shared/lib/apiClient';
-import { FullPageSpinner } from '@/shared/ui/FullPageSpinner';
-import { IconChart, IconChat, IconCheck } from '@/shared/ui/icons';
+import { EmptyState, ErrorState, LoadingState } from '@/shared/ui/states';
+import { IconAlert, IconChart, IconChat, IconCheck, IconSearch } from '@/shared/ui/icons';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
 import { buttonClass, CARD } from '@/shared/ui/styles';
@@ -44,7 +44,7 @@ export function WarningsPage() {
   const isOwner = useSnapshotRole(snapshotId) === 'OWNER';
 
   if (run.isPending) {
-    return <FullPageSpinner label="Đang tải kết quả phân tích…" />;
+    return <LoadingState label="Đang tải kết quả phân tích…" shape="table" />;
   }
   if (run.isError) {
     return <RunLoadError error={run.error} />;
@@ -84,7 +84,7 @@ export function WarningsPage() {
                 className={buttonClass('primary')}
               >
                 <IconChart className="size-4" />
-                Xem chỉ số &amp; tải báo cáo →
+                Xem chỉ số &amp; tải báo cáo
               </Link>
             ) : null}
           </>
@@ -110,24 +110,39 @@ export function WarningsPage() {
 
       {/* Run hỏng thì nói thẳng lý do — đây là chỗ duy nhất người dùng đọc được errorMessage. */}
       {run.data.status === 'FAILED' ? (
-        <p className="m-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          Lần phân tích này đã hỏng: {run.data.errorMessage ?? 'không rõ lý do'}
-        </p>
+        <ErrorState
+          title="Lần phân tích này đã hỏng"
+          message={run.data.errorMessage ?? 'Không rõ lý do.'}
+          hint="Sửa nguyên nhân trong mã nguồn hoặc cấu hình rồi chạy phân tích lại từ trang snapshot."
+        />
       ) : null}
       {run.data.status === 'SUCCEEDED_CLEAN' ? (
         <p className="text-ink-muted m-0 text-sm">{run.data.cleanAckNote}</p>
       ) : null}
 
-      <div className={`${CARD} px-4 py-3`}>
+      <div className={`${CARD} px-3 py-2.5`}>
         <WarningFilters value={filters} onChange={setFilters} />
       </div>
 
-      {warnings.isPending ? <StatusBadge tone="neutral" label="Đang tải cảnh báo…" /> : null}
+      {warnings.isPending ? <LoadingState label="Đang tải cảnh báo…" shape="table" /> : null}
       {warnings.isError ? <WarningsLoadError error={warnings.error} /> : null}
       {warnings.isSuccess && warnings.data.items.length === 0 ? (
-        <p className={`${CARD} text-ink-muted m-0 px-4 py-10 text-center text-sm`}>
-          Không có cảnh báo nào khớp bộ lọc hiện tại.
-        </p>
+        <div className={CARD}>
+          <EmptyState
+            icon={<IconSearch className="size-5" />}
+            title="Không có cảnh báo nào khớp bộ lọc hiện tại."
+            description="Nới bộ lọc — đường dẫn file chỉ cần gõ một phần, không phân biệt hoa thường."
+            action={
+              <button
+                type="button"
+                onClick={() => setFilters({})}
+                className={buttonClass('secondary', 'sm')}
+              >
+                Xoá bộ lọc
+              </button>
+            }
+          />
+        </div>
       ) : null}
       {warnings.isSuccess && warnings.data.items.length > 0 ? (
         <>
@@ -137,7 +152,7 @@ export function WarningsPage() {
             runId={runId}
             reviewByShortId={reviewByShortId}
           />
-          <p className="text-ink-muted m-0 text-sm">
+          <p className="text-ink-subtle m-0 text-xs">
             Hiển thị {warnings.data.items.length}/{warnings.data.total} cảnh báo.
           </p>
         </>
@@ -167,7 +182,7 @@ function RunSummary({
   const resolved = locationCount - unresolvedLocationCount;
   const linked = findingCount - unlinkedWarningCount;
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
+    <div className="grid gap-2 sm:grid-cols-3">
       <StatTile value={String(findingCount)} caption="cảnh báo tĩnh" />
       <StatTile
         value={percent(resolved, locationCount)}
@@ -200,18 +215,16 @@ function StatTile({
 }) {
   return (
     <div
-      className={`rounded-xl border px-4 py-3 shadow-xs ${warn ? 'border-orange-200 bg-orange-50' : 'border-border bg-surface'}`}
+      className={`rounded-lg border px-3 py-2.5 ${warn ? 'border-warning/30 bg-warning/5' : 'border-border bg-surface'}`}
     >
       <p
-        className={`m-0 text-2xl font-semibold tracking-tight tabular-nums ${warn ? 'text-sev-medium' : 'text-ink'}`}
+        className={`m-0 flex items-center gap-1.5 text-xl font-semibold tracking-tight ${warn ? 'text-warning' : 'text-ink'}`}
       >
+        {/* Màu không đứng một mình: ô cần chú ý có thêm icon cảnh báo. */}
+        {warn ? <IconAlert className="size-4" /> : null}
         {value}
       </p>
-      <p
-        className={`mt-0.5 mb-0 text-sm ${warn ? 'text-sev-medium font-medium' : 'text-ink-muted'}`}
-      >
-        {caption}
-      </p>
+      <p className={`mt-0.5 mb-0 text-xs ${warn ? 'text-warning' : 'text-ink-muted'}`}>{caption}</p>
     </div>
   );
 }
@@ -223,9 +236,20 @@ function percent(part: number, whole: number): string {
 
 function RunLoadError({ error }: { error: unknown }) {
   if (error instanceof ApiError && error.status === 404) {
-    return <StatusBadge tone="danger" label="Không tìm thấy lần phân tích này." />;
+    return (
+      <ErrorState
+        title="Không tìm thấy lần phân tích này."
+        hint="Lần phân tích có thể đã bị xoá cùng dự án, hoặc bạn không còn là thành viên. Quay lại danh sách dự án để mở lại."
+      />
+    );
   }
-  return <StatusBadge tone="danger" label="Không tải được lần phân tích." />;
+  return (
+    <ErrorState
+      title="Không tải được lần phân tích."
+      message={error instanceof ApiError ? error.message : undefined}
+      hint="Kiểm tra trạng thái backend ở chân trang rồi tải lại trang."
+    />
+  );
 }
 
 function WarningsLoadError({ error }: { error: unknown }) {
@@ -238,5 +262,11 @@ function WarningsLoadError({ error }: { error: unknown }) {
       />
     );
   }
-  return <StatusBadge tone="danger" label="Không tải được danh sách cảnh báo." />;
+  return (
+    <ErrorState
+      title="Không tải được danh sách cảnh báo."
+      message={error instanceof ApiError ? error.message : undefined}
+      hint="Kiểm tra trạng thái backend ở chân trang rồi tải lại trang."
+    />
+  );
 }

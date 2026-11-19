@@ -29,7 +29,7 @@ const DOT_CLASSES: Record<WarningSeverity, string> = {
 export function SeverityBadge({ severity }: { severity: WarningSeverity }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-wide ring-1 ring-inset ${SEVERITY_CLASSES[severity]}`}
+      className={`text-2xs inline-flex h-5 items-center gap-1.5 rounded-sm px-1.5 font-semibold tracking-wide ring-1 ring-inset ${SEVERITY_CLASSES[severity]}`}
     >
       <span
         aria-hidden="true"

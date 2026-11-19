@@ -133,7 +133,7 @@ describe('ArtifactUploadPanel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Nạp 1 file' }));
 
     expect(await screen.findByText(/34 cảnh báo · 30 ngữ cảnh mã nguồn/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Xem danh sách cảnh báo →' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Xem danh sách cảnh báo' })).toHaveAttribute(
       'href',
       '/snapshots/snap-1/runs/run-1/warnings',
     );
@@ -155,7 +155,7 @@ describe('ArtifactUploadPanel', () => {
 
     expect(await screen.findByText('Phân tích thất bại')).toBeInTheDocument();
     expect(screen.getByText('Khong co canh bao tinh nao')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Xem danh sách cảnh báo →' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Xem danh sách cảnh báo' })).toBeNull();
     expect(selectedNames()).toEqual(['jacoco.xml']);
   });
 

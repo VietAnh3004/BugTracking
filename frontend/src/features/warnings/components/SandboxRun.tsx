@@ -9,7 +9,7 @@ import { Link } from 'react-router-dom';
 
 import { formatElapsed } from '@/features/warnings/lib/formatElapsed';
 import { ApiError } from '@/shared/lib/apiClient';
-import { IconPlay } from '@/shared/ui/icons';
+import { IconArrowRight, IconPlay } from '@/shared/ui/icons';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
 import { buttonClass, TEXT_LINK } from '@/shared/ui/styles';
 
@@ -50,7 +50,7 @@ export function SandboxRunStatus({
   if (startError !== null) {
     return (
       <p
-        className="m-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        className="border-danger/30 bg-danger/10 text-danger m-0 rounded-lg border px-4 py-3 text-sm"
         role="alert"
       >
         {describeStartError(startError)}
@@ -89,10 +89,10 @@ export function SandboxRunStatus({
     return (
       <div
         role="alert"
-        className="flex flex-col gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
+        className="border-danger/30 bg-danger/10 flex flex-col gap-1.5 rounded-xl border px-4 py-3"
       >
         <StatusBadge tone="danger" label="Phân tích tự động thất bại" />
-        <p className="m-0 text-sm text-red-700">{run.errorMessage ?? 'Backend không ghi lý do.'}</p>
+        <p className="text-danger m-0 text-sm">{run.errorMessage ?? 'Backend không ghi lý do.'}</p>
       </div>
     );
   }
@@ -100,7 +100,7 @@ export function SandboxRunStatus({
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3"
+      className="border-success/30 bg-success/10 flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3"
     >
       <StatusBadge
         tone="ok"
@@ -112,9 +112,10 @@ export function SandboxRunStatus({
       />
       <Link
         to={`/snapshots/${snapshotId}/runs/${run.id}/warnings`}
-        className={`${TEXT_LINK} text-sm`}
+        className={`${TEXT_LINK} inline-flex items-center gap-1 text-sm`}
       >
-        Xem danh sách cảnh báo →
+        Xem danh sách cảnh báo
+        <IconArrowRight className="size-3.5" />
       </Link>
     </div>
   );

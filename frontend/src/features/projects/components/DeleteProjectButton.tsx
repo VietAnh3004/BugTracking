@@ -58,7 +58,7 @@ export function DeleteProjectButton({ projectId, projectName }: DeleteProjectBut
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex basis-full flex-col gap-3 rounded-lg border border-red-200 bg-red-50/70 p-4"
+      className="border-danger/30 bg-danger/5 flex basis-full flex-col gap-3 rounded-lg border p-4"
     >
       <p className="m-0 text-sm">
         Xoá vĩnh viễn dự án <strong>{projectName}</strong> cùng toàn bộ snapshot, cảnh báo, hội
@@ -74,7 +74,7 @@ export function DeleteProjectButton({ projectId, projectName }: DeleteProjectBut
       />
 
       {deleteProject.isError ? (
-        <p className="m-0 text-sm text-red-700" role="alert">
+        <p className="text-danger m-0 text-sm" role="alert">
           {describeError(deleteProject.error)}
         </p>
       ) : null}

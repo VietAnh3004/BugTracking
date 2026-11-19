@@ -28,7 +28,7 @@ export function BackendStatus() {
     return (
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <StatusBadge tone="danger" label="Mất kết nối backend" />
-        <p className="m-0 text-xs text-red-700">{reason}</p>
+        <p className="text-danger m-0 text-xs">{reason}</p>
         <p className="text-ink-subtle m-0 font-mono text-xs">API: {appConfig.apiBaseUrl}</p>
       </div>
     );

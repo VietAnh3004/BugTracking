@@ -37,7 +37,7 @@ export function RebuildLinksButton({ runId }: { runId: string }) {
       ) : null}
 
       {rebuild.isError ? (
-        <p role="alert" className="m-0 text-xs text-red-700">
+        <p role="alert" className="text-danger m-0 text-xs">
           {rebuild.error instanceof ApiError
             ? (rebuild.error.problem.detail ?? rebuild.error.message)
             : 'Không gọi được backend.'}

@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Avatar } from '@/shared/ui/Avatar';
-import { IconChevronDown, IconLogout, IconSettings } from '@/shared/ui/icons';
+import { IconChevronDown, IconLogout, IconSettings, IconShield } from '@/shared/ui/icons';
 import { CARD } from '@/shared/ui/styles';
 
 import type { CurrentUser } from '@/features/auth/api/authApi';
@@ -110,7 +110,7 @@ export function AccountMenu({ user }: { user: CurrentUser }) {
         aria-label={`Tài khoản: ${user.displayName}`}
         onClick={() => setOpen((value) => !value)}
         onKeyDown={handleTriggerKeyDown}
-        className={`flex items-center gap-2 rounded-full py-0.5 pr-2 pl-0.5 md:pr-3 ${
+        className={`flex h-8 items-center gap-2 rounded-md pr-1.5 pl-1 md:pr-2 ${
           open ? 'bg-surface-sunken' : 'hover:bg-surface-sunken'
         }`}
       >
@@ -147,6 +147,21 @@ export function AccountMenu({ user }: { user: CurrentUser }) {
                 Cài đặt tài khoản
               </Link>
             </li>
+            {/* Chỉ hiện với admin. Người thường không thấy mục này, và vào thẳng /admin cũng nhận 404. */}
+            {user.role === 'ADMIN' ? (
+              <li role="none">
+                <Link
+                  to="/admin"
+                  role="menuitem"
+                  tabIndex={-1}
+                  onClick={() => setOpen(false)}
+                  className={ITEM}
+                >
+                  <IconShield className="text-ink-muted size-4" />
+                  Quản lý tài khoản
+                </Link>
+              </li>
+            ) : null}
             <li role="none">
               <button
                 type="button"
@@ -156,7 +171,7 @@ export function AccountMenu({ user }: { user: CurrentUser }) {
                   setOpen(false);
                   void signOut();
                 }}
-                className={`${ITEM} hover:text-red-700 focus:text-red-700`}
+                className={`${ITEM} hover:text-danger focus:text-danger`}
               >
                 <IconLogout className="size-4" />
                 Đăng xuất

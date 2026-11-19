@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { useProjectSnapshots } from '@/features/snapshots/hooks/useSnapshots';
 import { IconChevronRight, IconFolder } from '@/shared/ui/icons';
 import { StatusBadge, type StatusTone } from '@/shared/ui/StatusBadge';
+import { EmptyState, ErrorState, LoadingState } from '@/shared/ui/states';
 
 import type { Snapshot } from '@/features/snapshots/api/snapshotApi';
 
@@ -24,25 +25,30 @@ export function SnapshotList({ projectId }: { projectId: string }) {
 
   if (isPending) {
     return (
-      <div className="px-5 py-4">
-        <StatusBadge tone="neutral" label="Đang tải danh sách snapshot…" />
+      <div className="px-4 py-3">
+        <LoadingState label="Đang tải danh sách snapshot…" shape="lines" rows={3} />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="px-5 py-4">
-        <StatusBadge tone="danger" label="Không tải được danh sách snapshot" />
+      <div className="p-3">
+        <ErrorState
+          title="Không tải được danh sách snapshot."
+          hint="Kiểm tra trạng thái backend ở chân trang rồi tải lại trang."
+        />
       </div>
     );
   }
 
   if (data.items.length === 0) {
     return (
-      <p className="text-ink-muted m-0 px-5 py-10 text-center text-sm">
-        Chưa có snapshot nào. Tải lên một file zip để bắt đầu.
-      </p>
+      <EmptyState
+        icon={<IconFolder className="size-5" />}
+        title="Chưa có snapshot nào."
+        description="Tải lên một file zip mã nguồn ở khung bên phải để bắt đầu."
+      />
     );
   }
 
@@ -55,11 +61,9 @@ export function SnapshotList({ projectId }: { projectId: string }) {
         return (
           <li
             key={snapshot.id}
-            className={`relative flex items-center gap-3 px-5 py-3.5 ${ready ? 'hover:bg-surface-muted' : ''}`}
+            className={`relative flex items-center gap-3 px-4 py-2.5 ${ready ? 'hover:bg-surface-sunken' : ''}`}
           >
-            <span className="bg-surface-sunken text-ink-muted grid size-9 shrink-0 place-items-center rounded-lg">
-              <IconFolder className="size-4.5" />
-            </span>
+            <IconFolder className="text-ink-subtle size-4" />
             <div className="min-w-0 flex-1">
               {/* Chỉ snapshot READY mới duyệt được file — các trạng thái khác chưa có gì để xem.
                   Link phủ cả hàng (`after:absolute`) để bấm chỗ nào trên hàng cũng mở được. */}
@@ -78,7 +82,7 @@ export function SnapshotList({ projectId }: { projectId: string }) {
                 {new Date(snapshot.createdAt).toLocaleString('vi-VN')}
               </p>
               {snapshot.errorMessage !== undefined ? (
-                <p className="mt-1 mb-0 text-sm text-red-700">{snapshot.errorMessage}</p>
+                <p className="text-danger mt-1 mb-0 text-sm">{snapshot.errorMessage}</p>
               ) : null}
             </div>
             <StatusBadge tone={status.tone} label={status.label} />
