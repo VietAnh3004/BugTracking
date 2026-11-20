@@ -356,4 +356,49 @@ class EvidenceLinkerVulnshopTest extends AbstractIntegrationTest {
                         "matches_dungMatKhau_traVeDung");
         assertThat(links("AND l.method = 'NAMING_CONVENTION'")).isEmpty();
     }
+
+    /**
+     * Lỗi gặp thật 20/11/2026: Surefire ghi tên test CÓ THAM SỐ kèm chữ ký ({@code ...(Path)}), listener
+     * thì không, nên cả 4 test của {@code FileStorageServiceTest} ({@code @TempDir Path}) mất độ phủ từng
+     * test và cảnh báo {@code FileStorageService.store:83} hiện như "không có test nào" — dù test xanh
+     * {@code store_ghiRoiDocLai...} chạy qua đúng dòng đó.
+     */
+    @Test
+    void coverageTungTest_testCoThamSoVanGhepDuoc() {
+        perTestCoverageStore.store(
+                run.getId(),
+                SampleArtifacts.sandboxPerTestCoverage(),
+                vn.hust.datn.evidence.service.analysis.SnapshotPathResolver.of(SampleArtifacts.vulnshopSourcePaths()));
+        linker.link(run.getId());
+
+        List<String> coLines = jdbcTemplate.queryForList(
+                """
+                SELECT DISTINCT tc.method_name FROM test_line_coverage c
+                JOIN test_case tc ON tc.evidence_record_id = c.test_evidence_id
+                JOIN evidence_record e ON e.id = c.test_evidence_id
+                WHERE e.analysis_run_id = ? AND tc.class_name LIKE '%FileStorageServiceTest'
+                ORDER BY tc.method_name
+                """,
+                String.class,
+                run.getId());
+        assertThat(coLines)
+                .as("cả 4 test có tham số @TempDir phải có độ phủ từng test")
+                .containsExactly(
+                        "readUserFileSafely_duongDanVuotRaNgoai_biChan(Path)",
+                        "readUserFileSafely_tepHopLe_docDuocNoiDung(Path)",
+                        "store_duongDanVuotRaNgoai_biChan(Path)",
+                        "store_ghiRoiDocLai_duocNoiDungGiongNhau(Path)");
+
+        List<String> linkedTo83 = jdbcTemplate.queryForList(
+                """
+                SELECT tc.method_name || ' ' || l.relation || ' ' || l.method FROM evidence_link l
+                JOIN evidence_record t ON t.id = l.to_evidence_id
+                JOIN test_case tc ON tc.evidence_record_id = l.from_evidence_id
+                WHERE l.analysis_run_id = ? AND t.type = 'STATIC_WARNING'
+                  AND t.file_path LIKE '%/storage/FileStorageService.java' AND t.start_line = 83
+                """,
+                String.class,
+                run.getId());
+        assertThat(linkedTo83).contains("store_ghiRoiDocLai_duocNoiDungGiongNhau(Path) CONTRADICTS LINE_EXACT");
+    }
 }

@@ -23,6 +23,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * (linker đọc bảng này). Ghép test theo {@code class + method} với bảng {@code test_case}; test
  * tham số hoá có nhiều lần chạy cùng method được GỘP — cùng một đơn vị trích dẫn.
  *
+ * <p><b>Ghép theo TÊN METHOD GỐC, không theo nguyên văn.</b> Hai nguồn ghi tên khác nhau: Surefire
+ * (bảng {@code test_case}) thêm chữ ký tham số và chỉ số lần chạy — {@code ghi(Path)},
+ * {@code lap(int)[2]} — còn listener ghi {@code MethodSource.getMethodName()}, chỉ có {@code ghi}.
+ * So nguyên văn thì MỌI test có tham số (kể cả {@code @TempDir Path}) bị bỏ trong im lặng: gặp thật
+ * 20/11/2026, 4/35 test của vulnshop ({@code FileStorageServiceTest}) mất hết độ phủ từng test, và
+ * cảnh báo {@code FileStorageService.store:83} hiện ra như "không có test nào" dù một test xanh chạy
+ * qua đúng dòng đó. Listener không giữ được danh tính từng lần chạy, nên mọi lần chạy cùng method
+ * nhận chung độ phủ đã gộp.
+ *
  * <p>Artifact là dữ liệu KHÔNG TIN CẬY (sinh từ repo người dùng): file hỏng thì bỏ qua cả file kèm
  * cảnh báo trong log và linker lùi về theo tên lớp — không làm hỏng lần phân tích, vì đây là phần
  * tăng cường. Đường dẫn không đối chiếu được với snapshot thì bỏ dòng đó, đúng như coverage_line.
@@ -59,7 +68,7 @@ public class PerTestCoverageStore {
             return 0;
         }
 
-        Map<String, UUID> testIds = new HashMap<>();
+        Map<String, List<UUID>> testIds = new HashMap<>();
         jdbcTemplate.query(
                 """
                 SELECT tc.evidence_record_id, tc.class_name, tc.method_name
@@ -67,9 +76,10 @@ public class PerTestCoverageStore {
                 WHERE e.analysis_run_id = ?
                 """,
                 rs -> {
-                    testIds.putIfAbsent(
-                            rs.getString("class_name") + "#" + rs.getString("method_name"),
-                            rs.getObject("evidence_record_id", UUID.class));
+                    testIds.computeIfAbsent(
+                                    testKey(rs.getString("class_name"), rs.getString("method_name")),
+                                    key -> new ArrayList<>())
+                            .add(rs.getObject("evidence_record_id", UUID.class));
                 },
                 runId);
 
@@ -77,8 +87,8 @@ public class PerTestCoverageStore {
         List<Object[]> rows = new ArrayList<>();
         int unmatchedTests = 0;
         for (JsonNode test : root.path("tests")) {
-            UUID testId = testIds.get(test.path("class").asText() + "#" + test.path("method").asText());
-            if (testId == null) {
+            List<UUID> ids = testIds.get(testKey(test.path("class").asText(), test.path("method").asText()));
+            if (ids == null) {
                 unmatchedTests++;
                 continue;
             }
@@ -92,7 +102,9 @@ public class PerTestCoverageStore {
                 }
                 for (JsonNode line : file.getValue()) {
                     if (line.canConvertToInt() && line.asInt() > 0) {
-                        rows.add(new Object[] {testId, filePath, line.asInt()});
+                        for (UUID testId : ids) {
+                            rows.add(new Object[] {testId, filePath, line.asInt()});
+                        }
                     }
                 }
             });
@@ -108,5 +120,30 @@ public class PerTestCoverageStore {
             log.warn("Run {}: {} test trong {} khong ghep duoc voi test_case", runId, unmatchedTests, ARTIFACT_NAME);
         }
         return rows.size();
+    }
+
+    /** Khoá ghép {@code lớp#method_gốc} — xem Javadoc của lớp. */
+    static String testKey(String className, String methodName) {
+        return className + "#" + baseMethodName(methodName);
+    }
+
+    /**
+     * Tên method bỏ phần Surefire thêm vào: chữ ký tham số {@code (…)} và chỉ số lần chạy {@code […]}.
+     * {@code ghi(Path)} → {@code ghi}; {@code lap(int)[2]} → {@code lap}; {@code ghi} giữ nguyên.
+     */
+    static String baseMethodName(String methodName) {
+        if (methodName == null) {
+            return "";
+        }
+        int cut = methodName.length();
+        int paren = methodName.indexOf('(');
+        int bracket = methodName.indexOf('[');
+        if (paren >= 0) {
+            cut = paren;
+        }
+        if (bracket >= 0 && bracket < cut) {
+            cut = bracket;
+        }
+        return methodName.substring(0, cut).strip();
     }
 }

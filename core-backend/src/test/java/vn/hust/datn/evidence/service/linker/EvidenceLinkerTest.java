@@ -616,6 +616,41 @@ class EvidenceLinkerTest extends AbstractIntegrationTest {
         assertThat(linksOf(run.getId())).noneMatch(link -> "NAMING_CONVENTION".equals(link.get("method")));
     }
 
+    /**
+     * Surefire ghi {@code lap(int)[1]}, {@code lap(int)[2]}; listener chỉ ghi {@code lap}. Mọi lần chạy
+     * phải nhận độ phủ — trước đây so tên nguyên văn nên không lần nào ghép được, mất trong im lặng.
+     */
+    @Test
+    void perTest_testThamSoHoaNhieuLanChay_ghepTheoTenGoc() {
+        materializer.materialize(
+                run.getId(),
+                List.of(
+                        warning(10),
+                        codeContext(5, 20),
+                        coverage(Map.of(10, new int[] {0, 7, 0, 0}), "app.Foo", "doThing", 10),
+                        passedTest("app.FooTest", "lap(int)[1]"),
+                        passedTest("app.FooTest", "lap(int)[2]"),
+                        passedTest("app.FooTest", "ghi(Path)")),
+                pathResolver);
+        perTest(
+                """
+                {"format":"evidence-per-test-coverage","version":1,"tests":[
+                  {"class":"app.FooTest","method":"lap","status":"PASSED","lines":{"app/Foo.java":[10]}},
+                  {"class":"app.FooTest","method":"lap","status":"PASSED","lines":{"app/Foo.java":[10]}},
+                  {"class":"app.FooTest","method":"ghi","status":"PASSED","lines":{"app/Foo.java":[10]}}]}
+                """);
+
+        linker.link(run.getId());
+
+        List<Map<String, Object>> testLinks = linksOf(run.getId()).stream()
+                .filter(link -> "TEST_RESULT".equals(link.get("from_type")))
+                .toList();
+        assertThat(testLinks).hasSize(3).allSatisfy(link -> {
+            assertThat(link.get("relation")).isEqualTo("CONTRADICTS");
+            assertThat(link.get("method")).isEqualTo("LINE_EXACT");
+        });
+    }
+
     /** Test hỏng chạy qua dòng ⇒ SUPPORTS; khi đó test xanh khác không lật ngược được (không CONTRADICTS). */
     @Test
     void perTest_testHongChayQuaDong_supports_vaChanContradicts() {
