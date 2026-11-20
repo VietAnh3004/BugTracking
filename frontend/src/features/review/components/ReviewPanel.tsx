@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { ReviewDecision } from '@/features/review/api/reviewApi';
 import { useReviews, useSubmitReview } from '@/features/review/hooks/useReview';
-import { CARD, INPUT } from '@/shared/ui/styles';
+import { buttonClass, CARD, INPUT } from '@/shared/ui/styles';
 
 /**
  * Bốn lựa chọn của người dùng về một cảnh báo.
@@ -62,6 +62,34 @@ export function ReviewPanel({ runId, shortId, messageId = null }: ReviewPanelPro
   useEffect(() => {
     setNote(existing?.note ?? '');
   }, [existing?.note]);
+
+  // Ghi chú đang gõ khác với bản đã lưu. So theo bản đã cắt khoảng trắng vì đó là thứ được gửi đi.
+  const savedNote = existing?.note ?? '';
+  const noteDirty = note.trim() !== savedNote.trim();
+
+  /**
+   * Lưu RIÊNG ghi chú cho một quyết định đã có.
+   *
+   * Backend ghi đè cả hàng (PUT), nên phải gửi lại ĐÚNG các giá trị đã lưu chứ không phải giá trị
+   * hiện tại của panel: `messageId` là biến thực nghiệm (có đọc Agent hay không) và `secondsSpent` là
+   * thời gian ra QUYẾT ĐỊNH. Viết thêm một câu ghi chú không được xoá dấu "đã đọc Agent", cũng không
+   * được kéo dài thời gian quyết định.
+   */
+  function saveNote(): void {
+    if (existing === undefined) {
+      return;
+    }
+    submit.mutate({
+      shortId,
+      body: {
+        decision: existing.decision,
+        ...(existing.messageId != null ? { messageId: existing.messageId } : {}),
+        // Rỗng = xoá ghi chú: bỏ trường đi thì backend ghi null.
+        ...(note.trim() === '' ? {} : { note: note.trim() }),
+        ...(existing.secondsSpent != null ? { secondsSpent: existing.secondsSpent } : {}),
+      },
+    });
+  }
 
   function choose(decision: ReviewDecision): void {
     // Bỏ hẳn trường thay vì gửi `null`: OpenAPI khai chúng là tuỳ chọn, và `undefined` không
@@ -131,6 +159,28 @@ export function ReviewPanel({ runId, shortId, messageId = null }: ReviewPanelPro
         placeholder="Vì sao? (ghi chú này đi vào báo cáo)"
         className={`${INPUT} mt-3 resize-none`}
       />
+
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-ink-subtle m-0 text-xs" role="status">
+          {existing === undefined
+            ? 'Ghi chú được lưu cùng lúc bạn chọn một đánh giá ở trên.'
+            : noteDirty
+              ? 'Ghi chú chưa lưu.'
+              : savedNote.trim() !== ''
+                ? 'Đã lưu ghi chú.'
+                : null}
+        </p>
+        {existing === undefined ? null : (
+          <button
+            type="button"
+            onClick={saveNote}
+            disabled={!noteDirty || submit.isPending}
+            className={buttonClass('secondary', 'sm')}
+          >
+            {submit.isPending ? 'Đang lưu…' : 'Lưu ghi chú'}
+          </button>
+        )}
+      </div>
 
       {submit.isError ? (
         <p role="alert" className="text-danger mt-2 text-xs">

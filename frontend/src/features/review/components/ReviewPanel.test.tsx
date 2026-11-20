@@ -155,3 +155,94 @@ describe('ReviewPanel', () => {
     expect(await screen.findByText('Chưa đánh giá')).toBeInTheDocument();
   });
 });
+
+/** Thân JSON của MỌI lời gọi PUT review, theo thứ tự. */
+function allSubmittedBodies(
+  fetchSpy: ReturnType<typeof mockFetchByUrl>,
+): Record<string, unknown>[] {
+  return fetchSpy.mock.calls
+    .filter(
+      ([url, init]) =>
+        String(url).endsWith('/review') && (init as RequestInit | undefined)?.method === 'PUT',
+    )
+    .map(([, init]) => JSON.parse(String((init as RequestInit).body)) as Record<string, unknown>);
+}
+
+describe('ReviewPanel — lưu ghi chú sau khi đã chọn đánh giá', () => {
+  /**
+   * Lỗi gốc: ghi chú chỉ đi theo lúc bấm nút quyết định, nên bấm "Báo nhầm" rồi mới viết lý do (đúng
+   * thứ tự nút gợi ý: "nêu lý do ở phần ghi chú") thì lý do không bao giờ được lưu.
+   */
+  it('bấm "Báo nhầm" trước, viết lý do sau, bấm "Lưu ghi chú" thì lý do được gửi đi', async () => {
+    const fetchSpy = mockFetchByUrl({
+      '/reviews': { body: [] },
+      // Cùng một phản hồi cho mọi PUT (mockFetchByUrl không phân biệt lượt), nên để KHÔNG có note:
+      // phản hồi của lượt bấm "Báo nhầm" mà mang sẵn note thì ô nhập bị điền trước rồi gõ chồng lên.
+      '/review': { body: savedReview({ decision: 'REJECT' }) },
+    });
+    renderPanel();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Báo nhầm' }));
+    const save = await screen.findByRole('button', { name: 'Lưu ghi chú' });
+    expect(save).toBeDisabled();
+
+    await userEvent.type(screen.getByLabelText('Ghi chú'), 'Gia tri den tu enum');
+    expect(screen.getByText('Ghi chú chưa lưu.')).toBeInTheDocument();
+    await userEvent.click(save);
+
+    await waitFor(() => expect(allSubmittedBodies(fetchSpy)).toHaveLength(2));
+    const second = allSubmittedBodies(fetchSpy)[1];
+    expect(second).toMatchObject({ decision: 'REJECT', note: 'Gia tri den tu enum' });
+  });
+
+  it('lưu ghi chú GIỮ NGUYÊN messageId và secondsSpent đã lưu (biến thực nghiệm)', async () => {
+    const existing = savedReview({ decision: 'REJECT', messageId: MESSAGE_ID, secondsSpent: 42 });
+    const fetchSpy = mockFetchByUrl({
+      '/reviews': { body: [existing] },
+      '/review': { body: { ...existing, note: 'Ly do' } },
+    });
+    // Panel mở lại KHÔNG kèm messageId (đã rời trang chat): lưu ghi chú vẫn không được xoá dấu
+    // "đã đọc Agent" của quyết định trước.
+    renderPanel();
+
+    await userEvent.type(await screen.findByLabelText('Ghi chú'), 'Ly do');
+    await userEvent.click(screen.getByRole('button', { name: 'Lưu ghi chú' }));
+
+    await waitFor(() => expect(allSubmittedBodies(fetchSpy)).toHaveLength(1));
+    expect(allSubmittedBodies(fetchSpy)[0]).toEqual({
+      decision: 'REJECT',
+      messageId: MESSAGE_ID,
+      note: 'Ly do',
+      secondsSpent: 42,
+    });
+    expect(await screen.findByText('Đã lưu ghi chú.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Lưu ghi chú' })).toBeDisabled();
+  });
+
+  it('xoá trắng ghi chú rồi lưu thì không gửi trường note (backend ghi null)', async () => {
+    const existing = savedReview({ decision: 'REJECT', note: 'Ghi chu cu' });
+    const fetchSpy = mockFetchByUrl({
+      '/reviews': { body: [existing] },
+      '/review': { body: { ...existing, note: undefined } },
+    });
+    renderPanel();
+
+    const field = await screen.findByLabelText('Ghi chú');
+    await waitFor(() => expect(field).toHaveValue('Ghi chu cu'));
+    await userEvent.clear(field);
+    await userEvent.click(screen.getByRole('button', { name: 'Lưu ghi chú' }));
+
+    await waitFor(() => expect(allSubmittedBodies(fetchSpy)).toHaveLength(1));
+    expect('note' in allSubmittedBodies(fetchSpy)[0]!).toBe(false);
+  });
+
+  it('chưa chọn đánh giá thì không có nút lưu riêng và nói rõ ghi chú lưu cùng đánh giá', async () => {
+    mockReviewApi();
+    renderPanel();
+
+    expect(
+      await screen.findByText('Ghi chú được lưu cùng lúc bạn chọn một đánh giá ở trên.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Lưu ghi chú' })).not.toBeInTheDocument();
+  });
+});
