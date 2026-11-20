@@ -62,3 +62,41 @@ SELECT count(*) FROM evidence_embedding v
 JOIN evidence_record e ON e.id = v.evidence_record_id
 WHERE e.analysis_run_id = '<run id>';
 ```
+
+---
+
+## 2. Agent không thấy ngữ cảnh NGOÀI dòng bị cảnh báo (kiểu được dùng, nơi gọi hàm)
+
+*Phát hiện 20/11/2026 — người dùng chọn GIỮ NGUYÊN (hướng C), không sửa.*
+
+**Triệu chứng.** Hỏi Agent về EV-00CA (`ProductRepository.findAllSorted:50`, SpotBugs
+`SQL_INJECTION_SPRING_JDBC`, nhãn đúng = false positive FP-01) cho `INSUFFICIENT_EVIDENCE`. Agent liệt kê
+đúng thứ nó thiếu: "kiểm tra định nghĩa `SortField`" và "kiểm tra nơi gọi `findAllSorted`".
+
+**Nguyên nhân (đã xác minh trên DB và mã nguồn).**
+
+1. `CodeContextExtractor` chỉ lưu `CODE_CONTEXT` cho những chỗ có cảnh báo hoặc test. `SortField` (enum chỉ
+   có 3 hằng số) và `ProductController.list` (khai tham số kiểu `SortField`, là chỗ Spring chặn mọi chuỗi
+   lạ) không có cảnh báo hay test nên không có bản ghi nào để `get_code_context` hay `search_evidence`
+   trả về.
+2. Không có tool tìm nơi gọi hàm; năm tool chỉ truy xuất bằng chứng đã lưu.
+3. Không phải do thiếu test: EV-00CA có liên kết `COVERS` ghi `Dòng 50: MISSED (ci=0 mi=6)` — nghĩa là
+   dòng KHÔNG được chạy (xem Javadoc `EvidenceLinker.covers`, cố ý sinh liên kết cả khi dòng không được
+   phủ để phân biệt "chưa ai kiểm" với "chưa nối được bằng chứng").
+
+**Quyết định (20/11/2026): giữ nguyên.** Coi `INSUFFICIENT_EVIDENCE` ở loại ca này là hành vi đúng thiết
+kế: Agent biết mình thiếu gì và nói ra thay vì đoán. Ca FP-01 vì thế được tính là "chưa trả lời được",
+không phải lỗi dữ liệu cần sửa. **Phải nêu như một hạn chế trong chương 4**: các false positive mà lý do
+nằm ở tầng khác với dòng bị cảnh báo (FP-01; có thể cả FP-04, FP-05 — chưa kiểm) nằm ngoài tầm với của
+Agent hiện tại. Khi test prompt, đừng đọc kết quả `INSUFFICIENT_EVIDENCE` ở các ca này là prompt kém.
+
+**Hướng sửa đã cân nhắc, để dành nếu sau này cần (hướng A).** Mở rộng `CodeContextExtractor`: với mỗi hàm bị
+cảnh báo, thêm bản ghi `CODE_CONTEXT` cho (a) kiểu được tham chiếu trong chữ ký/thân hàm và được khai
+báo trong dự án, (b) các hàm gọi nó, khớp theo TÊN (không có symbol solver). Nối vào cảnh báo bằng quan hệ
+và `method` mới với `weight` thấp (yếu như `NAMING_CONVENTION`), giới hạn số nơi gọi mỗi cảnh báo vì
+ngân sách bằng chứng của phiên chỉ ~12000 ký tự. Cần: migration cho quan hệ/method mới, test, và cập nhật
+ADR 0009. Chọn A thay vì thêm tool đọc file (B) vì nội dung Agent tự đọc không có Evidence ID để trích dẫn,
+mà `CitationValidator` chỉ chấp nhận ID có trong `evidence_record`.
+
+**Cách kiểm sau khi sửa (nếu làm A).** Hỏi lại EV-00CA trên run VulShop: `get_code_context` phải trả thêm
+mã của `SortField` và `ProductController#list`, và Agent không còn xin "kiểm tra định nghĩa `SortField`".
