@@ -157,7 +157,7 @@ services:
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
       # Đi thẳng vào llm_trace.prompt_version. Đổi prompt mà quên tăng số này thì kết quả của
       # hai phiên bản prompt nằm lẫn vào nhau và không tách lại được (kế hoạch §6).
-      PROMPT_VERSION: ${PROMPT_VERSION:-v1}
+      PROMPT_VERSION: ${PROMPT_VERSION:-v2}
     ports:
       - "${AGENT_SERVICE_PORT:-8000}:8000"
     healthcheck:

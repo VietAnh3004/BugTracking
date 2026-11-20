@@ -47,7 +47,7 @@ def test_nap_duoc_khi_du_bien(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert settings.llm_provider == "anthropic"
     assert settings.llm_model == "claude-sonnet-5"
-    assert settings.prompt_version == "v1"
+    assert settings.prompt_version == "v2"
 
 
 def test_temperature_mac_dinh_la_khong_gui(monkeypatch: pytest.MonkeyPatch) -> None:

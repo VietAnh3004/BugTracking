@@ -95,3 +95,67 @@ def test_khong_tool_nao_khai_analysis_run_id() -> None:
     """
     for tool in ALL_TOOLS:
         assert "analysis_run_id" not in tool["input_schema"]["properties"], tool["name"]
+
+
+# ----- prompt v2 (19/11/2026): xem docs/prompt-versions.md -----
+
+
+def test_v2_phat_hien_dung_chua_phai_loi_that(system_prompt: str) -> None:
+    """Định nghĩa `LIKELY_FALSE_POSITIVE` phải có chỗ cho ca "công cụ đúng nhưng ngữ cảnh vô hại".
+
+    Bản v1 chỉ nói "công cụ báo nhầm" và liệt kê lý do về luồng mã. Cả Sonnet lẫn Gemini đều đọc
+    ra "mẫu mã có thật ⇒ không phải báo nhầm ⇒ lỗi thật", kể cả khi chính chúng nhận ra mục đích sử
+    dụng vô hại.
+    """
+    assert "rủi ro mà quy tắc này" in system_prompt
+    assert "ngữ cảnh" in system_prompt and "sử dụng khiến rủi ro" in system_prompt
+
+
+def test_v2_muc_nghiem_trong_cua_cong_cu_khong_la_bang_chung(system_prompt: str) -> None:
+    assert "Mức nghiêm trọng công cụ gán" in system_prompt
+    assert "không phải bằng chứng" in system_prompt
+
+
+def test_v2_ngu_canh_vo_hai_phai_chung_minh_bang_ma_khong_phai_ten_ham(system_prompt: str) -> None:
+    """Hàng rào chống chiều ngược lại: v2 không được biến thành "cứ vô hại là FP".
+
+    Bẫy trung tâm của case study (test xanh ⇒ báo nhầm) vẫn phải bị chặn, và tên hàm một mình
+    không đủ làm bằng chứng ngữ cảnh.
+    """
+    assert "chứng minh bằng mã" in system_prompt
+    assert "Tên hàm hay tên lớp chỉ là gợi ý" in system_prompt
+    assert "`CONTRADICTS` không chứng minh cảnh báo sai" in system_prompt
+
+
+def test_v2_chua_xac_minh_khong_duoc_coi_la_loi_that(system_prompt: str) -> None:
+    assert "không tra được" in system_prompt
+    assert "INSUFFICIENT_EVIDENCE" in system_prompt
+
+
+def test_v2_cau_tra_loi_phai_giu_diem_di_nguoc_ket_luan(system_prompt: str) -> None:
+    """Gemini từng ghi nhận mục đích dedup trong phân tích rồi bỏ nó ở bước nộp có cấu trúc."""
+    assert "kể cả điểm đi ngược lại kết luận" in system_prompt
+    assert "`verdict` phải khớp" in system_prompt
+
+
+def test_v2_buoc_nop_nhac_giu_du_diem_va_verdict_khop() -> None:
+    from agent_service.agent.loop import _BUDGET_EXHAUSTED, _SUBMIT_NOW
+
+    for message in (_SUBMIT_NOW, _BUDGET_EXHAUSTED):
+        assert "đi ngược lại kết luận" in message
+        assert "`verdict`" in message and "khớp" in message
+
+
+def test_v2_prompt_khong_nhac_ten_ca_cu_the_cua_case_study(system_prompt: str) -> None:
+    """Prompt phải tổng quát: nhét tên thuật toán/lớp của vulnshop vào đây là dạy thuộc đề.
+
+    Chương 4 đo agent trên vulnshop; nếu prompt nhắc tới đúng các ca đó thì số liệu mất nghĩa.
+    """
+    for ten_ca in (
+        "MD5",
+        "PasswordHasher",
+        "checksumForDeduplication",
+        "vulnshop",
+        "findByUsername",
+    ):
+        assert ten_ca not in system_prompt, ten_ca

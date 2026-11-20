@@ -63,7 +63,7 @@ class Settings(BaseSettings):
 
     # Phiên bản prompt đang dùng, ghi vào llm_trace. Thực nghiệm cần biết prompt nào sinh ra
     # kết quả nào; không có cột này thì kết quả tuần 15 không tái lập được.
-    prompt_version: str = Field(default="v1", min_length=1)
+    prompt_version: str = Field(default="v2", min_length=1)
 
     request_timeout_seconds: float = Field(default=120.0, gt=0)
     # Số lần SDK tự thử lại khi gặp 429/5xx/mất kết nối, giãn cách tăng dần (tối đa ~8 giây).

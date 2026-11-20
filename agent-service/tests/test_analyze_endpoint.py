@@ -130,7 +130,7 @@ def test_health_bao_ca_phien_ban_prompt(client: TestClient) -> None:
     body = client.get("/health").json()
 
     assert body["status"] == "ok"
-    assert body["prompt_version"] == "v1"
+    assert body["prompt_version"] == "v2"
 
 
 def _premium_provider() -> ScriptedProvider:

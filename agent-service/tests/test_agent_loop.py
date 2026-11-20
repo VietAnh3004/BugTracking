@@ -193,7 +193,7 @@ async def test_trace_ghi_du_moi_vong_ke_ca_vong_hong(settings: Settings) -> None
     assert isinstance(answer, AnswerEvent)
     assert [t.iteration for t in answer.traces] == [0, 1, 2]
     assert answer.traces[0].tool_calls[0]["name"] == "get_coverage"
-    assert all(t.prompt_version == "v1" for t in answer.traces)
+    assert all(t.prompt_version == "v2" for t in answer.traces)
 
 
 @respx.mock

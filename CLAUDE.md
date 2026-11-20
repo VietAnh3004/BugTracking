@@ -592,6 +592,10 @@ Chạy lại analyzer làm `docs/samples/` hiện ra "đã sửa" trong git kể
   vụ NGƯỜI DÙNG dùng `...AndDeletedAtIsNull` (`ConversationRepository`); truy vấn đo thực nghiệm
   (`RunMetricsService`) cố ý KHÔNG lọc. Dữ liệu chỉ bị dọn thật khi xoá dự án/tài khoản. Đổi tên không đụng
   `updated_at` (không phải hoạt động hỏi đáp).
+- **Đổi prompt Agent (`system.jinja2`, `_SUBMIT_NOW`, `_BUDGET_EXHAUSTED`) PHẢI tăng `PROMPT_VERSION`** (mặc
+  định ở `config.py`, docker-compose, `.env*`) và ghi vào `docs/prompt-versions.md`; nếu không, số liệu của hai
+  prompt trộn vào nhau trong `llm_trace`. Prompt phải tổng quát: không nhắc tên ca/lớp/thuật toán của
+  vulnshop (có test chặn), vì chương 4 đo agent trên chính tập đó.
 - **Không trả entity JPA ra API** — luôn qua DTO.
 - **Schema chỉ đổi qua Flyway**, `ddl-auto: validate`.
 - **Không gọi `fetch` trực tiếp trong component React** — qua `apiClient`.

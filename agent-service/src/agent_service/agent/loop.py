@@ -34,12 +34,15 @@ _ANSWER_SCHEMA: dict[str, Any] = AnalysisResponse.model_json_schema()
 
 _BUDGET_EXHAUSTED = (
     "Bạn đã dùng hết số vòng truy xuất cho phép. Hãy nộp câu trả lời dựa trên bằng chứng đã có, "
-    "và nói rõ trong `suggested_next_checks` những gì còn chưa kiểm được."
+    "và nói rõ trong `suggested_next_checks` những gì còn chưa kiểm được. Giữ đủ các điểm đã "
+    "phân tích, kể cả điểm đi ngược lại kết luận, và để `verdict` khớp với các nhận định."
 )
 
 _SUBMIT_NOW = (
     "Hãy nộp câu trả lời cuối cùng theo đúng lược đồ, dựa trên phân tích ở trên. Mọi nhận định "
-    "phải kèm Evidence ID đã lấy từ kết quả tool; không bịa ID."
+    "phải kèm Evidence ID đã lấy từ kết quả tool; không bịa ID. Giữ đủ các điểm đã phân tích, kể "
+    "cả điểm đi ngược lại kết luận (mục đích sử dụng, ngữ cảnh làm giảm rủi ro): mỗi điểm là một "
+    "nhận định riêng, và `verdict` phải khớp với toàn bộ các nhận định đó."
 )
 
 _CONTEXT_EXHAUSTED = (

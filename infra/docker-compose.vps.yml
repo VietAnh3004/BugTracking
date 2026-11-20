@@ -168,7 +168,7 @@ services:
       PREMIUM_LLM_BASE_URL: ${PREMIUM_LLM_BASE_URL:-}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-none}
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
-      PROMPT_VERSION: ${PROMPT_VERSION:-v1}
+      PROMPT_VERSION: ${PROMPT_VERSION:-v2}
     # KHÔNG có `ports`: chỉ core-backend gọi vào, qua mạng Docker. Trình duyệt không bao giờ gọi
     # thẳng agent-service (ADR 0010), và nó không có xác thực người dùng.
     healthcheck:
