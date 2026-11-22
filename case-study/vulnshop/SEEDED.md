@@ -112,12 +112,15 @@ lập ở tuần 15 bằng cách đọc mã nguồn.
 |---|---|---|
 | `EI_EXPOSE_REP2` | 5 | Lưu tham chiếu tới đối tượng truyền vào constructor. Với bean Spring bất biến thì gần như chắc chắn là dương tính giả |
 | `SPRING_ENDPOINT` | 4 | Chỉ đánh dấu "đây là endpoint HTTP", mang tính thông tin |
-| `NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE` | 1 | `FileStorageService.store:83` — `getParent()` có thể trả về null. **Có vẻ là lỗi thật mà không hề cố ý gieo** |
+| `NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE` | 1 | `FileStorageService.store:83` — SpotBugs lo `getParent()` trả về null. **Dương tính giả**: `uploadRoot` luôn tuyệt đối (`toAbsolutePath().normalize()`) và dòng 80 bắt buộc `resolved.startsWith(uploadRoot)`, nên `resolved` chỉ là gốc ổ đĩa (trường hợp duy nhất `getParent()` ra null) khi chính thư mục upload bị cấu hình là `/`, tức một cấu hình sai chứ không phải đường chạy thật. `filename` rỗng hoặc `.` cho `resolved = uploadRoot`, `getParent()` vẫn khác null, và lệnh hỏng ở dòng 84 là `IOException`, không phải NPE. Ghi chú sơ bộ trước đây ("có vẻ là lỗi thật") là sai, đã sửa 21/11/2026 |
 | `UNSAFE_HASH_EQUALS` | 1 | `PasswordHasher.matches:48` — so sánh mã băm không dùng thuật toán chống tấn công thời gian |
 | `RV_ABSOLUTE_VALUE_OF_HASHCODE` | 1 | `ColorPicker.colorFor:34` — `Math.abs(Integer.MIN_VALUE)` vẫn âm. Lỗi thật, không cố ý |
 
-Ba dòng cuối đáng chú ý: chúng là **lỗi thật do công cụ tự tìm ra**, không phải do gieo. Chính
-những trường hợp này làm cho thực nghiệm gần với thực tế hơn.
+Hai dòng cuối đáng chú ý: chúng là **lỗi thật do công cụ tự tìm ra**, không phải do gieo. Chính
+những trường hợp này làm cho thực nghiệm gần với thực tế hơn. Dòng `NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE`
+cũng đáng chú ý, nhưng theo chiều ngược lại: đó là một dương tính giả tự nhiên. Muốn bác được nó
+phải suy luận qua phép kiểm `startsWith` ở dòng trước, chứ không thể chỉ nhìn dòng bị đánh dấu hay
+dựa vào một test xanh (test chỉ thử một đường dẫn, không chứng minh được mọi đường chạy đều khác null).
 
 ---
 
