@@ -5,6 +5,7 @@ SDK của hãng chỉ được import ở đây. Mọi phần còn lại của s
 loop — điều kiện để thực nghiệm tuần 15 chạy nhiều provider trên cùng một đoạn mã.
 """
 
+import copy
 import json
 import logging
 from typing import Any
@@ -82,14 +83,72 @@ class AnthropicProvider(LlmProvider):
 
 
 def _submit_tool(schema: dict[str, Any]) -> dict[str, Any]:
+    """Tool nộp bài, ở chế độ STRICT: API bảo đảm đầu vào khớp lược đồ.
+
+    Không strict thì lược đồ chỉ là gợi ý. Gặp thật 20/11/2026 với ``claude-sonnet-5``: model nộp
+    ``"claims": "<parameter name=\"text\">…"`` — một CHUỖI chứa cú pháp gọi tool kiểu XML thay
+    vì mảng object, rồi đẩy ``confidence``/``evidence_ids`` ra ngoài. Pydantic từ chối, cả lượt hỏi
+    hỏng dù model đã ra được kết luận đúng.
+    """
     return {
         "name": SUBMIT_TOOL_NAME,
         "description": (
             "Nộp câu trả lời cuối cùng. Mọi nhận định phải kèm Evidence ID lấy từ kết quả tool, "
             "không được bịa."
         ),
-        "input_schema": schema,
+        "strict": True,
+        "input_schema": _strict_schema(schema),
     }
+
+
+# Ràng buộc strict mode KHÔNG hỗ trợ (số, độ dài chuỗi, ràng buộc mảng) và ``default``. Gỡ khỏi lược
+# đồ gửi đi là an toàn: agent loop luôn ``model_validate_json`` lại bằng chính model Pydantic, nên
+# chúng vẫn được kiểm — chỉ là kiểm ở phía mình thay vì phía API.
+_UNSUPPORTED_IN_STRICT = frozenset(
+    {
+        "minimum",
+        "maximum",
+        "exclusiveMinimum",
+        "exclusiveMaximum",
+        "multipleOf",
+        "minLength",
+        "maxLength",
+        "pattern",
+        "minItems",
+        "maxItems",
+        "uniqueItems",
+        "default",
+    }
+)
+
+
+def _strict_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Chuyển lược đồ Pydantic sang dạng strict mode chấp nhận.
+
+    Mọi object: ``additionalProperties: false`` và MỌI thuộc tính đều ``required`` (trường có giá
+    trị mặc định ở Pydantic vẫn hợp lệ khi model gửi đủ — mảng rỗng là một giá trị). ``$defs`` và
+    ``$ref``
+    giữ nguyên vì strict mode hỗ trợ. Không sửa lược đồ gốc: nó dùng chung với provider khác.
+    """
+    result = copy.deepcopy(schema)
+    _make_strict(result)
+    return result
+
+
+def _make_strict(node: Any) -> None:
+    if isinstance(node, dict):
+        for key in _UNSUPPORTED_IN_STRICT:
+            node.pop(key, None)
+        properties = node.get("properties")
+        if node.get("type") == "object" or isinstance(properties, dict):
+            node["additionalProperties"] = False
+            if isinstance(properties, dict):
+                node["required"] = list(properties)
+        for value in node.values():
+            _make_strict(value)
+    elif isinstance(node, list):
+        for item in node:
+            _make_strict(item)
 
 
 def _split_system(messages: list[Message]) -> tuple[str, list[dict[str, Any]]]:

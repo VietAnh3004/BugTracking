@@ -5,6 +5,7 @@ Không gọi API thật: một client giả ghi lại đúng payload đã dựng
 chạy thật với khoá thật, tức là muộn nhất có thể.
 """
 
+import json
 from types import SimpleNamespace
 from typing import Any
 
@@ -190,3 +191,50 @@ async def test_so_token_di_vao_ket_qua(settings: Settings) -> None:
 
     assert (result.input_tokens, result.output_tokens) == (120, 45)
     assert result.stop_reason == "end_turn"
+
+
+async def test_tool_nop_bai_o_che_do_strict_va_luoc_do_hop_le_cho_strict(
+    settings: Settings,
+) -> None:
+    """Không strict thì Sonnet từng nộp ``claims`` là một chuỗi chứa cú pháp XML (gặp thật).
+
+    Strict mode đòi mọi object có ``additionalProperties: false`` + ``required``, và từ chối các
+    ràng buộc số/chuỗi/mảng — nên lược đồ gửi đi phải được làm sạch, lược đồ gốc thì không bị đụng.
+    """
+    from agent_service.schemas.analysis import AnalysisResponse
+
+    original = AnalysisResponse.model_json_schema()
+    snapshot = json.dumps(original, sort_keys=True)
+    submit = _block(
+        type="tool_use", id="t9", name="submit_analysis", input={"verdict": "INSUFFICIENT_EVIDENCE"}
+    )
+    provider, client = _provider(settings, _response([submit], stop_reason="tool_use"))
+
+    await provider.chat([Message(role="user", content="hoi")], response_schema=original)
+
+    tool = next(t for t in client.messages.request["tools"] if t["name"] == "submit_analysis")
+    assert tool["strict"] is True
+    schema = tool["input_schema"]
+
+    def objects(node: object) -> list[dict[str, object]]:
+        found: list[dict[str, object]] = []
+        if isinstance(node, dict):
+            if node.get("type") == "object":
+                found.append(node)
+            for value in node.values():
+                found.extend(objects(value))
+        elif isinstance(node, list):
+            for item in node:
+                found.extend(objects(item))
+        return found
+
+    all_objects = objects(schema)
+    assert len(all_objects) >= 2, "ca AnalysisResponse lan Claim (trong $defs) phai duoc xu ly"
+    for obj in all_objects:
+        assert obj["additionalProperties"] is False
+        assert set(obj["required"]) == set(obj["properties"])  # type: ignore[arg-type]
+    text = json.dumps(schema)
+    for unsupported in ('"minimum"', '"maximum"', '"default"', '"minLength"'):
+        assert unsupported not in text, unsupported
+    assert "$ref" in text, "strict mode ho tro $ref/$defs, khong can trai phang"
+    assert json.dumps(original, sort_keys=True) == snapshot, "khong duoc sua luoc do goc"
