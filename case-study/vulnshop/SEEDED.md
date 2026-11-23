@@ -88,8 +88,37 @@ cụ trong báo cáo chứ không được lặng lẽ bỏ qua.
 | FP-02 | `PasswordHasher.checksumForDeduplication:40` | SpotBugs `WEAK_MESSAGE_DIGEST_MD5` + Semgrep `use-of-md5` | MD5 dùng để phát hiện tệp trùng, không đóng vai trò bảo mật. Tạo được va chạm cũng không thu lợi gì |
 | FP-03 | `ColorPicker.RANDOM:21` | SpotBugs `PREDICTABLE_RANDOM` | Giá trị chỉ dùng chọn màu nền avatar. Đoán trước được màu avatar không mang lại lợi thế nào |
 | FP-04 | `UserService.countByRole:42` | SpotBugs `RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE` | Kiểm tra null thừa vì repository luôn trả về danh sách. Rườm rà chứ không gây hại |
-| FP-05 | `TextNormalizer.normalizeStatusCode:24` | SpotBugs `DM_CONVERT_CASE` | Đầu vào là mã trạng thái ASCII nội bộ, không đến từ người dùng. Kết quả không đổi dù locale nào |
-| FP-06 | `AuditLogger.logLogout:29` | SpotBugs `CRLF_INJECTION_LOGS` | Đã dùng tham số hoá SLF4J (`log.info("...{}", username)`) — cách phòng chống đúng. Công cụ vẫn báo |
+| FP-05 | `TextNormalizer.normalizeStatusCode:24` | SpotBugs `DM_CONVERT_CASE` | **Ý đồ sai, đã gán lại thành LỖI THẬT**, xem bên dưới |
+| FP-06 | `AuditLogger.logLogout:29` | SpotBugs `CRLF_INJECTION_LOGS` | **Ý đồ sai, đã gán lại thành LỖI THẬT**, xem bên dưới |
+
+**FP-05 và FP-06 được gán lại thành TRUE POSITIVE (23/11/2026).** Lý do ghi lúc viết mã sai về kỹ
+thuật; đọc lại mã thì công cụ báo đúng. Giữ nguyên mã số để không làm lệch các tham chiếu cũ, nhưng
+từ nay hai mục này được tính là **lỗi thật**. File nhãn máy đọc
+(`case-study/ground-truth/vulnshop-seeded.yaml`) đã sửa theo.
+
+- **FP-05**: lý do cũ là "đầu vào là mã ASCII nội bộ, kết quả không đổi dù locale nào". Sai: chính
+  ví dụ trong Javadoc (`SHIPPED`) có chữ `I`, mà với locale Thổ Nhĩ Kỳ (`tr`) `toLowerCase()` biến
+  `I` thành `ı` (không chấm). `"SHIPPED".toLowerCase()` ra `"shıpped"`, khác `"shipped"`, nên mọi
+  phép so khớp phía sau hỏng khi máy chủ chạy locale `tr`. Đây đúng là loại lỗi mà `DM_CONVERT_CASE`
+  cảnh báo. Đầu vào là dữ liệu nội bộ chỉ loại trừ được rủi ro bảo mật, không loại trừ được lỗi.
+  Test xanh (`normalizeStatusCode_maAscii_chuyenThanhChuThuong`) chỉ vì máy chạy test không dùng
+  locale `tr`.
+- **FP-06**: lý do cũ là "đã tham số hoá SLF4J, cách phòng chống đúng". Sai: placeholder `{}` chỉ
+  tránh nối chuỗi khi mức log tắt và tránh lỗi chuỗi định dạng. Nó **không lọc hay mã hoá** `\r`/`\n`.
+  `username` vẫn được chèn nguyên văn, nên vẫn chèn được dòng nhật ký giả y hệt TP-10. vulnshop không
+  có `logback.xml`, mà pattern mặc định của Spring Boot không mã hoá ký tự xuống dòng. Chống thật
+  phải lọc `\r`/`\n` trước khi ghi hoặc cấu hình encoder mã hoá chúng.
+
+Chi tiết chung của hai ca: cả `normalizeStatusCode` lẫn `logLogout` **không có nơi nào gọi** trong mã
+production (chỉ test gọi `normalizeStatusCode`). Nhãn vẫn là TP vì vulnshop gán nhãn theo **mã**: hàm
+public, ai gọi với đầu vào bình thường là gặp lỗi. Đó cũng là cách công cụ và các bộ benchmark gán
+nhãn. Nhưng một người gán nhãn theo khả năng khai thác hiện tại có thể kết luận khác; cần nêu điểm
+này khi so độ đồng thuận giữa hai người gán.
+
+Hệ quả cho thực nghiệm: số FP gieo còn **4** (FP-01 tới FP-04), số TP có cảnh báo lên **13**. Hai ca
+này cũng là bằng chứng trung thực rằng ý đồ thiết kế không phải ground truth (mục "Quan hệ với
+ground truth"): chính người gieo lỗi đã gán nhầm. Lưu ý về circularity: việc **xem lại** FP-06
+bắt đầu từ lúc đọc câu trả lời của Agent, nên phải khai báo rõ (xem mục 6).
 
 **FP-01 là trường hợp đắt giá nhất**: hai công cụ cho kết luận trái ngược nhau ở cùng một dòng.
 Muốn phán đoán đúng phải đọc định nghĩa `SortField` và chữ ký hàm ở `ProductController` — tức là
@@ -190,7 +219,14 @@ thuẫn đó chỉ lộ ra khi có mã thật đi đối chiếu.
 | Phạm vi | Chỉ cảnh báo gieo có chủ đích | Toàn bộ, gồm cả cảnh báo tự nhiên |
 | Có nhìn output agent không | **Không** — file này có trước khi agent tồn tại | **Không** |
 
-Nhãn ở đây không đến từ output của AI Agent, nên không có vấn đề circularity. Nhưng cần thêm một
+Nhãn ở đây không đến từ output của AI Agent, nên không có vấn đề circularity. **Ngoại lệ phải khai
+báo (23/11/2026):** FP-05 và FP-06 được gán lại thành TP (mục 3). FP-05 lộ ra khi đọc lại mã để
+giải thích cảnh báo, không qua Agent. FP-06 thì khác: việc xem lại bắt đầu từ câu trả lời của Agent
+kết luận cảnh báo `CRLF_INJECTION_LOGS` ở đó là lỗi thật. Quyết định sửa cả hai dựa trên ngữ nghĩa
+của Java và SLF4J, kiểm chứng được độc lập với Agent (locale `tr` biến `I` thành `ı`; `{}` không lọc
+`\r`/`\n`). Nhưng với FP-06, thứ tự sự việc vẫn là "Agent nói, người kiểm lại", và báo cáo phải nói
+ra điều đó. Hướng nghiêng của nó là có lợi cho Agent, nên khi trình bày cần tách riêng ca này hoặc
+báo kết quả theo cả hai cách gán. Nhưng cần thêm một
 bước để chắc chắn: nhờ người khác gán nhãn **mù** một tập con (~30 cảnh báo, không cho xem file
 này), rồi đối chiếu. Việc đó vừa cho ra chỉ số đồng thuận giữa người gán nhãn, vừa đo được lỗi
 gieo có thực tế hay không.

@@ -87,7 +87,7 @@ WHERE e.analysis_run_id = '<run id>';
 **Quyết định (20/11/2026): giữ nguyên.** Coi `INSUFFICIENT_EVIDENCE` ở loại ca này là hành vi đúng thiết
 kế: Agent biết mình thiếu gì và nói ra thay vì đoán. Ca FP-01 vì thế được tính là "chưa trả lời được",
 không phải lỗi dữ liệu cần sửa. **Phải nêu như một hạn chế trong chương 4**: các false positive mà lý do
-nằm ở tầng khác với dòng bị cảnh báo (FP-01; có thể cả FP-04, FP-05 — chưa kiểm) nằm ngoài tầm với của
+nằm ở tầng khác với dòng bị cảnh báo (FP-01; có thể cả FP-04 — chưa kiểm. FP-05 từng nằm trong danh sách này, nay đã gán lại thành lỗi thật, xem mục 3) nằm ngoài tầm với của
 Agent hiện tại. Khi test prompt, đừng đọc kết quả `INSUFFICIENT_EVIDENCE` ở các ca này là prompt kém.
 
 **Hướng sửa đã cân nhắc, để dành nếu sau này cần (hướng A).** Mở rộng `CodeContextExtractor`: với mỗi hàm bị
@@ -100,3 +100,35 @@ mà `CitationValidator` chỉ chấp nhận ID có trong `evidence_record`.
 
 **Cách kiểm sau khi sửa (nếu làm A).** Hỏi lại EV-00CA trên run VulShop: `get_code_context` phải trả thêm
 mã của `SortField` và `ProductController#list`, và Agent không còn xin "kiểm tra định nghĩa `SortField`".
+
+---
+
+## 3. Javadoc trong mã vulnshop còn ghi nhãn cũ của FP-05 và FP-06
+
+**Triệu chứng.** Ngày 23/11/2026, FP-05 (`TextNormalizer.normalizeStatusCode:24`) và FP-06
+(`AuditLogger.logLogout:29`) được gán lại thành lỗi thật trong `case-study/vulnshop/SEEDED.md` (mục 3)
+và `case-study/ground-truth/vulnshop-seeded.yaml`. Nhưng chú thích trong chính mã vulnshop vẫn nói ngược lại:
+
+- `TextNormalizer.java` dòng 11–18: "SEEDED — false positive", "đầu vào là mã trạng thái nội bộ… Kết quả
+  không đổi dù locale nào". Sai: với locale `tr`, `"SHIPPED".toLowerCase()` ra `"shıpped"`.
+- `AuditLogger.java` dòng 27: "Ghi nhật ký đúng cách: dùng tham số hoá của SLF4J." Sai: `{}` không lọc
+  `\r`/`\n`.
+- `TextNormalizerTest.java` dòng 10: chú thích gọi test xanh là "bằng chứng MÂU THUẪN" với cảnh báo. Test
+  xanh chỉ vì máy chạy test không dùng locale `tr`.
+
+Người đọc mã (hội đồng, người gán nhãn thứ hai nếu được xem mã) sẽ thấy tài liệu và mã mâu thuẫn nhau.
+
+**Vì sao để sau.** Snapshot vulnshop đang dùng cho thực nghiệm (run `ab3e8b0b`) đã tải lên với chú thích cũ.
+Sửa mã nghĩa là snapshot mới khác snapshot cũ, cần quyết định có phân tích lại hay không.
+
+**Cách sửa.**
+1. Viết lại ba chú thích trên theo lý do ở SEEDED.md mục 3. **Giữ nguyên số dòng** (chỉ thay nội dung trong
+   khối chú thích, không thêm/bớt dòng) để mọi `file:line` trong SEEDED.md, `vulnshop-seeded.yaml`,
+   `expected-analysis.json` và nhãn đã gán trong DB vẫn khớp.
+2. Không đổi mã thực thi: hai lỗi này giờ là lỗi thật có chủ đích, phải giữ lại.
+
+**Cách kiểm sau khi sửa.**
+- `git diff --stat` chỉ đổi số dòng sửa, không có dòng thêm/bớt ròng trong ba file.
+- `./case-study/run-analysis.sh vulnshop --check` vẫn khớp `expected-analysis.json` (cùng số cảnh báo, cùng dòng).
+- Nếu phân tích lại: `DM_CONVERT_CASE` vẫn ở `TextNormalizer.java:24`, `CRLF_INJECTION_LOGS` vẫn ở
+  `AuditLogger.java:29`.

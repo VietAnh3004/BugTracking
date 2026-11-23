@@ -13,6 +13,9 @@
 #
 # Không có TP-11..TP-15: không công cụ nào sinh cảnh báo ở đó (SEEDED.md mục 2), nên không có
 # cảnh báo nào để gắn nhãn — khai vào chỉ sinh ra mục "không khớp".
+#
+# FP-05 và FP-06 giữ mã số cũ nhưng nhãn là TRUE_POSITIVE: ý đồ ghi lúc viết mã sai về kỹ thuật,
+# đã gán lại 23/11/2026 (lý do ở SEEDED.md mục 3). Tổng: 13 TP + 4 FP.
 version: 1
 labels:
   - file: src/main/java/vn/hust/datn/casestudy/vulnshop/user/UserRepository.java
@@ -93,10 +96,10 @@ labels:
   - file: src/main/java/vn/hust/datn/casestudy/vulnshop/util/TextNormalizer.java
     line: 24
     source: SEEDED
-    label: FALSE_POSITIVE
-    rationale: "FP-05: đầu vào là mã trạng thái ASCII nội bộ, kết quả không đổi theo locale."
+    label: TRUE_POSITIVE
+    rationale: "FP-05 (gán lại thành TP 23/11/2026): toLowerCase() không truyền Locale; với locale tr, 'SHIPPED' thành 'shıpped' (I → ı không chấm), so khớp phía sau hỏng."
   - file: src/main/java/vn/hust/datn/casestudy/vulnshop/util/AuditLogger.java
     line: 29
     source: SEEDED
-    label: FALSE_POSITIVE
-    rationale: "FP-06: đã tham số hoá SLF4J — cách phòng chống đúng, công cụ vẫn báo."
+    label: TRUE_POSITIVE
+    rationale: "FP-06 (gán lại thành TP 23/11/2026): placeholder {} của SLF4J không lọc \\r/\\n, username vẫn chèn được dòng nhật ký giả như TP-10."

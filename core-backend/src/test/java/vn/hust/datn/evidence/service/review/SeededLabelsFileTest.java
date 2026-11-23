@@ -31,7 +31,8 @@ class SeededLabelsFileTest {
     void fileSeededNapDuoc_vaMoiMucDeuLaSeeded() throws Exception {
         List<GroundTruthService.ImportEntry> entries = GroundTruthService.parse(Files.readAllBytes(SEEDED_FILE));
 
-        // 11 TP có cảnh báo (TP-01..10, TP-16) + 6 FP. TP-11..15 không công cụ nào bắt ⇒ không có mục.
+        // 13 TP có cảnh báo (TP-01..10, TP-16, cùng FP-05/FP-06 đã gán lại thành TP) + 4 FP.
+        // TP-11..15 không công cụ nào bắt ⇒ không có mục.
         assertThat(entries).hasSize(17);
         assertThat(entries).allMatch(entry -> entry.source() == GroundTruthSource.SEEDED);
         assertThat(entries).allMatch(entry -> entry.file().startsWith("src/main/java/"));
@@ -56,6 +57,28 @@ class SeededLabelsFileTest {
                 .singleElement()
                 .extracting(GroundTruthService.ImportEntry::label)
                 .isEqualTo(GroundTruthVerdict.FALSE_POSITIVE);
+    }
+
+    /**
+     * FP-05/FP-06 giữ mã số cũ nhưng đã gán lại thành TP (23/11/2026): lý do "ASCII nội bộ" sai vì
+     * locale tr biến {@code I} thành {@code ı}; lý do "đã tham số hoá SLF4J" sai vì {@code {}} không
+     * lọc ký tự xuống dòng. Mã số mang chữ "FP" nên rất dễ có người "sửa" nhãn về lại — test này chặn.
+     */
+    @Test
+    void fp05VaFp06DaGanLaiThanhTp() throws Exception {
+        List<GroundTruthService.ImportEntry> entries = GroundTruthService.parse(Files.readAllBytes(SEEDED_FILE));
+
+        assertThat(entries)
+                .filteredOn(entry -> entry.file().endsWith("/util/TextNormalizer.java") && entry.line() == 24)
+                .singleElement()
+                .extracting(GroundTruthService.ImportEntry::label)
+                .isEqualTo(GroundTruthVerdict.TRUE_POSITIVE);
+        assertThat(entries)
+                .filteredOn(entry -> entry.file().endsWith("/util/AuditLogger.java") && entry.line() == 29)
+                .singleElement()
+                .extracting(GroundTruthService.ImportEntry::label)
+                .isEqualTo(GroundTruthVerdict.TRUE_POSITIVE);
+        assertThat(entries).filteredOn(entry -> entry.label() == GroundTruthVerdict.FALSE_POSITIVE).hasSize(4);
     }
 
     /** YAML có alias lồng nhau ("billion laughs") bị từ chối thay vì làm nổ bộ nhớ. */
