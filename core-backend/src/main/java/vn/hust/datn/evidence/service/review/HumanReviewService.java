@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import vn.hust.datn.evidence.domain.EvidenceRecord;
 import vn.hust.datn.evidence.domain.HumanReview;
 import vn.hust.datn.evidence.domain.Message;
 import vn.hust.datn.evidence.domain.MessageRole;
+import vn.hust.datn.evidence.dto.LatestAgentAnswerResponse;
 import vn.hust.datn.evidence.dto.ReviewResponse;
 import vn.hust.datn.evidence.dto.SubmitReviewRequest;
 import vn.hust.datn.evidence.exception.InvalidReviewException;
@@ -97,6 +99,27 @@ public class HumanReviewService {
         return reviews.stream()
                 .map(r -> ReviewResponse.from(r, shortIds.getOrDefault(r.getEvidenceRecordId(), "?")))
                 .toList();
+    }
+
+    /**
+     * Câu trả lời Agent mới nhất mà người này đã nhận về cảnh báo — để ô đánh giá gắn vào quyết định.
+     *
+     * <p>Lỗi gặp thật 23/11/2026: ô đánh giá chỉ nằm ở trang cảnh báo, mà trang đó không bao giờ biết
+     * câu trả lời nào đã được đọc, nên MỌI quyết định đều ghi {@code messageId = NULL}. Cả 34 đánh giá
+     * của run vulnshop rơi vào nhóm "không dùng Agent" trong khi ghi chú chép nguyên văn từ Agent.
+     * Quy tắc từ nay: đã có câu trả lời cho đúng cảnh báo này (phiên có {@code focus_short_id} trùng)
+     * thì coi là đã đọc, và giao diện nói rõ điều đó trước khi người dùng bấm.
+     */
+    @Transactional(readOnly = true)
+    public LatestAgentAnswerResponse latestAgentAnswer(UUID runId, String shortId, UUID userId) {
+        evidenceQueryService.requireRunReadableBy(runId, userId);
+        EvidenceRecord evidence = evidenceQueryService.getEvidence(runId, shortId);
+        return messageRepository
+                .findAgentAnswersForWarning(userId, runId, evidence.getShortId(), PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
+                .map(LatestAgentAnswerResponse::from)
+                .orElse(LatestAgentAnswerResponse.NONE);
     }
 
     /**

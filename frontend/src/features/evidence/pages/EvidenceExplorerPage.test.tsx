@@ -34,6 +34,7 @@ vi.mock('@/features/review/api/reviewApi', () => ({
   listReviews: () => Promise.resolve([]),
   submitReview: () => Promise.reject(new Error('không dùng trong test này')),
   getRunMetrics: () => Promise.reject(new Error('không dùng trong test này')),
+  getLatestAgentAnswer: () => Promise.resolve({}),
 }));
 
 function baseDetail(overrides: Partial<EvidenceDetail> = {}): EvidenceDetail {

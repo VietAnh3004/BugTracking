@@ -42,6 +42,7 @@ function savedReview(overrides: Record<string, unknown> = {}) {
  */
 function mockReviewApi(existing: unknown[] = []) {
   return mockFetchByUrl({
+    '/latest-agent-answer': { body: {} },
     '/reviews': { body: existing },
     '/review': { body: savedReview() },
   });
@@ -175,6 +176,7 @@ describe('ReviewPanel — lưu ghi chú sau khi đã chọn đánh giá', () => 
    */
   it('bấm "Báo nhầm" trước, viết lý do sau, bấm "Lưu ghi chú" thì lý do được gửi đi', async () => {
     const fetchSpy = mockFetchByUrl({
+      '/latest-agent-answer': { body: {} },
       '/reviews': { body: [] },
       // Cùng một phản hồi cho mọi PUT (mockFetchByUrl không phân biệt lượt), nên để KHÔNG có note:
       // phản hồi của lượt bấm "Báo nhầm" mà mang sẵn note thì ô nhập bị điền trước rồi gõ chồng lên.
@@ -198,6 +200,7 @@ describe('ReviewPanel — lưu ghi chú sau khi đã chọn đánh giá', () => 
   it('lưu ghi chú GIỮ NGUYÊN messageId và secondsSpent đã lưu (biến thực nghiệm)', async () => {
     const existing = savedReview({ decision: 'REJECT', messageId: MESSAGE_ID, secondsSpent: 42 });
     const fetchSpy = mockFetchByUrl({
+      '/latest-agent-answer': { body: {} },
       '/reviews': { body: [existing] },
       '/review': { body: { ...existing, note: 'Ly do' } },
     });
@@ -222,6 +225,7 @@ describe('ReviewPanel — lưu ghi chú sau khi đã chọn đánh giá', () => 
   it('xoá trắng ghi chú rồi lưu thì không gửi trường note (backend ghi null)', async () => {
     const existing = savedReview({ decision: 'REJECT', note: 'Ghi chu cu' });
     const fetchSpy = mockFetchByUrl({
+      '/latest-agent-answer': { body: {} },
       '/reviews': { body: [existing] },
       '/review': { body: { ...existing, note: undefined } },
     });
@@ -244,5 +248,50 @@ describe('ReviewPanel — lưu ghi chú sau khi đã chọn đánh giá', () => 
       await screen.findByText('Ghi chú được lưu cùng lúc bạn chọn một đánh giá ở trên.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Lưu ghi chú' })).not.toBeInTheDocument();
+  });
+});
+
+describe('ReviewPanel — tự gắn câu trả lời Agent đã đọc', () => {
+  /**
+   * Lỗi gặp thật 23/11/2026: panel nằm ở trang cảnh báo, không ai truyền messageId, nên cả 34 đánh
+   * giá của run vulnshop bị ghi "không dùng Agent" dù người dùng đã hỏi Agent ở trang chat trước.
+   */
+  it('đã hỏi Agent về cảnh báo này thì body mang messageId của câu trả lời mới nhất', async () => {
+    const fetchSpy = mockFetchByUrl({
+      '/latest-agent-answer': {
+        body: { messageId: MESSAGE_ID, answeredAt: '2026-11-20T10:00:00Z', model: 'gemini-test' },
+      },
+      '/reviews': { body: [] },
+      '/review': { body: savedReview({ messageId: MESSAGE_ID }) },
+    });
+    renderPanel();
+
+    expect(await screen.findByText(/đánh giá sẽ được ghi là đã đọc Agent/)).toBeInTheDocument();
+    expect(screen.getByTestId('agent-usage-note')).toHaveTextContent('gemini-test');
+    await userEvent.click(screen.getByRole('button', { name: 'Đúng là lỗi' }));
+
+    await waitFor(() => expect(submittedBody(fetchSpy)).toMatchObject({ messageId: MESSAGE_ID }));
+  });
+
+  it('chưa hỏi Agent thì nói rõ sẽ ghi là không dùng Agent', async () => {
+    mockReviewApi();
+    renderPanel();
+
+    expect(
+      await screen.findByText(
+        'Bạn chưa hỏi Agent về cảnh báo này, nên đánh giá sẽ được ghi là không dùng Agent.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('chưa tra xong câu trả lời Agent thì chưa cho bấm đánh giá', async () => {
+    mockFetchByUrl({
+      '/latest-agent-answer': { neverResolves: true },
+      '/reviews': { body: [] },
+      '/review': { body: savedReview() },
+    });
+    renderPanel();
+
+    expect(await screen.findByRole('button', { name: 'Đúng là lỗi' })).toBeDisabled();
   });
 });

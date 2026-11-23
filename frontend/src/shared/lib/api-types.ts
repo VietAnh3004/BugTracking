@@ -749,6 +749,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis-runs/{runId}/evidence/{shortId}/latest-agent-answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Câu trả lời Agent mới nhất của người gọi cho một cảnh báo */
+        get: operations["latestAgentAnswer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users": {
         parameters: {
             query?: never;
@@ -1660,6 +1677,16 @@ export interface components {
             endLine?: number;
             className?: string;
             methodName?: string;
+        };
+        /** @description Câu trả lời Agent mới nhất của người gọi cho một cảnh báo; mọi trường vắng mặt = chưa hỏi */
+        LatestAgentAnswerResponse: {
+            /** Format: uuid */
+            messageId?: string;
+            /** Format: date-time */
+            answeredAt?: string;
+            model?: string;
+            /** @enum {string} */
+            verdict?: "LIKELY_TRUE_POSITIVE" | "LIKELY_FALSE_POSITIVE" | "INSUFFICIENT_EVIDENCE";
         };
         AdminUserView: {
             /** Format: uuid */
@@ -2985,6 +3012,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["EvidenceDetailResponse"];
+                };
+            };
+        };
+    };
+    latestAgentAnswer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+                shortId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LatestAgentAnswerResponse"];
                 };
             };
         };

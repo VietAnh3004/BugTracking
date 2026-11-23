@@ -77,6 +77,23 @@ class ReviewControllerTest extends AbstractWebIntegrationTest {
     }
 
     @Test
+    void cauTraLoiAgentMoiNhat_chuaHoi_traVe200KhongCoTruongNao() throws Exception {
+        getMockMvc()
+                .perform(get("/api/v1/analysis-runs/{runId}/evidence/{shortId}/latest-agent-answer", run.getId(), shortId)
+                        .with(authenticatedAs(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.messageId").doesNotExist());
+    }
+
+    @Test
+    void cauTraLoiAgentMoiNhat_canhBaoKhongTonTai_traVe404() throws Exception {
+        getMockMvc()
+                .perform(get("/api/v1/analysis-runs/{runId}/evidence/{shortId}/latest-agent-answer", run.getId(), "EV-FFFF")
+                        .with(authenticatedAs(owner)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void khongCoJwt_traVe401KemProblemDetail() throws Exception {
         getMockMvc()
                 .perform(put("/api/v1/analysis-runs/{runId}/evidence/{shortId}/review", run.getId(), shortId)

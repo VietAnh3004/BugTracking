@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import vn.hust.datn.evidence.config.security.CurrentUser;
+import vn.hust.datn.evidence.dto.LatestAgentAnswerResponse;
 import vn.hust.datn.evidence.dto.ReviewResponse;
 import vn.hust.datn.evidence.dto.RunMetricsResponse;
 import vn.hust.datn.evidence.dto.SubmitReviewRequest;
@@ -62,6 +63,21 @@ public class ReviewController {
             @Valid @RequestBody SubmitReviewRequest request,
             @AuthenticationPrincipal CurrentUser currentUser) {
         return humanReviewService.submit(runId, shortId, currentUser.id(), request);
+    }
+
+    /**
+     * Câu trả lời Agent mới nhất mà CHÍNH người gọi đã nhận về cảnh báo này.
+     *
+     * <p>Ô đánh giá gắn {@code messageId} của câu trả lời này vào quyết định (biến thực nghiệm "có
+     * đọc Agent"). Luôn 200; chưa hỏi thì mọi trường vắng mặt.
+     */
+    @GetMapping("/analysis-runs/{runId}/evidence/{shortId}/latest-agent-answer")
+    @Operation(summary = "Câu trả lời Agent mới nhất của người gọi cho một cảnh báo")
+    public LatestAgentAnswerResponse latestAgentAnswer(
+            @PathVariable UUID runId,
+            @PathVariable String shortId,
+            @AuthenticationPrincipal CurrentUser currentUser) {
+        return humanReviewService.latestAgentAnswer(runId, shortId, currentUser.id());
     }
 
     /**

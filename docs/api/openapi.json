@@ -1762,6 +1762,41 @@
         }
       }
     },
+    "/api/v1/analysis-runs/{runId}/evidence/{shortId}/latest-agent-answer" : {
+      "get" : {
+        "tags" : [ "human-review" ],
+        "summary" : "Câu trả lời Agent mới nhất của người gọi cho một cảnh báo",
+        "operationId" : "latestAgentAnswer",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "shortId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LatestAgentAnswerResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/users" : {
       "get" : {
         "tags" : [ "admin-controller" ],
@@ -3677,6 +3712,27 @@
           }
         },
         "required" : [ "ordinal", "pathRaw", "primary" ]
+      },
+      "LatestAgentAnswerResponse" : {
+        "type" : "object",
+        "description" : "Câu trả lời Agent mới nhất của người gọi cho một cảnh báo; mọi trường vắng mặt = chưa hỏi",
+        "properties" : {
+          "messageId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "answeredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "model" : {
+            "type" : "string"
+          },
+          "verdict" : {
+            "type" : "string",
+            "enum" : [ "LIKELY_TRUE_POSITIVE", "LIKELY_FALSE_POSITIVE", "INSUFFICIENT_EVIDENCE" ]
+          }
+        }
       },
       "AdminUserView" : {
         "type" : "object",

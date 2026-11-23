@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  type LatestAgentAnswer,
   type Review,
   type RunMetrics,
   type SubmitReview,
+  getLatestAgentAnswer,
   getRunMetrics,
   listReviews,
   submitReview,
@@ -12,6 +14,8 @@ import {
 export const reviewKeys = {
   list: (runId: string) => ['reviews', runId] as const,
   metrics: (runId: string) => ['run-metrics', runId] as const,
+  latestAgentAnswer: (runId: string, shortId: string) =>
+    ['latest-agent-answer', runId, shortId] as const,
 };
 
 /**
@@ -33,6 +37,21 @@ export function useRunMetrics(runId: string) {
     queryKey: reviewKeys.metrics(runId),
     queryFn: () => getRunMetrics(runId),
     enabled: runId !== '',
+  });
+}
+
+/**
+ * Câu trả lời Agent mới nhất cho cảnh báo — để gắn vào quyết định (biến thực nghiệm "có đọc Agent").
+ *
+ * `staleTime: 0`: người dùng hỏi Agent ở trang chat rồi quay lại đây. Dùng bản cache 30 giây thì
+ * quyết định ngay sau câu hỏi đầu tiên bị ghi là "không dùng Agent".
+ */
+export function useLatestAgentAnswer(runId: string, shortId: string) {
+  return useQuery<LatestAgentAnswer>({
+    queryKey: reviewKeys.latestAgentAnswer(runId, shortId),
+    queryFn: () => getLatestAgentAnswer(runId, shortId),
+    enabled: runId !== '' && shortId !== '',
+    staleTime: 0,
   });
 }
 

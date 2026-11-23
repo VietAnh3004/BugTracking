@@ -20,6 +20,7 @@ import vn.hust.datn.evidence.domain.ReviewDecision;
 import vn.hust.datn.evidence.domain.User;
 import vn.hust.datn.evidence.domain.Warning;
 import vn.hust.datn.evidence.domain.WarningTool;
+import vn.hust.datn.evidence.dto.LatestAgentAnswerResponse;
 import vn.hust.datn.evidence.dto.ReviewResponse;
 import vn.hust.datn.evidence.dto.SubmitReviewRequest;
 import vn.hust.datn.evidence.exception.EvidenceNotFoundException;
@@ -75,6 +76,73 @@ class HumanReviewServiceTest extends AbstractIntegrationTest {
                 messageId,
                 conversationId);
         return messageId;
+    }
+
+    /**
+     * Câu trả lời Agent trong một phiên HỎI VỀ cảnh báo {@code focus}, đóng dấu thời gian {@code at}.
+     * {@code deleted} = phiên đã bị người dùng ẩn.
+     */
+    private UUID focusedAnswer(User owner, AnalysisRun targetRun, String focus, OffsetDateTime at, boolean deleted) {
+        UUID conversationId = UUID.randomUUID();
+        UUID messageId = UUID.randomUUID();
+        jdbcTemplate.update(
+                """
+                INSERT INTO conversation (id, owner_id, analysis_run_id, focus_short_id, title, deleted_at)
+                VALUES (?, ?, ?, ?, 'x', ?)
+                """,
+                conversationId,
+                owner.getId(),
+                targetRun.getId(),
+                focus,
+                deleted ? at : null);
+        jdbcTemplate.update(
+                """
+                INSERT INTO message (id, conversation_id, ordinal, role, content, verdict, model, created_at)
+                VALUES (?, ?, 1, 'ASSISTANT', 'tom tat', 'LIKELY_FALSE_POSITIVE', 'gemini-test', ?)
+                """,
+                messageId,
+                conversationId,
+                at);
+        return messageId;
+    }
+
+    @Test
+    void cauTraLoiMoiNhat_chuaHoiThiRong() {
+        LatestAgentAnswerResponse latest = service.latestAgentAnswer(run.getId(), shortId, reviewer.getId());
+
+        assertThat(latest).isEqualTo(LatestAgentAnswerResponse.NONE);
+    }
+
+    /**
+     * Lỗi gặp thật 23/11/2026: trang cảnh báo không biết câu trả lời nào đã được đọc nên mọi quyết
+     * định ghi {@code messageId = NULL}. Hỏi hai lần thì phải lấy lần MỚI NHẤT; phiên đã ẩn vẫn tính.
+     */
+    @Test
+    void cauTraLoiMoiNhat_layLanMoiNhat_keCaPhienDaAn() {
+        OffsetDateTime t0 = OffsetDateTime.parse("2026-11-20T10:00:00Z");
+        focusedAnswer(reviewer, run, shortId, t0, false);
+        UUID moiHon = focusedAnswer(reviewer, run, shortId, t0.plusMinutes(5), true);
+
+        LatestAgentAnswerResponse latest = service.latestAgentAnswer(run.getId(), shortId, reviewer.getId());
+
+        assertThat(latest.messageId()).isEqualTo(moiHon);
+        assertThat(latest.model()).isEqualTo("gemini-test");
+        assertThat(latest.answeredAt()).isEqualTo(t0.plusMinutes(5));
+    }
+
+    /** Chỉ câu trả lời của CHÍNH người này, cho ĐÚNG cảnh báo này, trong ĐÚNG run này mới tính. */
+    @Test
+    void cauTraLoiMoiNhat_boQuaNguoiKhac_canhBaoKhac_runKhac() {
+        OffsetDateTime t0 = OffsetDateTime.parse("2026-11-20T10:00:00Z");
+        User nguoiKhac = fixtures.user("nguoi-khac-" + System.nanoTime() + "@x.test");
+        AnalysisRun runKhac = fixtures.succeededRun(fixtures.snapshot(fixtures.project("p2-" + System.nanoTime(), reviewer)), 1);
+        focusedAnswer(nguoiKhac, run, shortId, t0, false);
+        focusedAnswer(reviewer, run, "EV-FFFF", t0, false);
+        focusedAnswer(reviewer, run, null, t0, false);
+        focusedAnswer(reviewer, runKhac, shortId, t0, false);
+
+        assertThat(service.latestAgentAnswer(run.getId(), shortId, reviewer.getId()))
+                .isEqualTo(LatestAgentAnswerResponse.NONE);
     }
 
     private SubmitReviewRequest request(ReviewDecision decision, UUID messageId) {

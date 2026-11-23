@@ -7,6 +7,7 @@ export type Review = components['schemas']['ReviewResponse'];
 export type SubmitReview = components['schemas']['SubmitReviewRequest'];
 export type ReviewDecision = Review['decision'];
 export type RunMetrics = components['schemas']['RunMetricsResponse'];
+export type LatestAgentAnswer = components['schemas']['LatestAgentAnswerResponse'];
 
 export function listReviews(runId: string): Promise<Review[]> {
   return apiClient.get<Review[]>(`/api/v1/analysis-runs/${runId}/reviews`);
@@ -20,6 +21,16 @@ export function submitReview(runId: string, shortId: string, body: SubmitReview)
   return apiClient.put<Review>(
     `/api/v1/analysis-runs/${runId}/evidence/${encodeURIComponent(shortId)}/review`,
     body,
+  );
+}
+
+/**
+ * Câu trả lời Agent mới nhất mà chính người dùng đã nhận về cảnh báo này. Mọi trường vắng mặt nghĩa
+ * là chưa hỏi.
+ */
+export function getLatestAgentAnswer(runId: string, shortId: string): Promise<LatestAgentAnswer> {
+  return apiClient.get<LatestAgentAnswer>(
+    `/api/v1/analysis-runs/${runId}/evidence/${encodeURIComponent(shortId)}/latest-agent-answer`,
   );
 }
 
