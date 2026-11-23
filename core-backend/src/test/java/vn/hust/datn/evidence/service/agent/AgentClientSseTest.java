@@ -22,7 +22,7 @@ import vn.hust.datn.evidence.config.properties.AgentServiceProperties;
 class AgentClientSseTest {
 
     private final AgentClient client =
-            new AgentClient(new AgentServiceProperties("http://agent:8000", java.time.Duration.ofSeconds(120)), new ObjectMapper());
+            new AgentClient(new AgentServiceProperties("http://agent:8000", java.time.Duration.ofSeconds(120), null), new ObjectMapper());
 
     private List<AgentClient.AgentEvent> parse(String body) {
         List<AgentClient.AgentEvent> events = new ArrayList<>();

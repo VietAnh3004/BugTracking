@@ -148,8 +148,11 @@ app:
     max-stored-file-bytes: ${UPLOAD_MAX_STORED_FILE_BYTES:2097152}
   agent:
     base-url: ${AGENT_SERVICE_URL}
-    # Agent gọi LLM nhiều vòng nên một lượt suy luận có thể kéo dài hàng chục giây.
-    timeout: ${AGENT_TIMEOUT:PT120S}
+    # Trần TỔNG của một lượt, chỉ để chặn treo vô hạn (agent gọi LLM nhiều vòng, có thể thử lại).
+    timeout: ${AGENT_TIMEOUT:PT15M}
+    # Cắt khi agent-service IM LẶNG quá lâu. Nó gửi nhịp `: ping` mỗi 15 giây nên lượt dài mà vẫn
+    # đang chạy không bị cắt, còn lượt treo thật thì bị cắt sau khoảng này.
+    idle-timeout: ${AGENT_IDLE_TIMEOUT:PT90S}
   sandbox:
     # TẮT mặc định có chủ đích: deploy lên môi trường không có Docker daemon vẫn khởi động bình
     # thường, và đường nạp artifact thủ công không phụ thuộc gì vào sandbox. Bật bằng

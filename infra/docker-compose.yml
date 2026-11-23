@@ -56,6 +56,9 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       AGENT_SERVICE_URL: http://agent-service:8000
+      # Cắt lượt hỏi khi agent-service IM LẶNG quá lâu (nó gửi nhịp mỗi 15 giây) / trần tổng một lượt.
+      AGENT_IDLE_TIMEOUT: ${AGENT_IDLE_TIMEOUT:-PT90S}
+      AGENT_TIMEOUT: ${AGENT_TIMEOUT:-PT15M}
       CORS_ORIGINS: ${CORS_ORIGINS}
       JWT_SECRET: ${JWT_SECRET}
       SERVICE_TOKEN: ${SERVICE_TOKEN}

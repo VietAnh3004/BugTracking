@@ -83,6 +83,9 @@ services:
       DB_USER: ${POSTGRES_USER:-evidence}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       AGENT_SERVICE_URL: http://agent-service:8000
+      # Cắt lượt hỏi khi agent-service IM LẶNG quá lâu (nó gửi nhịp mỗi 15 giây) / trần tổng một lượt.
+      AGENT_IDLE_TIMEOUT: ${AGENT_IDLE_TIMEOUT:-PT90S}
+      AGENT_TIMEOUT: ${AGENT_TIMEOUT:-PT15M}
       # Phải là https://<tên miền frontend>, khớp TỪNG KÝ TỰ với thanh địa chỉ trình duyệt.
       CORS_ORIGINS: ${CORS_ORIGINS:?Thieu CORS_ORIGINS trong infra/.env.vps}
       JWT_SECRET: ${JWT_SECRET:?Thieu JWT_SECRET trong infra/.env.vps}

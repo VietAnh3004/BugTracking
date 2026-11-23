@@ -22,6 +22,55 @@ logger = logging.getLogger(__name__)
 # Đủ nhanh để người dùng không thấy độ trễ khi bấm Dừng, đủ thưa để không đáng kể về CPU.
 DEFAULT_POLL_SECONDS = 0.5
 
+# Nhịp giữ kết nối. core-backend cắt lượt hỏi khi im lặng quá AGENT_IDLE_TIMEOUT (mặc định 90 giây),
+# nên nhịp phải dày hơn hẳn mốc đó; 15 giây cũng dưới mọi timeout đọc của proxy thường gặp.
+HEARTBEAT_SECONDS = 15.0
+
+# Dòng chú thích SSE: đặc tả bắt client bỏ qua dòng bắt đầu bằng ``:``, nên không phải sự kiện nào.
+SSE_HEARTBEAT = ": ping\n\n"
+
+
+async def with_heartbeat(
+    events: AsyncIterator[str],
+    interval: float = HEARTBEAT_SECONDS,
+    beat: str = SSE_HEARTBEAT,
+) -> AsyncIterator[str]:
+    """Chuyển tiếp ``events``, chen ``beat`` mỗi khi im lặng quá ``interval`` giây.
+
+    Vì sao cần (sửa 23/11/2026): timeout cũ của core-backend tính trên TỔNG cả lượt và cắt ba lượt
+    Gemini khoẻ mạnh nhưng chậm. Đổi sang tính theo thời gian IM LẶNG thì phải có gì đó đi trên dây
+    cả khi đang chờ một lời gọi LLM dài — một lời gọi có thể im tới ``request_timeout_seconds`` nhân
+    số lần thử lại.
+
+    KHÔNG huỷ lời gọi đang chờ khi phát nhịp: chỉ chờ tiếp chính task đó. Bị huỷ từ ngoài (người
+    dùng bấm Dừng, qua ``stop_on_disconnect``) thì huỷ luôn task đang chờ.
+    """
+    iterator = aiter(events)
+    pending: asyncio.Future[str] | None = None
+    try:
+        while True:
+            if pending is None:
+                pending = asyncio.ensure_future(anext(iterator))
+            done, _ = await asyncio.wait({pending}, timeout=interval)
+            if not done:
+                yield beat
+                continue
+            finished, pending = pending, None
+            try:
+                item = finished.result()
+            except StopAsyncIteration:
+                return
+            yield item
+    finally:
+        if pending is not None:
+            pending.cancel()
+            with contextlib.suppress(asyncio.CancelledError, StopAsyncIteration):
+                await pending
+        aclose = getattr(iterator, "aclose", None)
+        if aclose is not None:
+            with contextlib.suppress(RuntimeError, StopAsyncIteration):
+                await aclose()
+
 
 async def stop_on_disconnect[T](
     events: AsyncIterator[T],

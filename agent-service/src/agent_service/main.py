@@ -15,7 +15,7 @@ from agent_service.config import Settings, get_settings
 from agent_service.embeddings.gemini import EmbeddingError, GeminiEmbedder
 from agent_service.providers.factory import build_provider
 from agent_service.schemas.api import AnalyzeRequest, EmbedRequest, EmbedResponse
-from agent_service.streaming import stop_on_disconnect
+from agent_service.streaming import stop_on_disconnect, with_heartbeat
 from agent_service.tools.evidence_client import EvidenceToolClient
 
 logger = logging.getLogger(__name__)
@@ -164,8 +164,9 @@ async def analyze(request: AnalyzeRequest, http_request: Request) -> StreamingRe
 
     # Bọc bằng stop_on_disconnect: core-backend đóng kết nối khi người dùng bấm "Dừng" hoặc rời
     # trang, và lượt gọi LLM đang bay phải bị huỷ NGAY — không đợi tới khung SSE kế tiếp.
+    # with_heartbeat chen ": ping" khi im lặng: core-backend cắt lượt theo thời gian IM LẶNG.
     return StreamingResponse(
-        stop_on_disconnect(stream(), http_request.is_disconnected),
+        stop_on_disconnect(with_heartbeat(stream()), http_request.is_disconnected),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

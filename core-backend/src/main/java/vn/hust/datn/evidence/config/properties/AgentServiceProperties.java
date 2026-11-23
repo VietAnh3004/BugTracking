@@ -14,9 +14,21 @@ import org.springframework.validation.annotation.Validated;
  * Evidence Tool API của service này. Nhờ vậy mỗi lượt truy xuất bằng chứng của agent đều đi qua
  * một ranh giới quan sát được, phục vụ đo đạc trong thực nghiệm.
  *
+ * <p><b>Hai mốc thời gian, cố ý tách bạch</b> (sửa 23/11/2026). Trước đây chỉ có {@code timeout}
+ * = 120 giây tính trên TỔNG cả lượt, và nó cắt ba lượt Gemini khoẻ mạnh nhưng chậm (máy chủ model
+ * trả 429/503, agent tự thử lại) với thông báo vô nghĩa "dut ket noi ... closed".
+ *
  * @param baseUrl URL nội bộ tới agent-service
- * @param timeout thời gian chờ tối đa cho một lượt suy luận (agent gọi LLM nhiều vòng nên lâu)
+ * @param timeout trần TỔNG của một lượt, chỉ để chặn treo vô hạn — đặt rộng
+ * @param idleTimeout thời gian IM LẶNG tối đa: không nhận được dòng nào (kể cả nhịp {@code : ping}
+ *     agent-service gửi mỗi 15 giây) trong khoảng này thì coi là treo và cắt
  */
 @Validated
 @ConfigurationProperties(prefix = "app.agent")
-public record AgentServiceProperties(@NotBlank String baseUrl, Duration timeout) {}
+public record AgentServiceProperties(@NotBlank String baseUrl, Duration timeout, Duration idleTimeout) {
+
+    public AgentServiceProperties {
+        timeout = timeout == null ? Duration.ofMinutes(15) : timeout;
+        idleTimeout = idleTimeout == null ? Duration.ofSeconds(90) : idleTimeout;
+    }
+}

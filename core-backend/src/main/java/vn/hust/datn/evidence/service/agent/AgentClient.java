@@ -5,10 +5,15 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.springframework.http.MediaType;
@@ -41,8 +46,23 @@ public class AgentClient {
     private static final String EVENT_PREFIX = "event: ";
     private static final String DATA_PREFIX = "data: ";
 
+    /** Dòng chú thích SSE (đặc tả: bắt đầu bằng {@code :}) — agent-service dùng làm nhịp giữ kết nối. */
+    private static final String COMMENT_PREFIX = ":";
+
+    /**
+     * MỘT luồng nền dùng chung cho mọi lượt hỏi: việc của nó chỉ là nhìn đồng hồ, không đáng một luồng
+     * mỗi lượt. Daemon để không giữ JVM khi tắt ứng dụng.
+     */
+    private static final ScheduledExecutorService WATCHDOG = Executors.newSingleThreadScheduledExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "agent-idle-watchdog");
+        thread.setDaemon(true);
+        return thread;
+    });
+
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
+    private final Duration timeout;
+    private final Duration idleTimeout;
 
     public AgentClient(AgentServiceProperties properties, ObjectMapper objectMapper) {
         this.restClient = RestClient.builder()
@@ -50,6 +70,8 @@ public class AgentClient {
                 .baseUrl(properties.baseUrl())
                 .build();
         this.objectMapper = objectMapper;
+        this.timeout = properties.timeout();
+        this.idleTimeout = properties.idleTimeout();
     }
 
     /**
@@ -69,9 +91,8 @@ public class AgentClient {
                 .version(java.net.http.HttpClient.Version.HTTP_1_1)
                 .build();
         var factory = new org.springframework.http.client.JdkClientHttpRequestFactory(httpClient);
-        // Hàng rào thời gian cho CẢ lượt, lấy từ app.agent.timeout (mặc định 120s). Một lượt suy
-        // luận đi qua nhiều vòng gọi model nên nó phải rộng — nhưng vô hạn thì một agent treo sẽ
-        // giữ luôn một luồng của agentExecutor cho tới khi tắt ứng dụng.
+        // Trần TỔNG cho cả lượt (app.agent.timeout, mặc định 15 phút): chỉ để một agent treo không
+        // giữ mãi một luồng của agentExecutor. Mốc thường gặp là idle-timeout, do IdleWatchdog canh.
         factory.setReadTimeout(properties.timeout());
         return factory;
     }
@@ -97,6 +118,7 @@ public class AgentClient {
      * {@link AgentUnavailableException} — người gọi tự phân biệt huỷ có chủ đích với lỗi thật.
      */
     public void analyze(AnalyzeRequest request, Consumer<AgentEvent> onEvent, Consumer<Closeable> onConnected) {
+        long startedAt = System.nanoTime();
         restClient
                 .post()
                 .uri("/analyze")
@@ -112,11 +134,111 @@ public class AgentClient {
                                 throw new AgentUnavailableException("agent-service tra ve %s: %s"
                                         .formatted(response.getStatusCode(), readBody(response)));
                             }
-                            onConnected.accept(response);
-                            readStream(response.getBody(), onEvent);
+                            // Đóng THÂN response, KHÔNG đóng `response`: JdkClientHttpResponse.close()
+                            // đọc cạn (drain) phần còn lại trước khi đóng, tức là CHẶN cho tới khi
+                            // agent-service tự chạy xong. Gặp thật 23/11/2026: watchdog lẫn nút Dừng
+                            // đều kẹt trong close() suốt cả lượt, nên không cắt/huỷ được gì.
+                            java.io.InputStream body = response.getBody();
+                            onConnected.accept(body);
+                            IdleWatchdog watchdog = new IdleWatchdog(body, idleTimeout);
+                            try {
+                                readStream(body, onEvent, line -> {
+                                    watchdog.touch();
+                                    if (line.startsWith(COMMENT_PREFIX)) {
+                                        onEvent.accept(new AgentEvent(AgentEvent.HEARTBEAT, ""));
+                                    }
+                                });
+                            } catch (AgentUnavailableException e) {
+                                throw explainDisconnect(e, watchdog, startedAt);
+                            } finally {
+                                watchdog.stop();
+                            }
                             return null;
                         },
                         false);
+    }
+
+    /**
+     * Đổi "đứt kết nối" thành lý do người dùng hiểu được, khi biết chắc lý do.
+     *
+     * <p>Chỉ áp cho lỗi ĐỌC STREAM ({@code cause} là {@link IOException}); sự kiện {@code error} của
+     * agent-service cũng thoát ra dưới dạng {@link AgentUnavailableException} nhưng mang thông điệp
+     * riêng của nó, không được ghi đè.
+     */
+    private RuntimeException explainDisconnect(AgentUnavailableException e, IdleWatchdog watchdog, long startedAt) {
+        if (!(e.getCause() instanceof IOException)) {
+            return e;
+        }
+        if (watchdog.fired()) {
+            return new AgentUnavailableException(
+                    "Agent không phản hồi trong %s (máy chủ model có thể đang quá tải). Câu hỏi vẫn nằm trong lịch sử, bạn có thể hỏi lại."
+                            .formatted(humanize(idleTimeout)),
+                    e.getCause());
+        }
+        if (Duration.ofNanos(System.nanoTime() - startedAt).compareTo(timeout) >= 0) {
+            return new AgentUnavailableException(
+                    "Lượt hỏi vượt quá giới hạn %s nên đã bị dừng. Câu hỏi vẫn nằm trong lịch sử, bạn có thể hỏi lại."
+                            .formatted(humanize(timeout)),
+                    e.getCause());
+        }
+        return e;
+    }
+
+    private static String humanize(Duration duration) {
+        long seconds = duration.toSeconds();
+        if (seconds == 0) {
+            return duration.toMillis() + " ms";
+        }
+        return seconds >= 60 && seconds % 60 == 0 ? (seconds / 60) + " phút" : seconds + " giây";
+    }
+
+    /**
+     * Cắt lượt hỏi khi agent-service IM LẶNG quá {@code idleTimeout}.
+     *
+     * <p>Đóng THÂN response làm lần {@code read} đang chờ ở luồng đọc ném {@code IOException("closed")}
+     * ngay (đo thật: ~50 ms sau mốc). Cờ {@link #fired()} để người gọi phân biệt "bị cắt vì im lặng"
+     * với nút Dừng hay lỗi mạng.
+     */
+    static final class IdleWatchdog {
+        private final Closeable body;
+        private final long idleNanos;
+        private final ScheduledFuture<?> task;
+        private volatile long lastActivity = System.nanoTime();
+        private volatile boolean fired;
+        private volatile boolean stopped;
+
+        IdleWatchdog(Closeable body, Duration idleTimeout) {
+            this.body = body;
+            this.idleNanos = idleTimeout.toNanos();
+            // Kiểm thưa (≤ 1 giây) là đủ: sai số vài trăm mili giây trên mốc 90 giây không đáng kể.
+            long periodMillis = Math.clamp(idleTimeout.toMillis() / 4, 10, 1000);
+            this.task = WATCHDOG.scheduleWithFixedDelay(this::check, periodMillis, periodMillis, TimeUnit.MILLISECONDS);
+        }
+
+        void touch() {
+            lastActivity = System.nanoTime();
+        }
+
+        boolean fired() {
+            return fired;
+        }
+
+        void stop() {
+            stopped = true;
+            task.cancel(false);
+        }
+
+        private void check() {
+            if (fired || stopped || System.nanoTime() - lastActivity < idleNanos) {
+                return;
+            }
+            fired = true;
+            try {
+                body.close();
+            } catch (IOException | RuntimeException ignored) {
+                // Đóng hỏng thì luồng đọc vẫn thoát khi trần tổng (app.agent.timeout) tới.
+            }
+        }
     }
 
     /** Thân response lỗi, cắt ngắn — đủ để biết trường nào sai, không đủ để làm ngập log. */
@@ -137,11 +259,17 @@ public class AgentClient {
      * ca biên (khung cuối thiếu dòng trống, dòng lạ xen giữa).
      */
     void readStream(java.io.InputStream body, Consumer<AgentEvent> onEvent) {
+        readStream(body, onEvent, line -> {});
+    }
+
+    /** Như trên, kèm {@code onLine} nhận MỌI dòng đọc được — kể cả dòng chú thích không thành khung. */
+    void readStream(java.io.InputStream body, Consumer<AgentEvent> onEvent, Consumer<String> onLine) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8))) {
             String eventName = null;
             String data = null;
             String line;
             while ((line = reader.readLine()) != null) {
+                onLine.accept(line);
                 if (line.startsWith(EVENT_PREFIX)) {
                     eventName = line.substring(EVENT_PREFIX.length());
                 } else if (line.startsWith(DATA_PREFIX)) {
@@ -159,7 +287,7 @@ public class AgentClient {
                 onEvent.accept(new AgentEvent(eventName, data));
             }
         } catch (IOException e) {
-            throw new AgentUnavailableException("dut ket noi toi agent-service: " + e.getMessage());
+            throw new AgentUnavailableException("dut ket noi toi agent-service: " + e.getMessage(), e);
         }
     }
 
@@ -179,6 +307,8 @@ public class AgentClient {
         public static final String TOOL_RESULT = "tool_result";
         public static final String ANSWER = "answer";
         public static final String ERROR = "error";
+        /** Nhịp giữ kết nối (dòng chú thích SSE), không có dữ liệu. Không lưu, chỉ chuyển tiếp. */
+        public static final String HEARTBEAT = "heartbeat";
     }
 
     /** Thân request của {@code POST /analyze}, snake_case đúng hợp đồng của agent-service. */

@@ -90,7 +90,7 @@ class ConfigPropertiesValidationTest {
 
     @Test
     void agentThieuBaseUrlThiBiTuChoi() {
-        AgentServiceProperties properties = new AgentServiceProperties("", Duration.ofSeconds(120));
+        AgentServiceProperties properties = new AgentServiceProperties("", Duration.ofSeconds(120), null);
 
         assertThat(validator.validate(properties)).hasSize(1);
     }

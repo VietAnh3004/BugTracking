@@ -292,6 +292,9 @@ public class ConversationService {
             }
             // status/tool_call/tool_result forward nguyên văn: chúng chỉ là tiến trình, không
             // chứa kết luận nào cần hậu kiểm.
+            // Chuyển tiếp nhịp xuống trình duyệt dưới dạng chú thích SSE: trong lúc chờ một lời gọi
+            // LLM dài, Nginx trên VPS (proxy_read_timeout) không thấy gì và sẽ cắt kết nối.
+            case AgentClient.AgentEvent.HEARTBEAT -> sendHeartbeat(emitter, turn);
             default -> sendRaw(emitter, event.name(), event.data(), turn);
         }
     }
@@ -347,6 +350,14 @@ public class ConversationService {
             emitter.send(SseEmitter.event().name(name).data(json, org.springframework.http.MediaType.APPLICATION_JSON));
         } catch (IOException | IllegalStateException e) {
             clientGone(name, turn);
+        }
+    }
+
+    private void sendHeartbeat(SseEmitter emitter, ActiveTurn turn) {
+        try {
+            emitter.send(SseEmitter.event().comment("ping"));
+        } catch (IOException | IllegalStateException e) {
+            clientGone("heartbeat", turn);
         }
     }
 
