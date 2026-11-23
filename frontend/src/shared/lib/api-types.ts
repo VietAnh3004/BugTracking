@@ -1601,6 +1601,38 @@ export interface components {
              */
             relatedTotal: number;
         };
+        /** @description Độ phủ của chính dòng bị cảnh báo */
+        LineCoverageView: {
+            /**
+             * Format: int32
+             * @description Dòng mà số liệu dưới đây thuộc về
+             */
+            line: number;
+            /** @enum {string} */
+            status: "COVERED" | "PARTIAL" | "MISSED";
+            /**
+             * Format: int32
+             * @description ci: số lệnh bytecode được chạy
+             */
+            coveredInstructions: number;
+            /**
+             * Format: int32
+             * @description mi: số lệnh bytecode bị bỏ qua
+             */
+            missedInstructions: number;
+            /**
+             * Format: int32
+             * @description cb: số nhánh được chạy
+             */
+            coveredBranches: number;
+            /**
+             * Format: int32
+             * @description mb: số nhánh bị bỏ qua
+             */
+            missedBranches: number;
+            /** @description false khi dòng cảnh báo không thực thi được và đây là dòng gần nhất */
+            exactLine: boolean;
+        };
         RelatedEvidenceView: {
             /** Format: uuid */
             evidenceId: string;
@@ -1634,6 +1666,8 @@ export interface components {
             outgoing: boolean;
             /** @description Chỉ có khi type là TEST_RESULT/FAILED_TEST */
             testCase?: components["schemas"]["TestCaseSummaryView"];
+            /** @description Chỉ có với thẻ COVERS: độ phủ của chính dòng bị cảnh báo */
+            lineCoverage?: components["schemas"]["LineCoverageView"];
         };
         TestCaseSummaryView: {
             className: string;

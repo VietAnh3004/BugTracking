@@ -73,7 +73,9 @@ export const METHOD_LABELS: Record<EvidenceLinkMethod, MethodLabel> = {
 export const RELATION_LABELS: Record<EvidenceLinkRelation, string> = {
   SUPPORTS: 'Ủng hộ',
   CONTRADICTS: 'Phản bác',
-  COVERS: 'Phủ',
+  // KHÔNG phải "Phủ": liên kết này có cả khi dòng KHÔNG được test nào chạy qua (MISSED). Gặp thật
+  // 23/11/2026: chữ "Phủ" in đậm khiến người đọc tưởng dòng đã được test.
+  COVERS: 'Dữ liệu độ phủ',
   LOCATED_IN: 'Nằm trong',
 };
 

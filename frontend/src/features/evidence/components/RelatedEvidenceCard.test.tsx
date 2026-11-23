@@ -312,3 +312,84 @@ describe('RelatedEvidenceCard', () => {
     expect(screen.queryByText('Lỗi:')).not.toBeInTheDocument();
   });
 });
+
+describe('RelatedEvidenceCard — thẻ độ phủ nói rõ trạng thái của chính dòng cảnh báo', () => {
+  const coverageItem = (lineCoverage: Record<string, unknown> | undefined) =>
+    itemVoiNull({
+      type: 'COVERAGE_INFORMATION',
+      relation: 'COVERS',
+      filePath: FILE_NEO,
+      summary:
+        'Độ phủ UserService.java: 13/20 dòng được phủ (0 dòng phủ một phần), 7 dòng không phủ',
+      rationale: 'Dòng 72: MISSED (ci=0 mi=9 mb=0 cb=0)',
+      ...(lineCoverage === undefined ? {} : { lineCoverage }),
+    });
+
+  /** Gặp thật 23/11/2026 (EV-011C): "13/20 dòng được phủ" khiến người đọc tưởng dòng 72 đã được test. */
+  it('dòng MISSED: nói thẳng là không test nào chạy qua, câu của cả file lùi xuống', () => {
+    renderCard(
+      coverageItem({
+        line: 72,
+        status: 'MISSED',
+        coveredInstructions: 0,
+        missedInstructions: 9,
+        coveredBranches: 0,
+        missedBranches: 0,
+        exactLine: true,
+      }),
+    );
+
+    expect(screen.getByTestId('line-coverage-status')).toHaveTextContent(
+      'Dòng 72 không được test nào chạy qua',
+    );
+    expect(screen.getByText('Cả file:')).toBeInTheDocument();
+    expect(screen.getByText('Dữ liệu độ phủ')).toBeInTheDocument();
+    expect(screen.queryByText('Phủ')).not.toBeInTheDocument();
+    expect(screen.queryByText('Dòng 72: MISSED (ci=0 mi=9 mb=0 cb=0)')).not.toBeInTheDocument();
+  });
+
+  it('dòng PARTIAL: ghi số nhánh đã chạy', () => {
+    renderCard(
+      coverageItem({
+        line: 42,
+        status: 'PARTIAL',
+        coveredInstructions: 4,
+        missedInstructions: 1,
+        coveredBranches: 1,
+        missedBranches: 1,
+        exactLine: false,
+      }),
+    );
+
+    expect(screen.getByTestId('line-coverage-status')).toHaveTextContent(
+      'Dòng 42 chỉ được chạy một phần (1/2 nhánh)',
+    );
+    expect(screen.getByText(/không thực thi được/)).toBeInTheDocument();
+  });
+
+  it('dòng COVERED: được test chạy qua', () => {
+    renderCard(
+      coverageItem({
+        line: 66,
+        status: 'COVERED',
+        coveredInstructions: 5,
+        missedInstructions: 0,
+        coveredBranches: 0,
+        missedBranches: 0,
+        exactLine: true,
+      }),
+    );
+
+    expect(screen.getByTestId('line-coverage-status')).toHaveTextContent(
+      'Dòng 66 được test chạy qua',
+    );
+  });
+
+  /** Dữ liệu cũ không có `lineCoverage`: hiển thị như trước, không mất câu lý do. */
+  it('không có lineCoverage thì giữ cách hiển thị cũ', () => {
+    renderCard(coverageItem(undefined));
+
+    expect(screen.queryByTestId('line-coverage-status')).not.toBeInTheDocument();
+    expect(screen.getByText('Dòng 72: MISSED (ci=0 mi=9 mb=0 cb=0)')).toBeInTheDocument();
+  });
+});

@@ -44,4 +44,8 @@ public record RelatedEvidenceView(
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "true khi neo nằm ở đầu 'from' của liên kết")
                 boolean outgoing,
         @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED, description = "Chỉ có khi type là TEST_RESULT/FAILED_TEST")
-                TestCaseSummaryView testCase) {}
+                TestCaseSummaryView testCase,
+        @Schema(
+                        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+                        description = "Chỉ có với thẻ COVERS: độ phủ của chính dòng bị cảnh báo")
+                LineCoverageView lineCoverage) {}

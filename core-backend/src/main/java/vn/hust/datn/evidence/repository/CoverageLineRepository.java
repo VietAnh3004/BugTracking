@@ -38,4 +38,20 @@ public interface CoverageLineRepository extends JpaRepository<CoverageLine, Cove
             """)
     List<CoverageLineRow> findByRunAndFilePaths(
             @Param("runId") UUID runId, @Param("filePaths") Collection<String> filePaths);
+
+    /** Các dòng có độ phủ trong khoảng {@code [fromLine, toLine]} của những bản ghi độ phủ đã cho. */
+    @Query(
+            """
+            select new vn.hust.datn.evidence.service.linker.CoverageLineRow(
+                e.id, e.filePath, cl.lineNumber, cl.mi, cl.ci, cl.mb, cl.cb)
+            from CoverageLine cl, EvidenceRecord e
+            where cl.evidenceRecordId = e.id
+              and e.id in :evidenceIds
+              and cl.lineNumber between :fromLine and :toLine
+            order by e.id, cl.lineNumber
+            """)
+    List<CoverageLineRow> findInLineRange(
+            @Param("evidenceIds") Collection<UUID> evidenceIds,
+            @Param("fromLine") int fromLine,
+            @Param("toLine") int toLine);
 }

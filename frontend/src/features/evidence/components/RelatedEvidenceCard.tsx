@@ -10,7 +10,7 @@ import type { RelatedEvidence } from '@/features/evidence/api/evidenceApi';
 import { FailureKindBadge } from '@/features/evidence/components/FailureKindBadge';
 import { LinkStrengthBadge } from '@/features/evidence/components/LinkStrengthBadge';
 import { toFilePathUrl, toLineHash } from '@/features/snapshots/lib/filePathUrl';
-import { IconFile } from '@/shared/ui/icons';
+import { IconAlert, IconCheck, IconError, IconFile } from '@/shared/ui/icons';
 import { CARD } from '@/shared/ui/styles';
 
 interface RelatedEvidenceCardProps {
@@ -62,7 +62,18 @@ export function RelatedEvidenceCard({
         Bằng chứng có `testCase` thì khối có cấu trúc phủ hết nội dung câu tóm tắt, nên bỏ câu đó
         đi TRÊN MÀN HÌNH. Dữ liệu trong DB không đổi — Agent vẫn đọc `summary` như cũ.
       */}
-      {item.testCase != null ? null : (
+      {/*
+        Thẻ độ phủ: trạng thái của CHÍNH dòng cảnh báo lên trước, câu tóm tắt của CẢ FILE lùi xuống.
+        Gặp thật 23/11/2026 (EV-011C): "13/20 dòng được phủ" đứng ở chỗ nổi nhất khiến người đọc tưởng
+        dòng 72 đã được test, trong khi không test nào chạy qua dòng đó.
+      */}
+      {item.lineCoverage == null ? null : <LineCoverageStatus coverage={item.lineCoverage} />}
+
+      {item.testCase != null ? null : item.lineCoverage != null ? (
+        <p className="text-ink-subtle mt-1 mb-2.5 text-xs [overflow-wrap:anywhere]">
+          <span className="font-semibold">Cả file:</span> {item.summary}
+        </p>
+      ) : (
         <p className="text-ink mt-2 mb-2.5 text-sm [overflow-wrap:anywhere]">{item.summary}</p>
       )}
 
@@ -144,7 +155,9 @@ export function RelatedEvidenceCard({
         nó còn mang câu cảnh báo "test xanh KHÔNG chứng minh cảnh báo sai" — thứ mà bỏ đi là mời
         người đọc rơi đúng vào cái bẫy vulnshop gài.
       */}
-      {item.rationale == null ? null : (
+      {item.lineCoverage != null ? (
+        <CoverageCounters coverage={item.lineCoverage} />
+      ) : item.rationale == null ? null : (
         <p className="border-border-strong text-ink-muted mt-2.5 mb-0 border-l-2 pl-2.5 text-xs leading-relaxed [overflow-wrap:anywhere]">
           {item.rationale}
         </p>
@@ -161,5 +174,61 @@ export function RelatedEvidenceCard({
         </Link>
       )}
     </li>
+  );
+}
+
+type LineCoverage = NonNullable<RelatedEvidence['lineCoverage']>;
+
+/** Một câu cho người đọc: dòng cảnh báo có được test chạy qua không. Màu luôn đi kèm chữ và icon. */
+function LineCoverageStatus({ coverage }: { coverage: LineCoverage }) {
+  const totalBranches = coverage.coveredBranches + coverage.missedBranches;
+  const view =
+    coverage.status === 'MISSED'
+      ? {
+          className: 'text-danger',
+          Icon: IconError,
+          text: `Dòng ${String(coverage.line)} không được test nào chạy qua`,
+        }
+      : coverage.status === 'PARTIAL'
+        ? {
+            className: 'text-warning',
+            Icon: IconAlert,
+            text:
+              totalBranches > 0
+                ? `Dòng ${String(coverage.line)} chỉ được chạy một phần (${String(coverage.coveredBranches)}/${String(totalBranches)} nhánh)`
+                : `Dòng ${String(coverage.line)} chỉ được chạy một phần`,
+          }
+        : {
+            className: 'text-success',
+            Icon: IconCheck,
+            text: `Dòng ${String(coverage.line)} được test chạy qua`,
+          };
+
+  return (
+    <div className="mt-2" data-testid="line-coverage-status">
+      <p className={`m-0 flex items-center gap-1.5 text-sm font-semibold ${view.className}`}>
+        <view.Icon className="size-4 shrink-0" />
+        {view.text}
+      </p>
+      {coverage.exactLine ? null : (
+        <p className="text-ink-subtle mt-0.5 mb-0 text-xs">
+          Dòng bị cảnh báo không thực thi được (khai báo, dấu ngoặc), nên đây là dòng gần nhất có dữ
+          liệu độ phủ.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Bốn bộ đếm của JaCoCo, nhỏ và có chú giải — để đối chiếu được với dữ liệu gốc. */
+function CoverageCounters({ coverage }: { coverage: LineCoverage }) {
+  return (
+    <p
+      className="text-ink-subtle text-2xs mt-2.5 mb-0 font-mono"
+      title="ci/mi: số lệnh bytecode được chạy / bị bỏ qua; cb/mb: số nhánh được chạy / bị bỏ qua (JaCoCo)"
+    >
+      JaCoCo dòng {coverage.line}: ci={coverage.coveredInstructions} mi=
+      {coverage.missedInstructions} cb={coverage.coveredBranches} mb={coverage.missedBranches}
+    </p>
   );
 }

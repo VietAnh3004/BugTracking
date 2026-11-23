@@ -2,8 +2,10 @@ package vn.hust.datn.evidence.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -19,15 +21,18 @@ import vn.hust.datn.evidence.domain.TestCase;
 import vn.hust.datn.evidence.domain.Warning;
 import vn.hust.datn.evidence.domain.WarningLocation;
 import vn.hust.datn.evidence.dto.EvidenceDetailResponse;
+import vn.hust.datn.evidence.dto.LineCoverageView;
 import vn.hust.datn.evidence.dto.LinkRebuildResponse;
 import vn.hust.datn.evidence.dto.RelatedEvidenceView;
 import vn.hust.datn.evidence.dto.TestCaseSummaryView;
 import vn.hust.datn.evidence.dto.WarningDetailView;
 import vn.hust.datn.evidence.dto.WarningLocationView;
+import vn.hust.datn.evidence.repository.CoverageLineRepository;
 import vn.hust.datn.evidence.repository.EvidenceRecordRepository;
 import vn.hust.datn.evidence.repository.TestCaseRepository;
 import vn.hust.datn.evidence.repository.WarningLocationRepository;
 import vn.hust.datn.evidence.repository.WarningRepository;
+import vn.hust.datn.evidence.service.linker.CoverageLineRow;
 import vn.hust.datn.evidence.service.linker.EvidenceLinker;
 import vn.hust.datn.evidence.service.linker.LinkResult;
 
@@ -56,6 +61,7 @@ public class EvidenceDetailService {
     private final WarningLocationRepository warningLocationRepository;
     private final TestCaseRepository testCaseRepository;
     private final EvidenceLinker evidenceLinker;
+    private final CoverageLineRepository coverageLineRepository;
 
     public EvidenceDetailService(
             EvidenceQueryService evidenceQueryService,
@@ -63,13 +69,15 @@ public class EvidenceDetailService {
             WarningRepository warningRepository,
             WarningLocationRepository warningLocationRepository,
             TestCaseRepository testCaseRepository,
-            EvidenceLinker evidenceLinker) {
+            EvidenceLinker evidenceLinker,
+            CoverageLineRepository coverageLineRepository) {
         this.evidenceQueryService = evidenceQueryService;
         this.evidenceRecordRepository = evidenceRecordRepository;
         this.warningRepository = warningRepository;
         this.warningLocationRepository = warningLocationRepository;
         this.testCaseRepository = testCaseRepository;
         this.evidenceLinker = evidenceLinker;
+        this.coverageLineRepository = coverageLineRepository;
     }
 
     /**
@@ -105,6 +113,7 @@ public class EvidenceDetailService {
         tatCa.addAll(coverage);
         tatCa.addAll(other);
         Map<UUID, TestCaseSummaryView> testCaseById = loadTestCases(tatCa);
+        Map<UUID, LineCoverageView> lineCoverageById = loadLineCoverage(coverage, anchor.getStartLine());
 
         return new EvidenceDetailResponse(
                 anchor.getId(),
@@ -119,10 +128,10 @@ public class EvidenceDetailService {
                 anchor.getEndLine(),
                 anchor.getSymbol(),
                 anchor.getType() == EvidenceType.STATIC_WARNING ? warningDetail(anchor.getId()) : null,
-                toViews(codeContext, testCaseById),
-                toViews(tests, testCaseById),
-                toViews(coverage, testCaseById),
-                toViews(other, testCaseById),
+                toViews(codeContext, testCaseById, Map.of()),
+                toViews(tests, testCaseById, Map.of()),
+                toViews(coverage, testCaseById, lineCoverageById),
+                toViews(other, testCaseById, Map.of()),
                 tatCa.size());
     }
 
@@ -219,8 +228,46 @@ public class EvidenceDetailService {
                                         : shortIdById.get(testCase.getStackTraceEvidenceId()))));
     }
 
+    /**
+     * Độ phủ của CHÍNH dòng cảnh báo cho từng thẻ độ phủ: đúng dòng nếu có, không thì dòng thực thi
+     * được gần nhất — cùng quy tắc EvidenceLinker dùng để sinh liên kết {@code COVERS}.
+     */
+    private Map<UUID, LineCoverageView> loadLineCoverage(List<LinkedEvidence> coverage, Integer anchorLine) {
+        if (coverage.isEmpty() || anchorLine == null) {
+            return Map.of();
+        }
+        List<UUID> ids = coverage.stream().map(pair -> pair.record().getId()).toList();
+        int radius = CoverageLineRow.NEAREST_LINE_RADIUS;
+        Map<UUID, List<CoverageLineRow>> byRecord = coverageLineRepository
+                .findInLineRange(ids, anchorLine - radius, anchorLine + radius)
+                .stream()
+                .collect(Collectors.groupingBy(CoverageLineRow::evidenceRecordId));
+
+        Map<UUID, LineCoverageView> result = new java.util.HashMap<>();
+        byRecord.forEach((recordId, rows) -> {
+            Optional<CoverageLineRow> exact =
+                    rows.stream().filter(row -> row.lineNumber() == anchorLine).findFirst();
+            CoverageLineRow row = exact.orElseGet(() -> rows.stream()
+                    .min(Comparator.comparingInt(r -> Math.abs(r.lineNumber() - anchorLine)))
+                    .orElseThrow());
+            result.put(
+                    recordId,
+                    new LineCoverageView(
+                            row.lineNumber(),
+                            row.statusLabel(),
+                            row.ci(),
+                            row.mi(),
+                            row.cb(),
+                            row.mb(),
+                            exact.isPresent()));
+        });
+        return result;
+    }
+
     private static List<RelatedEvidenceView> toViews(
-            List<LinkedEvidence> pairs, Map<UUID, TestCaseSummaryView> testCaseById) {
+            List<LinkedEvidence> pairs,
+            Map<UUID, TestCaseSummaryView> testCaseById,
+            Map<UUID, LineCoverageView> lineCoverageById) {
         return pairs.stream()
                 .map(pair -> new RelatedEvidenceView(
                         pair.record().getId(),
@@ -237,7 +284,8 @@ public class EvidenceDetailService {
                         pair.link().getWeight().doubleValue(),
                         pair.link().getRationale(),
                         pair.outgoing(),
-                        testCaseById.get(pair.record().getId())))
+                        testCaseById.get(pair.record().getId()),
+                        lineCoverageById.get(pair.record().getId())))
                 .toList();
     }
 }

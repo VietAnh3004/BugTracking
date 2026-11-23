@@ -89,7 +89,7 @@ public class EvidenceLinker {
      * <p>Hẹp có chủ đích: nới rộng ra thì "vùng gần đó có chạy" mất hết ý nghĩa, mà liên kết vẫn
      * cứ sinh ra — tức là đổi một khoảng trống thành một bằng chứng giả.
      */
-    private static final int NEAREST_LINE_RADIUS = 3;
+    private static final int NEAREST_LINE_RADIUS = CoverageLineRow.NEAREST_LINE_RADIUS;
 
     private final JdbcTemplate jdbcTemplate;
     private final EvidenceRecordRepository evidenceRecordRepository;

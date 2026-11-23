@@ -3537,6 +3537,46 @@
         },
         "required" : [ "analysisRunId", "codeContext", "coverage", "evidenceId", "other", "relatedTotal", "shortId", "snapshotId", "source", "summary", "tests", "type" ]
       },
+      "LineCoverageView" : {
+        "type" : "object",
+        "description" : "Độ phủ của chính dòng bị cảnh báo",
+        "properties" : {
+          "line" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Dòng mà số liệu dưới đây thuộc về"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "COVERED", "PARTIAL", "MISSED" ]
+          },
+          "coveredInstructions" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "ci: số lệnh bytecode được chạy"
+          },
+          "missedInstructions" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "mi: số lệnh bytecode bị bỏ qua"
+          },
+          "coveredBranches" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "cb: số nhánh được chạy"
+          },
+          "missedBranches" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "mb: số nhánh bị bỏ qua"
+          },
+          "exactLine" : {
+            "type" : "boolean",
+            "description" : "false khi dòng cảnh báo không thực thi được và đây là dòng gần nhất"
+          }
+        },
+        "required" : [ "coveredBranches", "coveredInstructions", "exactLine", "line", "missedBranches", "missedInstructions", "status" ]
+      },
       "RelatedEvidenceView" : {
         "type" : "object",
         "properties" : {
@@ -3597,6 +3637,10 @@
           "testCase" : {
             "$ref" : "#/components/schemas/TestCaseSummaryView",
             "description" : "Chỉ có khi type là TEST_RESULT/FAILED_TEST"
+          },
+          "lineCoverage" : {
+            "$ref" : "#/components/schemas/LineCoverageView",
+            "description" : "Chỉ có với thẻ COVERS: độ phủ của chính dòng bị cảnh báo"
           }
         },
         "required" : [ "evidenceId", "method", "outgoing", "relation", "shortId", "source", "summary", "type", "weight" ]

@@ -15,6 +15,13 @@ import java.util.UUID;
 public record CoverageLineRow(
         UUID evidenceRecordId, String filePath, int lineNumber, int mi, int ci, int mb, int cb) {
 
+    /**
+     * Dòng bị cảnh báo không thực thi được (khai báo, dấu ngoặc, comment) thì lấy dòng thực thi được
+     * gần nhất trong bán kính này. Dùng chung cho EvidenceLinker (sinh liên kết) và trang cảnh báo
+     * (hiện trạng thái dòng), để hai nơi luôn nói về CÙNG một dòng.
+     */
+    public static final int NEAREST_LINE_RADIUS = 3;
+
     /** Dòng có được THỰC THI hay không — đúng định nghĩa của JaCoCo. */
     public boolean executed() {
         return ci > 0;

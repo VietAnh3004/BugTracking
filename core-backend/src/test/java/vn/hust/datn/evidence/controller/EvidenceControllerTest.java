@@ -41,6 +41,9 @@ class EvidenceControllerTest extends AbstractWebIntegrationTest {
     private AnalysisRun run;
     private Warning warning;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void setUp() {
         owner = fixtures.user("ev-%d@test.local".formatted(System.nanoTime()));
@@ -109,6 +112,61 @@ class EvidenceControllerTest extends AbstractWebIntegrationTest {
                 .andExpect(jsonPath("$.tests[0].weight").value(0.3))
                 .andExpect(jsonPath("$.tests[0].relation").value(EvidenceLinkRelation.SUPPORTS.name()))
                 .andExpect(jsonPath("$.coverage[0].shortId").value(coverage.getShortId()));
+    }
+
+    /** Độ phủ của một dòng cho bản ghi độ phủ {@code coverage}. */
+    private void coverageLine(EvidenceRecord coverage, int line, int mi, int ci, int mb, int cb) {
+        jdbcTemplate.update(
+                "INSERT INTO coverage_line (evidence_record_id, line_number, mi, ci, mb, cb) VALUES (?, ?, ?, ?, ?, ?)",
+                coverage.getId(),
+                line,
+                mi,
+                ci,
+                mb,
+                cb);
+    }
+
+    /**
+     * Lỗi gặp thật 23/11/2026 (EV-011C): thẻ độ phủ chỉ có câu tóm tắt cả file, người đọc tưởng dòng
+     * cảnh báo đã được test. Thẻ phải mang trạng thái của CHÍNH dòng đó.
+     */
+    @Test
+    void theDoPhu_mangTrangThaiCuaChinhDongCanhBao() throws Exception {
+        EvidenceRecord coverage = fixtures.evidenceRecord(
+                run, EvidenceType.COVERAGE_INFORMATION, EvidenceSource.jacoco, "PasswordHasher.java", 1);
+        coverageLine(coverage, 39, 0, 5, 0, 0);
+        coverageLine(coverage, 40, 9, 0, 0, 0);
+        fixtures.link(
+                coverage, warning.getEvidenceRecord(), EvidenceLinkRelation.COVERS, EvidenceLinkMethod.LINE_EXACT, 1.0);
+
+        getMockMvc()
+                .perform(get(url(run.getId(), shortId())).with(authenticatedAs(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.coverage[0].lineCoverage.line").value(40))
+                .andExpect(jsonPath("$.coverage[0].lineCoverage.status").value("MISSED"))
+                .andExpect(jsonPath("$.coverage[0].lineCoverage.missedInstructions").value(9))
+                .andExpect(jsonPath("$.coverage[0].lineCoverage.exactLine").value(true));
+    }
+
+    /** Dòng cảnh báo không thực thi được: lấy dòng gần nhất và nói rõ đó không phải chính dòng ấy. */
+    @Test
+    void theDoPhu_dongKhongThucThiDuoc_layDongGanNhat() throws Exception {
+        EvidenceRecord coverage = fixtures.evidenceRecord(
+                run, EvidenceType.COVERAGE_INFORMATION, EvidenceSource.jacoco, "PasswordHasher.java", 1);
+        coverageLine(coverage, 42, 1, 4, 1, 1);
+        fixtures.link(
+                coverage,
+                warning.getEvidenceRecord(),
+                EvidenceLinkRelation.COVERS,
+                EvidenceLinkMethod.LINE_NEAREST_EXECUTABLE,
+                0.6);
+
+        getMockMvc()
+                .perform(get(url(run.getId(), shortId())).with(authenticatedAs(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.coverage[0].lineCoverage.line").value(42))
+                .andExpect(jsonPath("$.coverage[0].lineCoverage.status").value("PARTIAL"))
+                .andExpect(jsonPath("$.coverage[0].lineCoverage.exactLine").value(false));
     }
 
     /** Cảnh báo phải mang được DANH SÁCH vị trí — thứ {@code WarningView} của bảng cố ý không có. */
