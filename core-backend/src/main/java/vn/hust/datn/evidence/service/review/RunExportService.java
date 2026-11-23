@@ -51,6 +51,8 @@ public class RunExportService {
         "severity",
         "agent_verdict",
         "agent_downgraded_from",
+        "agent_model",
+        "agent_prompt_version",
         "claim_count",
         "unsupported_claim_count",
         "citation_count",
@@ -134,6 +136,8 @@ public class RunExportService {
                        w.severity_normalized                             AS severity,
                        agent.verdict                                     AS agent_verdict,
                        agent.downgraded_from_verdict                     AS agent_downgraded_from,
+                       agent.model                                       AS agent_model,
+                       agent.prompt_version                              AS agent_prompt_version,
                        COALESCE(agent.claim_count, 0)                    AS claim_count,
                        COALESCE(agent.unsupported_claim_count, 0)        AS unsupported_claim_count,
                        COALESCE(agent.citation_count, 0)                 AS citation_count,
@@ -148,6 +152,14 @@ public class RunExportService {
                   LEFT JOIN LATERAL (
                        SELECT m.verdict,
                               m.downgraded_from_verdict,
+                              -- Model và phiên bản prompt: chương 4 so Gemini với Sonnet, và so
+                              -- prompt v1 với v2. message.model chỉ có từ V14, nên câu trả lời cũ
+                              -- lấy từ trace (mỗi câu trả lời chỉ có MỘT model và MỘT prompt).
+                              COALESCE(m.model,
+                                       (SELECT t.model FROM llm_trace t
+                                         WHERE t.message_id = m.id ORDER BY t.iteration LIMIT 1)) AS model,
+                              (SELECT t.prompt_version FROM llm_trace t
+                                WHERE t.message_id = m.id ORDER BY t.iteration LIMIT 1) AS prompt_version,
                               (SELECT count(*) FROM claim cl WHERE cl.message_id = m.id) AS claim_count,
                               (SELECT count(*) FROM claim cl
                                 WHERE cl.message_id = m.id

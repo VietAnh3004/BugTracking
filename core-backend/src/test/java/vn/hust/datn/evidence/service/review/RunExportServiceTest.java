@@ -151,6 +151,59 @@ class RunExportServiceTest extends AbstractIntegrationTest {
         assertThat(parse(export.toCsv(run.getId(), owner.getId()))).hasSize(1);
     }
 
+    /** Câu trả lời Agent về cảnh báo, kèm một trace; {@code messageModel} null = câu trả lời trước V14. */
+    private void agentAnswer(String messageModel, String traceModel, String promptVersion) {
+        UUID conversationId = UUID.randomUUID();
+        UUID messageId = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO conversation (id, owner_id, analysis_run_id, focus_short_id, title) VALUES (?, ?, ?, ?, 'x')",
+                conversationId,
+                owner.getId(),
+                run.getId(),
+                shortId);
+        jdbcTemplate.update(
+                """
+                INSERT INTO message (id, conversation_id, ordinal, role, content, verdict, model)
+                VALUES (?, ?, 1, 'ASSISTANT', 'tom tat', 'LIKELY_TRUE_POSITIVE', ?)
+                """,
+                messageId,
+                conversationId,
+                messageModel);
+        jdbcTemplate.update(
+                """
+                INSERT INTO llm_trace (id, conversation_id, message_id, iteration, provider, model, prompt_version)
+                VALUES (?, ?, ?, 0, 'test', ?, ?)
+                """,
+                UUID.randomUUID(),
+                conversationId,
+                messageId,
+                traceModel,
+                promptVersion);
+    }
+
+    /** Chương 4 so Gemini với Sonnet và prompt v1 với v2 — file xuất phải tách được hai thứ đó. */
+    @Test
+    void csvCoModelVaPhienBanPromptCuaCauTraLoiAgent() throws Exception {
+        agentAnswer("claude-sonnet-5", "claude-sonnet-5", "v2");
+
+        CSVRecord row = parse(export.toCsv(run.getId(), owner.getId())).getFirst();
+
+        assertThat(row.get("agent_model")).isEqualTo("claude-sonnet-5");
+        assertThat(row.get("agent_prompt_version")).isEqualTo("v2");
+    }
+
+    /** 14 câu trả lời thật có {@code message.model} NULL (trước V14): phải lấy model từ trace. */
+    @Test
+    void cauTraLoiCuKhongCoMessageModel_layModelTuTrace() {
+        agentAnswer(null, "gemini-3.5-flash-lite", "v1");
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> row = ((List<Map<String, Object>>) export.toJson(run.getId(), owner.getId()).get("warnings"))
+                .getFirst();
+
+        assertThat(row).containsEntry("agent_model", "gemini-3.5-flash-lite").containsEntry("agent_prompt_version", "v1");
+    }
+
     /** JSON mang cả chỉ số lẫn từng dòng — và chỉ số lấy từ RunMetricsService, không tính lại. */
     @Test
     void jsonMangCaChiSoLanTungDong() {
