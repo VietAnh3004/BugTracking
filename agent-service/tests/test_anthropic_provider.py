@@ -13,7 +13,7 @@ import pytest
 
 from agent_service.config import Settings
 from agent_service.providers.anthropic_provider import AnthropicProvider
-from agent_service.providers.base import Message, ToolCall
+from agent_service.providers.base import Message, RetryableLlmError, ToolCall
 
 
 class FakeMessages:
@@ -238,3 +238,22 @@ async def test_tool_nop_bai_o_che_do_strict_va_luoc_do_hop_le_cho_strict(
         assert unsupported not in text, unsupported
     assert "$ref" in text, "strict mode ho tro $ref/$defs, khong can trai phang"
     assert json.dumps(original, sort_keys=True) == snapshot, "khong duoc sua luoc do goc"
+
+
+class _OverloadedMessages:
+    """Như ``anthropic.APIStatusError`` 529 "overloaded" — lỗi tạm thời hay gặp của Claude."""
+
+    async def create(self, **kwargs: Any) -> Any:
+        error = RuntimeError("Error code: 529 - overloaded")
+        error.status_code = 529  # type: ignore[attr-defined]
+        raise error
+
+
+async def test_529_qua_tai_la_loi_tam_thoi_de_agent_loop_thu_lai(settings: Settings) -> None:
+    provider, client = _provider(settings, _response([_block(type="text", text="x")]))
+    client.messages = _OverloadedMessages()  # type: ignore[assignment]
+
+    with pytest.raises(RetryableLlmError) as raised:
+        await provider.chat([Message(role="user", content="hoi")])
+
+    assert "HTTP 529" in raised.value.reason

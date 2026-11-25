@@ -26,6 +26,7 @@ from agent_service.providers.base import (
     LlmResponse,
     Message,
     ToolCall,
+    classify_transient,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,13 +43,15 @@ class OpenAICompatibleProvider(LlmProvider):
                 api_key=settings.llm_api_key,
                 base_url=settings.llm_base_url,
                 timeout=settings.request_timeout_seconds,
-                max_retries=settings.llm_max_retries,
+                # 0: agent loop tự thử lại để báo được tiến trình (xem RetryableLlmError).
+                max_retries=0,
             )
 
         self._client = client
         self._model = settings.llm_model
         self._max_tokens = settings.llm_max_tokens
         self._temperature = settings.llm_temperature
+        self._timeout_seconds = settings.request_timeout_seconds
         # Ghi vào llm_trace.provider. Kèm host vì "openai" trần không cho biết thực nghiệm đã
         # chạy trên Gemini hay trên OpenAI — mà đó là thứ phải tách được khi đọc số liệu.
         host = urlparse(settings.llm_base_url).hostname if settings.llm_base_url else None
@@ -87,11 +90,17 @@ class OpenAICompatibleProvider(LlmProvider):
             response = await self._client.chat.completions.create(**request)
         except Exception as exc:
             status = getattr(exc, "status_code", None)
+            message = (
+                f"{self._provider_name} tra ve HTTP {status}: {_error_detail(exc)}"
+                if status is not None
+                else f"{self._provider_name}: {exc}"
+            )
+            transient = classify_transient(exc, message, self._timeout_seconds)
+            if transient is not None:
+                raise transient from exc
             if status is None:
                 raise
-            raise ProviderHttpError(
-                f"{self._provider_name} tra ve HTTP {status}: {_error_detail(exc)}"
-            ) from exc
+            raise ProviderHttpError(message) from exc
         return _to_llm_response(response)
 
 

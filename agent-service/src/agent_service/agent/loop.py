@@ -5,7 +5,9 @@ prompt có Evidence ID → sinh đầu ra có cấu trúc. Bước hậu kiểm 
 core-backend, để nó độc lập với LLM (ADR 0001, ADR 0010).
 """
 
+import asyncio
 import logging
+import random
 import time
 from collections.abc import AsyncIterator
 from typing import Any
@@ -17,18 +19,25 @@ from agent_service.agent.events import (
     AnswerEvent,
     ErrorEvent,
     LlmTraceEntry,
+    RetryEvent,
     StatusEvent,
     ToolCallEvent,
     ToolResultEvent,
 )
 from agent_service.config import Settings
 from agent_service.prompts.loader import render
-from agent_service.providers.base import LlmProvider, Message
+from agent_service.providers.base import LlmProvider, Message, RetryableLlmError
 from agent_service.schemas.analysis import AnalysisResponse
 from agent_service.tools.evidence_client import EvidenceToolClient
 from agent_service.tools.schemas import ALL_TOOLS
 
 logger = logging.getLogger(__name__)
+
+# Gián tiếp qua biến module để test thay được, khỏi phải ngủ thật.
+_sleep = asyncio.sleep
+
+# Chờ tối đa giữa hai lần thử; Retry-After của máy chủ dài hơn mốc này thì cũng chỉ chờ chừng này.
+_MAX_RETRY_DELAY_SECONDS = 30.0
 
 _ANSWER_SCHEMA: dict[str, Any] = AnalysisResponse.model_json_schema()
 
@@ -62,6 +71,7 @@ class AgentLoop:
         self._max_iterations = settings.max_tool_iterations
         self._prompt_version = settings.prompt_version
         self._context_budget = settings.evidence_context_budget
+        self._max_retries = settings.llm_max_retries
 
     async def run(
         self,
@@ -87,7 +97,8 @@ class AgentLoop:
         try:
             async for event in self._retrieve(messages, traces, analysis_run_id):
                 yield event
-            yield await self._submit(messages, traces)
+            async for event in self._submit(messages, traces):
+                yield event
         except _ModelCallFailedError as exc:
             # Lượt gọi hỏng cũng là một dòng llm_trace: thiếu nó thì "hỏng vì model quá tải"
             # không đếm được, và tỉ lệ lượt hỏi thất bại tuần 15 báo cáo thấp hơn thực tế.
@@ -106,7 +117,10 @@ class AgentLoop:
         for iteration in range(self._max_iterations):
             yield StatusEvent(iteration=iteration, message="Đang suy luận")
 
-            response, trace = await self._call_model(messages, iteration, tools=ALL_TOOLS)
+            called: list[tuple[Any, LlmTraceEntry]] = []
+            async for event in self._call_model(messages, iteration, called, tools=ALL_TOOLS):
+                yield event
+            response, trace = called[0]
             traces.append(trace)
 
             if not response.tool_calls:
@@ -170,7 +184,9 @@ class AgentLoop:
             return text, spent + len(text)
         return text[:remaining] + _CONTEXT_EXHAUSTED, self._context_budget
 
-    async def _submit(self, messages: list[Message], traces: list[LlmTraceEntry]) -> AgentEvent:
+    async def _submit(
+        self, messages: list[Message], traces: list[LlmTraceEntry]
+    ) -> AsyncIterator[AgentEvent]:
         """Một lượt gọi cuối, ép model nộp đúng cấu trúc :class:`AnalysisResponse`.
 
         Tách riêng khỏi vòng lặp vì ép định dạng và cho phép gọi tool loại trừ nhau: ép nộp
@@ -178,14 +194,18 @@ class AgentLoop:
         truy xuất được bằng chứng nào.
         """
         iteration = len(traces)
-        response, trace = await self._call_model(
-            messages, iteration, response_schema=_ANSWER_SCHEMA
-        )
+        called: list[tuple[Any, LlmTraceEntry]] = []
+        async for event in self._call_model(
+            messages, iteration, called, response_schema=_ANSWER_SCHEMA
+        ):
+            yield event
+        response, trace = called[0]
         traces.append(trace)
 
         if not response.content:
             trace.error_message = "model khong nop duoc cau tra loi co cau truc"
-            return ErrorEvent(message=trace.error_message, traces=traces)
+            yield ErrorEvent(message=trace.error_message, traces=traces)
+            return
 
         try:
             answer = AnalysisResponse.model_validate_json(response.content)
@@ -194,33 +214,62 @@ class AgentLoop:
             # lời rỗng: một verdict tự chế sẽ đi thẳng vào số liệu tuần 15.
             trace.error_message = f"phan hoi khong dung luoc do: {exc.error_count()} loi"
             logger.warning("phan hoi khong dung luoc do: %s", exc)
-            return ErrorEvent(message=trace.error_message, traces=traces)
+            yield ErrorEvent(message=trace.error_message, traces=traces)
+            return
 
-        return AnswerEvent(answer=answer, traces=traces)
+        yield AnswerEvent(answer=answer, traces=traces)
 
     async def _call_model(
         self,
         messages: list[Message],
         iteration: int,
+        result: list[tuple[Any, LlmTraceEntry]],
         tools: list[dict[str, Any]] | None = None,
         response_schema: dict[str, Any] | None = None,
-    ) -> tuple[Any, LlmTraceEntry]:
+    ) -> AsyncIterator[AgentEvent]:
+        """Gọi model, TỰ thử lại khi gặp lỗi tạm thời, và báo từng lần thử lại.
+
+        Là async generator để phát được :class:`RetryEvent` giữa các lần thử; kết quả đặt vào
+        ``result`` (generator không ``return`` giá trị được). ``latency_ms`` tính cả thời gian thử
+        lại và chờ, giống số liệu cũ khi SDK tự thử lại ngầm.
+        """
         started = time.monotonic()
-        try:
-            response = await self._provider.chat(
-                messages, tools=tools, response_schema=response_schema
-            )
-        except Exception as exc:
-            failed = LlmTraceEntry(
-                iteration=iteration,
-                provider=self._provider.provider_name,
-                model=self._provider.model_name,
-                prompt_version=self._prompt_version,
-                latency_ms=int((time.monotonic() - started) * 1000),
-                request_messages=[_trace_message(m) for m in messages],
-                error_message=str(exc),
-            )
-            raise _ModelCallFailedError(failed) from exc
+        attempt = 0
+        while True:
+            try:
+                response = await self._provider.chat(
+                    messages, tools=tools, response_schema=response_schema
+                )
+                break
+            except RetryableLlmError as exc:
+                if attempt >= self._max_retries:
+                    raise self._failed(
+                        messages,
+                        iteration,
+                        started,
+                        f"{exc.reason}; da thu lai {attempt} lan van hong, hay hoi lai sau it "
+                        f"phut. Chi tiet: {exc}",
+                    ) from exc
+                attempt += 1
+                delay = _retry_delay(attempt, exc.retry_after)
+                logger.info(
+                    "goi model loi tam thoi o vong %s (%s), thu lai lan %s/%s sau %.1fs",
+                    iteration,
+                    exc,
+                    attempt,
+                    self._max_retries,
+                    delay,
+                )
+                yield RetryEvent(
+                    iteration=iteration,
+                    attempt=attempt,
+                    max_attempts=self._max_retries,
+                    reason=exc.reason,
+                    delay_seconds=round(delay, 1),
+                )
+                await _sleep(delay)
+            except Exception as exc:
+                raise self._failed(messages, iteration, started, str(exc)) from exc
         latency_ms = int((time.monotonic() - started) * 1000)
 
         trace = LlmTraceEntry(
@@ -235,7 +284,34 @@ class AgentLoop:
             request_messages=[_trace_message(m) for m in messages],
             response_content=response.content,
         )
-        return response, trace
+        result.append((response, trace))
+
+    def _failed(
+        self, messages: list[Message], iteration: int, started: float, error: str
+    ) -> "_ModelCallFailedError":
+        return _ModelCallFailedError(
+            LlmTraceEntry(
+                iteration=iteration,
+                provider=self._provider.provider_name,
+                model=self._provider.model_name,
+                prompt_version=self._prompt_version,
+                latency_ms=int((time.monotonic() - started) * 1000),
+                request_messages=[_trace_message(m) for m in messages],
+                error_message=error,
+            )
+        )
+
+
+def _retry_delay(attempt: int, retry_after: float | None) -> float:
+    """Chờ bao lâu trước lần thử thứ ``attempt``: theo Retry-After nếu có, không thì lùi dần.
+
+    Lùi dần 1, 2, 4, 8… giây (trần 30) kèm nhiễu ±25% để nhiều lượt hỏi cùng gặp 503 không dồn
+    lại thử cùng một lúc.
+    """
+    if retry_after is not None and retry_after >= 0:
+        return min(retry_after, _MAX_RETRY_DELAY_SECONDS)
+    base = min(2.0 ** (attempt - 1), _MAX_RETRY_DELAY_SECONDS)
+    return base * random.uniform(0.75, 1.25)
 
 
 class _ModelCallFailedError(Exception):

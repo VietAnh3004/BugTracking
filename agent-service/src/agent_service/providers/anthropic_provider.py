@@ -17,6 +17,7 @@ from agent_service.providers.base import (
     LlmResponse,
     Message,
     ToolCall,
+    classify_transient,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,12 +41,16 @@ class AnthropicProvider(LlmProvider):
             from anthropic import AsyncAnthropic
 
             client = AsyncAnthropic(
-                api_key=settings.llm_api_key, max_retries=settings.llm_max_retries
+                api_key=settings.llm_api_key,
+                timeout=settings.request_timeout_seconds,
+                # 0: agent loop tự thử lại để báo được tiến trình (xem RetryableLlmError).
+                max_retries=0,
             )
 
         self._client = client
         self._model = settings.llm_model
         self._max_tokens = settings.llm_max_tokens
+        self._timeout_seconds = settings.request_timeout_seconds
 
     @property
     def model_name(self) -> str:
@@ -78,7 +83,13 @@ class AnthropicProvider(LlmProvider):
         if effective_tools:
             request["tools"] = effective_tools
 
-        response = await self._client.messages.create(**request)
+        try:
+            response = await self._client.messages.create(**request)
+        except Exception as exc:
+            transient = classify_transient(exc, f"anthropic: {exc}", self._timeout_seconds)
+            if transient is not None:
+                raise transient from exc
+            raise
         return _to_llm_response(response, forced_submit=response_schema is not None)
 
 

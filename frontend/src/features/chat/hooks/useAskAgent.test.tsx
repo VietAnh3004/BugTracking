@@ -88,3 +88,44 @@ describe('useAskAgent — huỷ lượt hỏi', () => {
     expect(cancelTurnMock).not.toHaveBeenCalled();
   });
 });
+
+describe('useAskAgent — báo thử lại khi máy chủ model lỗi tạm thời', () => {
+  /** Gặp thật 24/11/2026: Gemini trả 503 liên tục, lượt hỏi im lặng nhiều phút như bị treo. */
+  it('mỗi lần thử lại thành một dòng tiến trình có lý do và thời gian chờ', async () => {
+    askAgentMock.mockImplementation(
+      (
+        _conversationId: string,
+        _question: string,
+        callbacks: { onRetry?: (retry: unknown) => void },
+        signal: AbortSignal,
+      ) => {
+        callbacks.onRetry?.({
+          attempt: 2,
+          maxAttempts: 6,
+          reason: 'Máy chủ model quá tải hoặc lỗi tạm thời (HTTP 503)',
+          delaySeconds: 1.8,
+        });
+        return hangingUntilAborted(_conversationId, _question, callbacks, signal);
+      },
+    );
+    cancelTurnMock.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useAskAgent('conv-3'), { wrapper });
+
+    act(() => {
+      void result.current.ask('Cau hoi');
+    });
+
+    await waitFor(() => expect(result.current.steps).toHaveLength(1));
+    expect(result.current.steps[0]).toMatchObject({
+      label: 'Thử lại lần 2/6',
+      detail: 'Máy chủ model quá tải hoặc lỗi tạm thời (HTTP 503) · chờ 2 giây',
+      failed: true,
+    });
+
+    // Dừng trước khi test kết thúc: afterEach reset mock TRƯỚC khi gỡ component, nên một lượt còn
+    // đang chạy lúc gỡ sẽ gọi `cancelTurn` đã mất giá trị trả về.
+    await act(async () => {
+      await result.current.stop();
+    });
+  });
+});

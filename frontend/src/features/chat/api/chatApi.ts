@@ -66,8 +66,21 @@ export interface ToolResultFrame {
   error: string | null;
 }
 
+/** Lần gọi model gặp lỗi tạm thời (quá tải, hết giờ chờ…) và agent sắp thử lại. */
+export interface RetryFrame {
+  attempt: number;
+  maxAttempts: number;
+  reason: string;
+  delaySeconds: number;
+}
+
 export interface AskCallbacks {
   onStatus: (message: string) => void;
+  /**
+   * Agent đang thử lại vì máy chủ model lỗi tạm thời. Có để người dùng biết nó KHÔNG treo: gặp
+   * thật 24/11/2026, Gemini trả 503 liên tục và một lượt im lặng nhiều phút.
+   */
+  onRetry?: (retry: RetryFrame) => void;
   onToolCall: (call: ToolCallFrame) => void;
   onToolResult: (result: ToolResultFrame) => void;
   /** Câu trả lời ĐÃ qua hậu kiểm trích dẫn và đã ghi xuống DB. */
@@ -103,6 +116,14 @@ function dispatch(frame: SseFrame, callbacks: AskCallbacks): void {
   switch (frame.name) {
     case 'status':
       callbacks.onStatus(readString(payload, 'message') ?? 'Đang xử lý');
+      break;
+    case 'retry':
+      callbacks.onRetry?.({
+        attempt: readNumber(payload, 'attempt') ?? 0,
+        maxAttempts: readNumber(payload, 'max_attempts') ?? 0,
+        reason: readString(payload, 'reason') ?? 'Máy chủ model lỗi tạm thời',
+        delaySeconds: readNumber(payload, 'delay_seconds') ?? 0,
+      });
       break;
     case 'tool_call':
       callbacks.onToolCall({

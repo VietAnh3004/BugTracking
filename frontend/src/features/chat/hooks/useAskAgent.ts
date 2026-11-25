@@ -97,6 +97,12 @@ export function useAskAgent(conversationId: string) {
           question,
           {
             onStatus: (message) => addStep(message, null),
+            onRetry: (retry) =>
+              addStep(
+                `Thử lại lần ${String(retry.attempt)}/${String(retry.maxAttempts)}`,
+                `${retry.reason} · chờ ${String(Math.max(1, Math.round(retry.delaySeconds)))} giây`,
+                true,
+              ),
             onToolCall: (call) =>
               addStep(`Truy xuất ${call.name}`, describeArguments(call.arguments)),
             onToolResult: (result) =>

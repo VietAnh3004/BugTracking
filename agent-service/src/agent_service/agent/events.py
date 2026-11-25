@@ -23,6 +23,7 @@ class EventType(StrEnum):
     TOOL_RESULT = "tool_result"
     ANSWER = "answer"
     ERROR = "error"
+    RETRY = "retry"
 
 
 class StatusEvent(BaseModel):
@@ -47,6 +48,21 @@ class ToolResultEvent(BaseModel):
     duration_ms: int
     item_count: int | None = None
     error: str | None = None
+
+
+class RetryEvent(BaseModel):
+    """Lần gọi model vừa gặp lỗi tạm thời và sắp được thử lại.
+
+    Có để người dùng thấy agent KHÔNG treo: gặp thật 24/11/2026, Gemini trả 503 liên tục và một
+    lượt im lặng nhiều phút trong khi thư viện tự thử lại ngầm.
+    """
+
+    type: Literal[EventType.RETRY] = EventType.RETRY
+    iteration: int
+    attempt: int
+    max_attempts: int
+    reason: str
+    delay_seconds: float
 
 
 class LlmTraceEntry(BaseModel):
@@ -84,4 +100,4 @@ class ErrorEvent(BaseModel):
     traces: list[LlmTraceEntry] = Field(default_factory=list)
 
 
-AgentEvent = StatusEvent | ToolCallEvent | ToolResultEvent | AnswerEvent | ErrorEvent
+AgentEvent = StatusEvent | ToolCallEvent | ToolResultEvent | RetryEvent | AnswerEvent | ErrorEvent

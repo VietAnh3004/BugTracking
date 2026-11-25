@@ -11,16 +11,18 @@ import pytest
 import respx
 from tests.conftest import items_result
 
+from agent_service.agent import loop as loop_module
 from agent_service.agent.events import (
     AnswerEvent,
     ErrorEvent,
     EventType,
+    RetryEvent,
     ToolCallEvent,
     ToolResultEvent,
 )
 from agent_service.agent.loop import AgentLoop
 from agent_service.config import Settings
-from agent_service.providers.base import LlmResponse, ToolCall
+from agent_service.providers.base import LlmResponse, RetryableLlmError, ToolCall
 from agent_service.providers.scripted import ScriptedProvider
 from agent_service.tools.evidence_client import EvidenceToolClient
 
@@ -394,3 +396,91 @@ async def test_luot_nop_khong_ket_thuc_bang_luot_cua_model(settings: Settings) -
     # Kết luận model vừa viết vẫn nằm trong hội thoại: bước nộp định dạng lại, không suy luận lại.
     assert submit_messages[-2] == {**submit_messages[-2], "role": "assistant"}
     assert "Ket luan" in submit_messages[-2]["content"]
+
+
+class _FlakyProvider(ScriptedProvider):
+    """Lỗi tạm thời ``failures`` lần đầu (như Gemini free trả 503), sau đó trả lời bình thường."""
+
+    def __init__(self, responses: list[LlmResponse], failures: int) -> None:
+        super().__init__(responses)
+        self.failures = failures
+
+    async def chat(self, messages, tools=None, response_schema=None):  # type: ignore[no-untyped-def]
+        if self.failures > 0:
+            self.failures -= 1
+            raise RetryableLlmError(
+                "openai-compatible:x tra ve HTTP 503: UNAVAILABLE: high demand",
+                "Máy chủ model quá tải hoặc lỗi tạm thời (HTTP 503)",
+            )
+        return await super().chat(messages, tools=tools, response_schema=response_schema)
+
+
+@pytest.fixture
+def no_sleep(monkeypatch: pytest.MonkeyPatch) -> list[float]:
+    """Thay việc chờ giữa hai lần thử bằng ghi lại thời gian chờ — test không ngủ thật."""
+    delays: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        delays.append(seconds)
+
+    monkeypatch.setattr(loop_module, "_sleep", fake_sleep)
+    return delays
+
+
+async def test_loi_tam_thoi_duoc_thu_lai_va_bao_cho_nguoi_dung(
+    settings: Settings, no_sleep: list[float]
+) -> None:
+    """Gặp thật 24/11/2026: SDK tự thử lại 503 ngầm, một lượt im lặng nhiều phút như bị treo.
+
+    Nay mỗi lần thử lại là một sự kiện ``retry`` có lý do, và lượt hỏi vẫn ra câu trả lời.
+    """
+    provider = _FlakyProvider([_submit(), _submit()], failures=2)
+    loop = AgentLoop(provider, EvidenceToolClient(settings), settings)
+
+    events = await _collect(loop)
+
+    retries = [e for e in events if isinstance(e, RetryEvent)]
+    assert [r.attempt for r in retries] == [1, 2]
+    assert all(r.max_attempts == settings.llm_max_retries for r in retries)
+    assert "HTTP 503" in retries[0].reason
+    assert len(no_sleep) == 2
+    assert isinstance(events[-1], AnswerEvent)
+
+
+async def test_het_so_lan_thu_lai_thi_bao_loi_ro_rang(
+    settings: Settings, no_sleep: list[float]
+) -> None:
+    provider = _FlakyProvider([_submit()], failures=99)
+    loop = AgentLoop(provider, EvidenceToolClient(settings), settings)
+
+    events = await _collect(loop)
+
+    retries = [e for e in events if isinstance(e, RetryEvent)]
+    assert len(retries) == settings.llm_max_retries
+    error = events[-1]
+    assert isinstance(error, ErrorEvent)
+    assert "HTTP 503" in error.message
+    assert f"da thu lai {settings.llm_max_retries} lan" in error.message
+    assert error.traces[-1].error_message == error.message
+
+
+async def test_loi_khong_tam_thoi_khong_thu_lai(settings: Settings, no_sleep: list[float]) -> None:
+    """Lỗi cấu hình (sai khoá, 400) thử lại cũng vô ích — báo ngay."""
+    respx_free = _OverloadedProvider([_submit()])
+    respx_free.calls.append({"messages": []})  # để lần gọi đầu đã sập
+    loop = AgentLoop(respx_free, EvidenceToolClient(settings), settings)
+
+    events = await _collect(loop)
+
+    assert not [e for e in events if isinstance(e, RetryEvent)]
+    assert isinstance(events[-1], ErrorEvent)
+    assert no_sleep == []
+
+
+def test_thoi_gian_cho_lui_dan_va_ton_trong_retry_after() -> None:
+    assert loop_module._retry_delay(1, retry_after=7.0) == 7.0
+    assert loop_module._retry_delay(1, retry_after=999.0) == loop_module._MAX_RETRY_DELAY_SECONDS
+    first = loop_module._retry_delay(1, retry_after=None)
+    third = loop_module._retry_delay(3, retry_after=None)
+    assert 0.75 <= first <= 1.25
+    assert 3.0 <= third <= 5.0

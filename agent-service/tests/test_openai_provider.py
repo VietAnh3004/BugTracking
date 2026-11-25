@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from typing import Any
 
 from agent_service.config import Settings
-from agent_service.providers.base import SUBMIT_TOOL_NAME, Message, ToolCall
+from agent_service.providers.base import SUBMIT_TOOL_NAME, Message, RetryableLlmError, ToolCall
 from agent_service.providers.openai_provider import OpenAICompatibleProvider, inline_refs
 from agent_service.schemas.analysis import AnalysisResponse
 from agent_service.tools.schemas import ALL_TOOLS
@@ -294,3 +294,56 @@ async def test_loi_khong_phai_http_di_nguyen_ven(settings: Settings) -> None:
         pass
     else:
         raise AssertionError("phai nem ConnectionError")
+
+
+class _StatusError(Exception):
+    def __init__(self, status: int, headers: dict[str, str] | None = None) -> None:
+        super().__init__(f"Error code: {status}")
+        self.status_code = status
+        self.response = SimpleNamespace(json=lambda: {}, headers=headers or {})
+
+
+class APITimeoutError(Exception):
+    """Cùng TÊN lớp với ``openai.APITimeoutError`` — cách nhận dạng mà provider dùng."""
+
+
+async def _raise(settings: Settings, exc: Exception) -> Exception:
+    provider, client = _provider(settings, _response())
+    client.chat.completions = _RaisingCompletions(exc)  # type: ignore[assignment]
+    try:
+        await provider.chat([Message(role="user", content="hoi")])
+    except Exception as raised:
+        return raised
+    raise AssertionError("phai nem loi")
+
+
+async def test_503_va_429_la_loi_tam_thoi_kem_ly_do_va_retry_after(settings: Settings) -> None:
+    overloaded = await _raise(settings, _StatusError(503))
+    limited = await _raise(settings, _StatusError(429, {"retry-after": "12"}))
+
+    assert isinstance(overloaded, RetryableLlmError)
+    assert "HTTP 503" in overloaded.reason
+    assert isinstance(limited, RetryableLlmError)
+    assert "429" in limited.reason
+    assert limited.retry_after == 12.0
+
+
+async def test_het_gio_cho_la_loi_tam_thoi(settings: Settings) -> None:
+    raised = await _raise(settings, APITimeoutError("Request timed out."))
+
+    assert isinstance(raised, RetryableLlmError)
+    assert raised.reason.startswith("Model không phản hồi trong")
+
+
+async def test_400_khong_phai_loi_tam_thoi(settings: Settings) -> None:
+    raised = await _raise(settings, _StatusError(400))
+
+    assert not isinstance(raised, RetryableLlmError)
+    assert "HTTP 400" in str(raised)
+
+
+def test_sdk_khong_tu_thu_lai_ngam(settings: Settings) -> None:
+    """Agent loop tự thử lại để báo tiến trình; SDK mà thử lại nữa thì lại im lặng như cũ."""
+    provider = OpenAICompatibleProvider(settings)
+
+    assert provider._client.max_retries == 0
