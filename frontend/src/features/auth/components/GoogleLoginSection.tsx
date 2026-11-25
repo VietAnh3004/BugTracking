@@ -35,7 +35,7 @@ export function GoogleLoginSection({ text = 'signin_with' }: GoogleLoginSectionP
         text={text}
         onCredential={(credential) =>
           googleLogin.mutate(credential, {
-            onSuccess: () => void navigate('/', { replace: true }),
+            onSuccess: () => void navigate('/projects', { replace: true }),
           })
         }
       />

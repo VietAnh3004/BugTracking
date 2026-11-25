@@ -11,25 +11,23 @@
  * đăng nhập và mất luôn đường dẫn đang xem — đúng thứ mà tiêu chí nghiệm thu tuần 5-7 kiểm.
  * ========================================================================================
  *
- * `state={{ from: location }}` để sau khi đăng nhập quay lại đúng trang đang định mở, thay vì
- * luôn đổ về `/projects`.
+ * Không mang theo trang đang mở sang /login: đăng nhập xong luôn về trang chủ (xem `PublicOnlyRoute`).
  */
 
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { LoadingState } from '@/shared/ui/states';
 
 export function ProtectedRoute() {
   const { status } = useAuth();
-  const location = useLocation();
 
   if (status === 'bootstrapping') {
     return <LoadingState label="Đang khôi phục phiên đăng nhập…" shape="lines" rows={3} />;
   }
 
   if (status === 'anonymous') {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;

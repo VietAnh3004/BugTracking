@@ -29,9 +29,8 @@ export function LoginPage() {
     login.mutate(
       { email, password },
       {
-        // Điều hướng về `/` chứ không phải `/projects`: `PublicOnlyRoute` sẽ đọc `state.from` mà
-        // `ProtectedRoute` đặt trước đó và đưa người dùng về đúng trang họ định mở.
-        onSuccess: () => void navigate('/', { replace: true }),
+        // Luôn về trang chủ (danh sách dự án), không quay lại trang đang mở dở.
+        onSuccess: () => void navigate('/projects', { replace: true }),
       },
     );
   }

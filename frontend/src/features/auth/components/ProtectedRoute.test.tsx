@@ -9,6 +9,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { fakeAuthTokens, mockFetchByUrl } from '@/test/mockFetch';
 import { renderRoute } from '@/test/renderRoute';
@@ -88,6 +89,26 @@ describe('ProtectedRoute', () => {
 });
 
 describe('PublicOnlyRoute', () => {
+  /**
+   * Đăng nhập xong LUÔN về trang chủ, kể cả khi bị đá sang /login từ một trang sâu (người dùng chọn
+   * 23/11/2026). Trước đó app quay lại trang cũ — gồm cả trang có từ lúc bấm Đăng xuất.
+   */
+  it('bị đá sang /login từ một trang sâu thì đăng nhập xong vẫn về danh sách dự án', async () => {
+    mockFetchByUrl({
+      '/api/v1/auth/login': { body: fakeAuthTokens() },
+      '/api/v1/projects': { body: { items: [], page: 0, size: 20, total: 0 } },
+      '/actuator/health': HEALTH_RESPONSE,
+    });
+    const { router } = renderRoute('/snapshots/s-1/runs/r-1/evidence/EV-0001');
+    await waitFor(() => expect(router.state.location.pathname).toBe('/login'));
+
+    await userEvent.type(await screen.findByLabelText('Email'), 'a@x.test');
+    await userEvent.type(screen.getByLabelText('Mật khẩu'), 'mat-khau-dai-du');
+    await userEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/projects'));
+  });
+
   it('đã đăng nhập mà mở /login thì chuyển về danh sách dự án', async () => {
     window.localStorage.setItem(REFRESH_TOKEN_KEY, 'refresh-token-gia');
     mockFetchByUrl({
