@@ -35,11 +35,8 @@ export function RootLayout() {
         <div className="mx-auto flex h-12 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
           <Link to="/projects" className="group flex min-w-0 items-center gap-2.5">
             <IconLogo className="text-brand size-5" />
-            <h1 className="m-0 flex min-w-0 items-baseline gap-2 text-sm leading-none">
-              <span className="text-ink group-hover:text-brand font-semibold">VSleuth</span>
-              <span className="text-ink-subtle hidden truncate font-normal md:inline">
-                Nền tảng phân tích chương trình dựa trên bằng chứng
-              </span>
+            <h1 className="text-ink group-hover:text-brand m-0 text-sm leading-none font-semibold">
+              VSleuth
             </h1>
           </Link>
 

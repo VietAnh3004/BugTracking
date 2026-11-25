@@ -59,9 +59,7 @@ describe('định tuyến', () => {
     renderRoute('/duong-dan-khong-ton-tai');
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { name: /Nền tảng phân tích chương trình/ }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'VSleuth' })).toBeInTheDocument();
     });
   });
 
