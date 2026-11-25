@@ -5,8 +5,11 @@ Không gọi API thật: client giả ghi lại đúng payload đã dựng, cùn
 """
 
 import json
+import sys
 from types import SimpleNamespace
 from typing import Any
+
+import pytest
 
 from agent_service.config import Settings
 from agent_service.providers.base import SUBMIT_TOOL_NAME, Message, RetryableLlmError, ToolCall
@@ -342,8 +345,22 @@ async def test_400_khong_phai_loi_tam_thoi(settings: Settings) -> None:
     assert "HTTP 400" in str(raised)
 
 
-def test_sdk_khong_tu_thu_lai_ngam(settings: Settings) -> None:
-    """Agent loop tự thử lại để báo tiến trình; SDK mà thử lại nữa thì lại im lặng như cũ."""
-    provider = OpenAICompatibleProvider(settings)
+def test_sdk_khong_tu_thu_lai_ngam(settings: Settings, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Agent loop tự thử lại để báo tiến trình; SDK mà thử lại nữa thì lại im lặng như cũ.
 
-    assert provider._client.max_retries == 0
+    Thay module ``openai`` bằng module giả ghi lại tham số dựng client: SDK là phụ thuộc TUỲ CHỌN
+    (extra ``openai``) và CI chỉ cài ``.[dev]``, nên dựng client thật thì test đỏ với
+    ``ModuleNotFoundError`` ngay trên CI dù trên máy dev vẫn xanh.
+    """
+    captured: dict[str, Any] = {}
+
+    class _RecordingAsyncOpenAI:
+        def __init__(self, **kwargs: Any) -> None:
+            captured.update(kwargs)
+
+    monkeypatch.setitem(sys.modules, "openai", SimpleNamespace(AsyncOpenAI=_RecordingAsyncOpenAI))
+
+    OpenAICompatibleProvider(settings)
+
+    assert captured["max_retries"] == 0
+    assert captured["timeout"] == settings.request_timeout_seconds
