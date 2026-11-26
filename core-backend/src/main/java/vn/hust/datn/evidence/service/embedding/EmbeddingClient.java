@@ -16,6 +16,13 @@ import vn.hust.datn.evidence.exception.EmbeddingUnavailableException;
  *
  * <p>GHIM HTTP/1.1 cùng lý do với {@code AgentClient}: client HTTP của JDK mặc định thử nâng cấp
  * h2c và gửi request KHÔNG có thân tới uvicorn — lỗi đã gặp thật ở tuần 12-13.
+ *
+ * <p><b>Một lời gọi {@code /embed} có thể kéo dài vài phút, và đó là ĐÚNG.</b> Gặp 429 (bản free của
+ * Gemini: 100 đoạn văn bản/phút), agent-service chờ đúng thời gian Google yêu cầu rồi gửi lại, tối
+ * đa {@code EMBEDDING_RETRY_MAX_WAIT_SECONDS} (mặc định 150 giây). Read timeout ở đây vì thế dùng
+ * trần TỔNG {@code app.agent.timeout} (mặc định 15 phút), không phải mốc ngắn: hạ nó xuống dưới
+ * ngân sách chờ đó là core-backend tự cắt trước khi lô thứ hai kịp gửi, và mọi run hơn 100 bằng
+ * chứng lại không nhúng được như trước 26/11/2026.
  */
 @Component
 public class EmbeddingClient {

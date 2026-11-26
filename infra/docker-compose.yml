@@ -158,6 +158,9 @@ services:
       PREMIUM_LLM_BASE_URL: ${PREMIUM_LLM_BASE_URL:-}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-none}
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      # Tổng thời gian chờ hạn mức (429) khi nhúng bằng chứng / câu hỏi — bản free 100 đoạn/phút.
+      EMBEDDING_RETRY_MAX_WAIT_SECONDS: ${EMBEDDING_RETRY_MAX_WAIT_SECONDS:-150}
+      EMBEDDING_QUERY_MAX_WAIT_SECONDS: ${EMBEDDING_QUERY_MAX_WAIT_SECONDS:-10}
       # Đi thẳng vào llm_trace.prompt_version. Đổi prompt mà quên tăng số này thì kết quả của
       # hai phiên bản prompt nằm lẫn vào nhau và không tách lại được (kế hoạch §6).
       PROMPT_VERSION: ${PROMPT_VERSION:-v2}

@@ -171,6 +171,9 @@ services:
       PREMIUM_LLM_BASE_URL: ${PREMIUM_LLM_BASE_URL:-}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-none}
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      # Tổng thời gian chờ hạn mức (429) khi nhúng bằng chứng / câu hỏi — bản free 100 đoạn/phút.
+      EMBEDDING_RETRY_MAX_WAIT_SECONDS: ${EMBEDDING_RETRY_MAX_WAIT_SECONDS:-150}
+      EMBEDDING_QUERY_MAX_WAIT_SECONDS: ${EMBEDDING_QUERY_MAX_WAIT_SECONDS:-10}
       PROMPT_VERSION: ${PROMPT_VERSION:-v2}
     # KHÔNG có `ports`: chỉ core-backend gọi vào, qua mạng Docker. Trình duyệt không bao giờ gọi
     # thẳng agent-service (ADR 0010), và nó không có xác thực người dùng.

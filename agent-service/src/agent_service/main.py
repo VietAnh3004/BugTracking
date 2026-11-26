@@ -47,6 +47,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             dimensions=settings.embedding_dimensions,
             base_url=settings.embedding_base_url,
             timeout_seconds=settings.request_timeout_seconds,
+            document_max_wait_seconds=settings.embedding_retry_max_wait_seconds,
+            query_max_wait_seconds=settings.embedding_query_max_wait_seconds,
         )
         if settings.embedding_provider == "gemini"
         else None

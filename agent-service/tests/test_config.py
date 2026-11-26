@@ -26,6 +26,8 @@ OPTIONAL_ENV = (
     "PREMIUM_LLM_API_KEY",
     "PREMIUM_LLM_MODEL",
     "PREMIUM_LLM_BASE_URL",
+    "EMBEDDING_RETRY_MAX_WAIT_SECONDS",
+    "EMBEDDING_QUERY_MAX_WAIT_SECONDS",
 )
 
 
@@ -48,6 +50,21 @@ def test_nap_duoc_khi_du_bien(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.llm_provider == "anthropic"
     assert settings.llm_model == "claude-sonnet-5"
     assert settings.prompt_version == "v2"
+
+
+def test_ngan_sach_cho_han_muc_embedding_co_mac_dinh_va_phai_duong(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for name, value in REQUIRED_ENV.items():
+        monkeypatch.setenv(name, value)
+
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert settings.embedding_retry_max_wait_seconds == 150
+    assert settings.embedding_query_max_wait_seconds == 10
+
+    monkeypatch.setenv("EMBEDDING_RETRY_MAX_WAIT_SECONDS", "0")
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)  # type: ignore[call-arg]
 
 
 def test_temperature_mac_dinh_la_khong_gui(monkeypatch: pytest.MonkeyPatch) -> None:

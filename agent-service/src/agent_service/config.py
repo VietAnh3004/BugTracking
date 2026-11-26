@@ -82,6 +82,12 @@ class Settings(BaseSettings):
     # Bỏ trống thì dùng LLM_API_KEY — trường hợp thường gặp là cùng một key Gemini cho cả hai.
     embedding_api_key: str | None = Field(default=None)
     embedding_base_url: str = Field(default="https://generativelanguage.googleapis.com/v1beta")
+    # Tổng thời gian được chờ hạn mức (429) / lỗi tạm thời trong MỘT lần nhúng. Bản free giới hạn
+    # 100 đoạn/phút nên run 124 bằng chứng cần chờ ~1 phút giữa hai lô: 150 giây đủ cho run tới
+    # ~300 bằng chứng. Câu hỏi (query) chờ ngắn vì nằm giữa một lượt gọi tool của Agent và hỏng
+    # thì vẫn còn so khớp chữ.
+    embedding_retry_max_wait_seconds: float = Field(default=150.0, gt=0)
+    embedding_query_max_wait_seconds: float = Field(default=10.0, gt=0)
 
     @field_validator("embedding_api_key", mode="before")
     @classmethod
