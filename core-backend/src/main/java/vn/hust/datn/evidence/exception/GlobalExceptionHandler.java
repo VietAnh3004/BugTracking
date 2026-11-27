@@ -64,6 +64,13 @@ public class GlobalExceptionHandler {
         return problem(HttpStatus.CONFLICT, "run-not-queryable", "Run chưa thể truy vấn", ex.getMessage(), request);
     }
 
+    @ExceptionHandler(ExperimentAlreadyRunningException.class)
+    public ProblemDetail handleExperimentAlreadyRunning(
+            ExperimentAlreadyRunningException ex, HttpServletRequest request) {
+        return problem(
+                HttpStatus.CONFLICT, "experiment-already-running", "Thực nghiệm đang chạy", ex.getMessage(), request);
+    }
+
     /**
      * Chạy lại liên kết ra 0 trong khi có ngữ cảnh mã nguồn — bất biến cấu trúc bị vi phạm.
      *

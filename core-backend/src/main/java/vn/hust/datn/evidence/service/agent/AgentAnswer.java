@@ -43,6 +43,20 @@ public record AgentAnswer(Answer answer, List<Trace> traces) {
         public List<String> suggestedOrEmpty() {
             return suggestedNextChecks == null ? List.of() : suggestedNextChecks;
         }
+
+        /**
+         * Đầu vào của {@code CitationValidator}. Một chỗ chuyển đổi duy nhất cho cả hỏi đáp thường
+         * lẫn thực nghiệm 3 cấu hình: hai cách chuyển khác nhau thì chỉ số của hai bên không còn so
+         * được với nhau.
+         */
+        public vn.hust.datn.evidence.service.citation.AnswerDraft toDraft() {
+            List<vn.hust.datn.evidence.service.citation.AnswerDraft.ClaimDraft> drafts = claimsOrEmpty().stream()
+                    .map(c -> new vn.hust.datn.evidence.service.citation.AnswerDraft.ClaimDraft(
+                            c.text(), c.evidenceIdsOrEmpty(), c.confidence()))
+                    .toList();
+            return new vn.hust.datn.evidence.service.citation.AnswerDraft(
+                    verdict, summary, drafts, contradictingOrEmpty(), suggestedOrEmpty());
+        }
     }
 
     /** Một nhận định kèm danh sách Evidence ID nguyên văn mô hình viết ra. */

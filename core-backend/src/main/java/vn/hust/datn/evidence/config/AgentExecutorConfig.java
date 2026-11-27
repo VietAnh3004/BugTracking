@@ -36,4 +36,26 @@ public class AgentExecutorConfig {
         executor.initialize();
         return executor;
     }
+
+    /**
+     * Thực nghiệm 3 cấu hình: MỘT luồng, chạy tuần tự từng ô.
+     *
+     * <p>Tuần tự có chủ đích: Gemini free giới hạn số lượt mỗi phút và mỗi ngày, chạy song song chỉ
+     * đổi lượt thành công lấy lượt 429. Tách khỏi {@code agentExecutor} để một lượt thực nghiệm dài
+     * nhiều giờ không chiếm luồng của người đang hỏi Agent trên giao diện. Hàng đợi 4: mỗi run chỉ
+     * có một job (ExperimentService chặn trùng), vài run cùng lúc thì xếp hàng.
+     */
+    @Bean("experimentExecutor")
+    public Executor experimentExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(1);
+        executor.setQueueCapacity(4);
+        executor.setThreadNamePrefix("experiment-");
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        // Không chờ khi tắt ứng dụng: ô dở dang chỉ mất ô đó, "Chạy tiếp" làm lại từ ô ấy.
+        executor.setWaitForTasksToCompleteOnShutdown(false);
+        executor.initialize();
+        return executor;
+    }
 }

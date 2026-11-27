@@ -317,7 +317,26 @@ public class AgentClient {
             String question,
             @com.fasterxml.jackson.annotation.JsonProperty("focus_short_id") String focusShortId,
             List<Map<String, String>> history,
-            @com.fasterxml.jackson.annotation.JsonProperty("model_tier") String modelTier) {
+            @com.fasterxml.jackson.annotation.JsonProperty("model_tier") String modelTier,
+            // Chỉ thực nghiệm 3 cấu hình gửi trường này; null = hỏi đáp thường.
+            @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+                    String config) {
+
+        /**
+         * Một ô của thực nghiệm 3 cấu hình: model FREE (người dùng chốt Gemini free, 26/11/2026),
+         * không lịch sử. {@code question} chỉ để thoả hợp đồng — agent-service dùng câu hỏi chuẩn
+         * của thực nghiệm khi có {@code config}.
+         */
+        public static AnalyzeRequest forExperiment(
+                UUID runId, String focusShortId, vn.hust.datn.evidence.domain.ExperimentConfig config) {
+            return new AnalyzeRequest(
+                    runId,
+                    "thuc-nghiem",
+                    focusShortId,
+                    new ArrayList<>(),
+                    vn.hust.datn.evidence.domain.AgentModel.FREE.wireValue(),
+                    config.wireValue());
+        }
 
         public static AnalyzeRequest of(UUID runId, String question, String focusShortId, List<Map<String, String>> history) {
             return of(runId, question, focusShortId, history, vn.hust.datn.evidence.domain.AgentModel.FREE);
@@ -330,7 +349,12 @@ public class AgentClient {
                 List<Map<String, String>> history,
                 vn.hust.datn.evidence.domain.AgentModel model) {
             return new AnalyzeRequest(
-                    runId, question, focusShortId, history == null ? new ArrayList<>() : history, model.wireValue());
+                    runId,
+                    question,
+                    focusShortId,
+                    history == null ? new ArrayList<>() : history,
+                    model.wireValue(),
+                    null);
         }
     }
 }

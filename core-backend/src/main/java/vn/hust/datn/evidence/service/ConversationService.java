@@ -36,7 +36,6 @@ import vn.hust.datn.evidence.repository.MessageRepository;
 import vn.hust.datn.evidence.repository.ProjectRepository;
 import vn.hust.datn.evidence.service.agent.AgentAnswer;
 import vn.hust.datn.evidence.service.agent.AgentClient;
-import vn.hust.datn.evidence.service.citation.AnswerDraft;
 import vn.hust.datn.evidence.service.citation.CitationValidator;
 import vn.hust.datn.evidence.service.citation.ShortIdFormat;
 import vn.hust.datn.evidence.service.citation.ValidatedAnswer;
@@ -277,7 +276,7 @@ public class ConversationService {
                 traces.addAll(raw.tracesOrEmpty());
 
                 ValidatedAnswer validated =
-                        citationValidator.validate(conversation.getAnalysisRunId(), toDraft(raw.answer()));
+                        citationValidator.validate(conversation.getAnalysisRunId(), raw.answer().toDraft());
                 ChatMessageResponse saved = persistence.persistAnswer(conversation, validated, raw.tracesOrEmpty());
                 send(emitter, "answer", saved, turn);
             }
@@ -316,14 +315,6 @@ public class ConversationService {
         String messageOr(String fallback) {
             return message == null || message.isBlank() ? fallback : message;
         }
-    }
-
-    private static AnswerDraft toDraft(AgentAnswer.Answer answer) {
-        List<AnswerDraft.ClaimDraft> claims = answer.claimsOrEmpty().stream()
-                .map(c -> new AnswerDraft.ClaimDraft(c.text(), c.evidenceIdsOrEmpty(), c.confidence()))
-                .toList();
-        return new AnswerDraft(
-                answer.verdict(), answer.summary(), claims, answer.contradictingOrEmpty(), answer.suggestedOrEmpty());
     }
 
     private void send(SseEmitter emitter, String name, Object payload) {

@@ -167,6 +167,11 @@ app:
     # Chặn fork bomb. Timeout KHÔNG chặn được kiểu này: máy chết trước khi timeout kịp nổ.
     pids-limit: ${SANDBOX_PIDS_LIMIT:512}
     cpus: ${SANDBOX_CPUS:2}
+  # Thực nghiệm 3 cấu hình (docs/thuc-nghiem.md). Là tham số của GIAO THỨC thực nghiệm, không phải của
+  # môi trường triển khai, nên cố ý không đọc từ biến môi trường: đổi chúng là đổi thực nghiệm.
+  experiment:
+    repeats: 3
+    max-consecutive-failures: 3
 
 logging:
   level:

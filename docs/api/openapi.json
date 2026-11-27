@@ -1054,6 +1054,88 @@
         }
       }
     },
+    "/api/v1/analysis-runs/{runId}/experiment" : {
+      "get" : {
+        "tags" : [ "experiment" ],
+        "summary" : "Tiến độ và chỉ số của thực nghiệm 3 cấu hình",
+        "operationId" : "status",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExperimentStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "experiment" ],
+        "summary" : "Chạy hoặc chạy tiếp thực nghiệm 3 cấu hình",
+        "operationId" : "start",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExperimentStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-runs/{runId}/experiment/stop" : {
+      "post" : {
+        "tags" : [ "experiment" ],
+        "summary" : "Dừng thực nghiệm sau ô đang chạy",
+        "operationId" : "stop",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExperimentStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/analysis-runs/{runId}/embeddings" : {
       "post" : {
         "tags" : [ "evidence" ],
@@ -1697,6 +1779,41 @@
         "tags" : [ "human-review" ],
         "summary" : "Xuất kết quả ra CSV",
         "operationId" : "exportCsv",
+        "parameters" : [ {
+          "name" : "runId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv;charset=UTF-8" : {
+                "schema" : {
+                  "type" : "string",
+                  "format" : "byte"
+                }
+              },
+              "text/csv; charset=UTF-8" : {
+                "schema" : {
+                  "type" : "string",
+                  "format" : "byte"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis-runs/{runId}/experiment/export.csv" : {
+      "get" : {
+        "tags" : [ "experiment" ],
+        "summary" : "Xuất kết quả thực nghiệm ra CSV",
+        "operationId" : "exportCsv_1",
         "parameters" : [ {
           "name" : "runId",
           "in" : "path",
@@ -2719,6 +2836,140 @@
           }
         },
         "required" : [ "entriesMatched", "labelsWritten", "unmatched" ]
+      },
+      "ConfigMetrics" : {
+        "type" : "object",
+        "description" : "Chỉ số của một cấu hình",
+        "properties" : {
+          "config" : {
+            "type" : "string",
+            "enum" : [ "LLM_CODE", "LLM_STATIC", "EVIDENCE_AGENT" ]
+          },
+          "succeededCells" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "failedCells" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "accuracy" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Gộp mọi lần lặp; vắng khi chưa có ô nào có nhãn"
+          },
+          "accuracyStdDev" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Độ lệch chuẩn của độ chính xác giữa các lần lặp; cần ít nhất 2 lần lặp có dữ liệu"
+          },
+          "accuracyByRepeat" : {
+            "type" : "array",
+            "description" : "Độ chính xác của từng lần lặp, theo thứ tự; null = lần đó chưa có dữ liệu",
+            "items" : {
+              "type" : "number",
+              "format" : "double"
+            }
+          },
+          "decidedAccuracy" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Độ chính xác trên các ô có kết luận (bỏ INSUFFICIENT_EVIDENCE)"
+          },
+          "insufficientRate" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Tỉ lệ ô trả INSUFFICIENT_EVIDENCE"
+          },
+          "unsupportedClaimRate" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Tỉ lệ nhận định không có trích dẫn hợp lệ"
+          },
+          "citationResolvedRate" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Tỉ lệ trích dẫn tra được về bằng chứng thật"
+          },
+          "stability" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Tỉ lệ cảnh báo cho cùng verdict ở mọi lần lặp (chỉ tính cảnh báo đã đủ lần lặp)"
+          },
+          "avgLlmCalls" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Trung bình số lượt gọi model mỗi ô"
+          },
+          "avgToolCalls" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Trung bình số tool call mỗi ô"
+          },
+          "avgInputTokens" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Trung bình token vào mỗi ô"
+          },
+          "avgOutputTokens" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Trung bình token ra mỗi ô"
+          },
+          "avgLatencyMs" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Trung bình độ trễ mỗi ô, mili giây"
+          }
+        },
+        "required" : [ "accuracyByRepeat", "config", "failedCells", "succeededCells" ]
+      },
+      "ExperimentStatusResponse" : {
+        "type" : "object",
+        "description" : "Tiến độ và chỉ số của thực nghiệm 3 cấu hình",
+        "properties" : {
+          "analysisRunId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "running" : {
+            "type" : "boolean",
+            "description" : "Đang có một lượt chạy trên máy chủ"
+          },
+          "repeats" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalCells" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Số cảnh báo × 3 cấu hình × số lần lặp"
+          },
+          "succeededCells" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "failedCells" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Ô hỏng, sẽ được chạy lại khi bấm Chạy tiếp"
+          },
+          "currentCell" : {
+            "type" : "string",
+            "description" : "Ô đang chạy, dạng EV-0123 · LLM_CODE · lần 2"
+          },
+          "lastStopReason" : {
+            "type" : "string",
+            "description" : "Vì sao lượt chạy gần nhất dừng; vắng khi chưa dừng lần nào"
+          },
+          "configs" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ConfigMetrics"
+            }
+          }
+        },
+        "required" : [ "analysisRunId", "configs", "failedCells", "repeats", "running", "succeededCells", "totalCells" ]
       },
       "CreateConversationRequest" : {
         "type" : "object",

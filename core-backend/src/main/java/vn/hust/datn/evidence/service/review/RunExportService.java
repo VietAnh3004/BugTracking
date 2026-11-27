@@ -40,7 +40,7 @@ public class RunExportService {
      * <p>Excel trên Windows đoán bảng mã theo locale hệ thống chứ không mặc định UTF-8, nên file
      * không BOM mở ra là chữ rác với mọi cột tiếng Việt. Người chấm sẽ mở bằng Excel.
      */
-    private static final String UTF8_BOM = "﻿";
+    public static final String UTF8_BOM = "﻿";
 
     private static final String[] CSV_HEADERS = {
         "short_id",
