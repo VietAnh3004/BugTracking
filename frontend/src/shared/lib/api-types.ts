@@ -431,6 +431,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis-runs/{runId}/experiment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tiến độ và chỉ số của thực nghiệm 3 cấu hình */
+        get: operations["status"];
+        put?: never;
+        /** Chạy hoặc chạy tiếp thực nghiệm 3 cấu hình */
+        post: operations["start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis-runs/{runId}/experiment/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dừng thực nghiệm sau ô đang chạy */
+        post: operations["stop"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/analysis-runs/{runId}/embeddings": {
         parameters: {
             query?: never;
@@ -724,6 +759,23 @@ export interface paths {
         };
         /** Xuất kết quả ra CSV */
         get: operations["exportCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis-runs/{runId}/experiment/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Xuất kết quả thực nghiệm ra CSV */
+        get: operations["exportCsv_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1198,6 +1250,103 @@ export interface components {
             entriesMatched: number;
             /** @description Mục không khớp cảnh báo nào, dạng tool/luật@file:dòng */
             unmatched: string[];
+        };
+        /** @description Chỉ số của một cấu hình */
+        ConfigMetrics: {
+            /** @enum {string} */
+            config: "LLM_CODE" | "LLM_STATIC" | "EVIDENCE_AGENT";
+            /** Format: int64 */
+            succeededCells: number;
+            /** Format: int64 */
+            failedCells: number;
+            /**
+             * Format: double
+             * @description Gộp mọi lần lặp; vắng khi chưa có ô nào có nhãn
+             */
+            accuracy?: number;
+            /**
+             * Format: double
+             * @description Độ lệch chuẩn của độ chính xác giữa các lần lặp; cần ít nhất 2 lần lặp có dữ liệu
+             */
+            accuracyStdDev?: number;
+            /** @description Độ chính xác của từng lần lặp, theo thứ tự; null = lần đó chưa có dữ liệu */
+            accuracyByRepeat: number[];
+            /**
+             * Format: double
+             * @description Độ chính xác trên các ô có kết luận (bỏ INSUFFICIENT_EVIDENCE)
+             */
+            decidedAccuracy?: number;
+            /**
+             * Format: double
+             * @description Tỉ lệ ô trả INSUFFICIENT_EVIDENCE
+             */
+            insufficientRate?: number;
+            /**
+             * Format: double
+             * @description Tỉ lệ nhận định không có trích dẫn hợp lệ
+             */
+            unsupportedClaimRate?: number;
+            /**
+             * Format: double
+             * @description Tỉ lệ trích dẫn tra được về bằng chứng thật
+             */
+            citationResolvedRate?: number;
+            /**
+             * Format: double
+             * @description Tỉ lệ cảnh báo cho cùng verdict ở mọi lần lặp (chỉ tính cảnh báo đã đủ lần lặp)
+             */
+            stability?: number;
+            /**
+             * Format: double
+             * @description Trung bình số lượt gọi model mỗi ô
+             */
+            avgLlmCalls?: number;
+            /**
+             * Format: double
+             * @description Trung bình số tool call mỗi ô
+             */
+            avgToolCalls?: number;
+            /**
+             * Format: double
+             * @description Trung bình token vào mỗi ô
+             */
+            avgInputTokens?: number;
+            /**
+             * Format: double
+             * @description Trung bình token ra mỗi ô
+             */
+            avgOutputTokens?: number;
+            /**
+             * Format: double
+             * @description Trung bình độ trễ mỗi ô, mili giây
+             */
+            avgLatencyMs?: number;
+        };
+        /** @description Tiến độ và chỉ số của thực nghiệm 3 cấu hình */
+        ExperimentStatusResponse: {
+            /** Format: uuid */
+            analysisRunId: string;
+            /** @description Đang có một lượt chạy trên máy chủ */
+            running: boolean;
+            /** Format: int32 */
+            repeats: number;
+            /**
+             * Format: int64
+             * @description Số cảnh báo × 3 cấu hình × số lần lặp
+             */
+            totalCells: number;
+            /** Format: int64 */
+            succeededCells: number;
+            /**
+             * Format: int64
+             * @description Ô hỏng, sẽ được chạy lại khi bấm Chạy tiếp
+             */
+            failedCells: number;
+            /** @description Ô đang chạy, dạng EV-0123 · LLM_CODE · lần 2 */
+            currentCell?: string;
+            /** @description Vì sao lượt chạy gần nhất dừng; vắng khi chưa dừng lần nào */
+            lastStopReason?: string;
+            configs: components["schemas"]["ConfigMetrics"][];
         };
         /** @description Mở một phiên hỏi đáp mới */
         CreateConversationRequest: {
@@ -2524,6 +2673,72 @@ export interface operations {
             };
         };
     };
+    status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExperimentStatusResponse"];
+                };
+            };
+        };
+    };
+    start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExperimentStatusResponse"];
+                };
+            };
+        };
+    };
+    stop: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExperimentStatusResponse"];
+                };
+            };
+        };
+    };
     rebuildEmbeddings: {
         parameters: {
             query?: never;
@@ -3005,6 +3220,29 @@ export interface operations {
         };
     };
     exportCsv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv;charset=UTF-8": string;
+                    "text/csv; charset=UTF-8": string;
+                };
+            };
+        };
+    };
+    exportCsv_1: {
         parameters: {
             query?: never;
             header?: never;

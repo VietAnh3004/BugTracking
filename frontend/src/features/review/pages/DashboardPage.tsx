@@ -12,6 +12,7 @@
 
 import { useParams } from 'react-router-dom';
 
+import { ExperimentCard } from '@/features/review/components/ExperimentCard';
 import { ExportButtons } from '@/features/review/components/ExportButtons';
 import { Metric, MetricCard } from '@/features/review/components/MetricCard';
 import { useRunMetrics } from '@/features/review/hooks/useReview';
@@ -190,6 +191,9 @@ export function DashboardPage() {
           />
         </MetricCard>
       </div>
+
+      {/* Thực nghiệm 3 cấu hình: số liệu RIÊNG, không trộn với câu trả lời Agent của user study. */}
+      <ExperimentCard runId={runId} />
     </section>
   );
 }

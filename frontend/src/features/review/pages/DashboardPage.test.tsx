@@ -23,6 +23,24 @@ vi.mock('@/features/review/api/reviewApi', () => ({
   submitReview: vi.fn(),
 }));
 
+// Thẻ thực nghiệm 3 cấu hình có test riêng (ExperimentCard.test.tsx); ở đây chỉ cần nó không gọi mạng.
+vi.mock('@/features/review/api/experimentApi', () => ({
+  getExperiment: vi.fn(() =>
+    Promise.resolve({
+      analysisRunId: 'run-1',
+      running: false,
+      repeats: 3,
+      totalCells: 306,
+      succeededCells: 0,
+      failedCells: 0,
+      configs: [],
+    }),
+  ),
+  startExperiment: vi.fn(),
+  stopExperiment: vi.fn(),
+  experimentCsvPath: vi.fn(),
+}));
+
 /**
  * Các tỉ lệ để `null` TƯỜNG MINH chứ không bỏ khoá. Nay backend đã bỏ hẳn khoá null
  * (`jackson.default-property-inclusion: non_null`) nên dữ liệu thật là `undefined`, nhưng bộ test

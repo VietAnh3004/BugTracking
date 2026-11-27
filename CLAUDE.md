@@ -25,6 +25,7 @@ Bảo vệ dự kiến giữa tháng 12/2026.
 | [case-study/vulnshop/SEEDED.md](case-study/vulnshop/SEEDED.md) | Danh mục lỗi gieo có chủ đích + phát hiện ảnh hưởng thiết kế |
 | [docs/deploy-vps.md](docs/deploy-vps.md) | **Triển khai lên VPS** cho tên miền `vsleuth.id.vn`: trạng thái (mục 0), quyết định đã chốt (mục 2), việc còn mở (mục 11). Đọc trước khi đụng vào `infra/docker-compose.vps.yml` hay bất cứ việc gì về deploy |
 | [docs/viec-con-mo.md](docs/viec-con-mo.md) | **Lỗi/việc đã biết nhưng chủ ý để sau** (vd Agent không thấy ngữ cảnh ngoài dòng bị cảnh báo), kèm nguyên nhân đã xác minh và hướng sửa đã chốt. Đọc trước khi bắt đầu một việc mới |
+| [docs/thuc-nghiem.md](docs/thuc-nghiem.md) | **Thực nghiệm 3 cấu hình** (LLM-Code / LLM-Static / Evidence-Agent): mỗi cấu hình thấy gì, cách chạy rải nhiều ngày từ Dashboard, định nghĩa chỉ số, các yếu tố ảnh hưởng tính hợp lệ. Đọc trước khi đổi prompt, model hay embedding trong lúc thực nghiệm đang chạy dở |
 | [docs/email.md](docs/email.md) | Gửi thư từ `VSleuth <no-reply@vsleuth.id.vn>` qua **Resend**: bản ghi DNS (SPF/DKIM/DMARC) ở PA Vietnam, cách kiểm thư thật. Đọc trước khi sửa `service/account/*Email*` hay `SmtpAccountMailer` |
 
 Xem `git log` để biết đang dở ở đâu — commit message ghi khá chi tiết lý do.
