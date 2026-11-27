@@ -1,0 +1,35 @@
+{#
+  Đề bài của hai cấu hình đối chứng. ``contexts``: các đoạn mã đã đánh số dòng (``lines``), dòng
+  bị xét có ``marked``. llm_code KHÔNG được thấy công cụ, luật hay thông điệp của cảnh báo — chỉ
+  file và số dòng.
+#}
+{% if config == "llm_static" %}
+# Cảnh báo ({{ warning.short_id }})
+
+- Công cụ: {{ warning.tool }}
+- Quy tắc: {{ warning.rule_id }}
+- Mức nghiêm trọng công cụ gán: {{ warning.severity }}
+- Vị trí: {{ warning.file_path }}, dòng {{ warning.start_line }}
+- Thông điệp: {{ warning.summary }}
+
+{% else %}
+# Dòng cần xét
+
+{{ warning.file_path }}, dòng {{ warning.start_line }} (đánh dấu `>>` trong đoạn mã dưới đây).
+
+{% endif %}
+{% for context in contexts %}
+# Đoạn mã ({{ context.short_id }}) — {{ context.file_path }}
+
+```java
+{% for line in context.lines %}
+{{ ">>" if line.marked else "  " }}{{ "%5s" | format(line.number) }} | {{ line.text }}
+{% endfor %}
+```
+
+{% endfor %}
+{% if config == "llm_code" %}
+Câu hỏi: Dòng {{ warning.start_line }} có lỗi thật không? Hãy kết luận và giải thích dựa trên đoạn mã.
+{% else %}
+Câu hỏi: {{ question }}
+{% endif %}

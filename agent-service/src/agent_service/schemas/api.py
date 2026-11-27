@@ -4,10 +4,14 @@ Người gọi DUY NHẤT là core-backend, server-to-server. Frontend không ba
 câu trả lời phải đi qua hậu kiểm trích dẫn trước khi tới người dùng (ADR 0010).
 """
 
-from typing import Literal
+from typing import Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+# Ba cấu hình của thực nghiệm (kế hoạch §6, docs/thuc-nghiem.md). Cùng model, cùng lược đồ trả lời;
+# chỉ khác lượng thông tin model được thấy.
+ExperimentConfig = Literal["evidence_agent", "llm_code", "llm_static"]
 
 
 class HistoryTurn(BaseModel):
@@ -32,6 +36,16 @@ class AnalyzeRequest(BaseModel):
     # Model nào trả lời lượt này. core-backend đã kiểm quyền của dự án trước khi gửi; mặc định
     # "free" để request cũ (không có trường này) vẫn chạy như trước.
     model_tier: Literal["free", "premium"] = "free"
+    # Chỉ thực nghiệm 3 cấu hình gửi trường này; None = hỏi đáp thường, hành vi như cũ. Có config
+    # thì câu hỏi gửi model là câu CHUẨN của thực nghiệm, ``question`` ở đây bị bỏ qua — để cả ba
+    # cấu hình và cả ba lần lặp nhận đúng một câu hỏi.
+    config: ExperimentConfig | None = None
+
+    @model_validator(mode="after")
+    def _experiment_needs_focus(self) -> Self:
+        if self.config is not None and not self.focus_short_id:
+            raise ValueError("config thuc nghiem can focus_short_id (canh bao dang xet)")
+        return self
 
 
 class EmbedRequest(BaseModel):

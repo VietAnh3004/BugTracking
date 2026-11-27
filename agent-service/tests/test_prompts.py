@@ -159,3 +159,23 @@ def test_v2_prompt_khong_nhac_ten_ca_cu_the_cua_case_study(system_prompt: str) -
         "findByUsername",
     ):
         assert ten_ca not in system_prompt, ten_ca
+
+
+def test_moi_template_prompt_deu_khong_nhac_ten_ca_cu_the() -> None:
+    """Cùng lý do như trên, cho MỌI template — kể cả prompt của hai cấu hình đối chứng trong
+    thực nghiệm 3 cấu hình: dạy thuộc đề ở cấu hình nào thì phép so sánh lệch ở cấu hình đó.
+    """
+    from agent_service.prompts.loader import PROMPT_DIR
+
+    templates = sorted(PROMPT_DIR.glob("*.jinja2"))
+    assert len(templates) >= 5
+    for template in templates:
+        text = template.read_text(encoding="utf-8")
+        for ten_ca in (
+            "MD5",
+            "PasswordHasher",
+            "checksumForDeduplication",
+            "vulnshop",
+            "findByUsername",
+        ):
+            assert ten_ca not in text, f"{template.name}: {ten_ca}"

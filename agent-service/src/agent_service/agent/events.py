@@ -80,6 +80,9 @@ class LlmTraceEntry(BaseModel):
     tool_calls: list[dict[str, Any]] = Field(default_factory=list)
     response_content: str | None = None
     error_message: str | None = None
+    # Cấu hình thực nghiệm sinh ra vòng gọi này (evidence_agent / llm_code / llm_static); None =
+    # hỏi đáp thường. Không có trường này thì trace của ba cấu hình không tách lại được.
+    config: str | None = None
 
 
 class AnswerEvent(BaseModel):

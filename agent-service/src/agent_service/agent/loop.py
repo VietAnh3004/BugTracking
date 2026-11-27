@@ -28,6 +28,7 @@ from agent_service.config import Settings
 from agent_service.prompts.loader import render
 from agent_service.providers.base import LlmProvider, Message, RetryableLlmError
 from agent_service.schemas.analysis import AnalysisResponse
+from agent_service.schemas.api import ExperimentConfig
 from agent_service.tools.evidence_client import EvidenceToolClient
 from agent_service.tools.schemas import ALL_TOOLS
 
@@ -64,7 +65,11 @@ class AgentLoop:
     """Chạy một lượt hỏi đáp, phát sự kiện tiến trình rồi phát câu trả lời."""
 
     def __init__(
-        self, provider: LlmProvider, tool_client: EvidenceToolClient, settings: Settings
+        self,
+        provider: LlmProvider,
+        tool_client: EvidenceToolClient,
+        settings: Settings,
+        config: ExperimentConfig | None = None,
     ) -> None:
         self._provider = provider
         self._tools = tool_client
@@ -72,6 +77,8 @@ class AgentLoop:
         self._prompt_version = settings.prompt_version
         self._context_budget = settings.evidence_context_budget
         self._max_retries = settings.llm_max_retries
+        # Cấu hình thực nghiệm (None = hỏi đáp thường); đóng dấu vào mọi trace của lượt này.
+        self._config = config
 
     async def run(
         self,
@@ -93,11 +100,100 @@ class AgentLoop:
             ),
         ]
         traces: list[LlmTraceEntry] = []
+        async for event in self._guarded(
+            self._retrieve_then_submit(messages, traces, analysis_run_id), traces
+        ):
+            yield event
 
-        try:
-            async for event in self._retrieve(messages, traces, analysis_run_id):
+    async def run_experiment(
+        self, analysis_run_id: str, focus_short_id: str
+    ) -> AsyncIterator[AgentEvent]:
+        """Một ô của thực nghiệm 3 cấu hình (docs/thuc-nghiem.md), theo ``config`` của loop.
+
+        - ``evidence_agent``: đúng agent thật (cùng system prompt, cùng 5 tool), chỉ khác là câu
+          hỏi là câu CHUẨN của thực nghiệm thay vì câu người dùng gõ.
+        - ``llm_code`` / ``llm_static``: KHÔNG có tool. Agent-service tự lấy trước đoạn mã (và nội
+          dung cảnh báo với ``llm_static``) rồi nộp đúng một lượt gọi model.
+        """
+        question = render("experiment_question.jinja2")
+        if self._config in (None, "evidence_agent"):
+            async for event in self.run(analysis_run_id, question, focus_short_id):
                 yield event
-            async for event in self._submit(messages, traces):
+            return
+        traces: list[LlmTraceEntry] = []
+        async for event in self._guarded(
+            self._baseline(analysis_run_id, focus_short_id, question, traces), traces
+        ):
+            yield event
+
+    async def _retrieve_then_submit(
+        self, messages: list[Message], traces: list[LlmTraceEntry], analysis_run_id: str
+    ) -> AsyncIterator[AgentEvent]:
+        async for event in self._retrieve(messages, traces, analysis_run_id):
+            yield event
+        async for event in self._submit(messages, traces):
+            yield event
+
+    async def _baseline(
+        self,
+        analysis_run_id: str,
+        focus_short_id: str,
+        question: str,
+        traces: list[LlmTraceEntry],
+    ) -> AsyncIterator[AgentEvent]:
+        """Cấu hình đối chứng: lấy trước bằng chứng cố định, rồi một lượt nộp duy nhất.
+
+        Lần lấy trước KHÔNG ghi vào ``trace.tool_calls``: model không hề gọi tool, và số tool call
+        của hai cấu hình này phải bằng 0 trong số liệu.
+        """
+        yield StatusEvent(iteration=0, message="Đang lấy mã nguồn")
+        warning = await self._tools.call(
+            "get_warning", {"evidence_id": focus_short_id}, analysis_run_id
+        )
+        if warning.error or not isinstance(warning.result, dict):
+            yield ErrorEvent(
+                message=f"khong lay duoc canh bao {focus_short_id}: {warning.error}",
+                traces=traces,
+            )
+            return
+        context = await self._tools.call(
+            "get_code_context", {"evidence_id": focus_short_id}, analysis_run_id
+        )
+        items = (context.result or {}).get("items", []) if context.error is None else []
+        warning_line = warning.result.get("start_line")
+        contexts = [_numbered_context(item, warning_line) for item in items if item.get("snippet")]
+        if not contexts:
+            # Không có mã thì hai cấu hình này không có gì để đọc: báo hỏng thay vì để model
+            # đoán, vì một verdict sinh từ đề bài rỗng sẽ đi thẳng vào số liệu.
+            yield ErrorEvent(
+                message=f"canh bao {focus_short_id} khong co ngu canh ma"
+                + (f": {context.error}" if context.error else ""),
+                traces=traces,
+            )
+            return
+
+        messages = [
+            Message(role="system", content=render("baseline_system.jinja2", config=self._config)),
+            Message(
+                role="user",
+                content=render(
+                    "baseline_user.jinja2",
+                    config=self._config,
+                    question=question,
+                    warning=_warning_view(warning.result, focus_short_id),
+                    contexts=contexts,
+                ),
+            ),
+        ]
+        async for event in self._submit(messages, traces):
+            yield event
+
+    async def _guarded(
+        self, events: AsyncIterator[AgentEvent], traces: list[LlmTraceEntry]
+    ) -> AsyncIterator[AgentEvent]:
+        """Biến mọi lỗi giữa chừng thành :class:`ErrorEvent` mang đủ trace đã có."""
+        try:
+            async for event in events:
                 yield event
         except _ModelCallFailedError as exc:
             # Lượt gọi hỏng cũng là một dòng llm_trace: thiếu nó thì "hỏng vì model quá tải"
@@ -283,6 +379,7 @@ class AgentLoop:
             stop_reason=response.stop_reason,
             request_messages=[_trace_message(m) for m in messages],
             response_content=response.content,
+            config=self._config,
         )
         result.append((response, trace))
 
@@ -298,6 +395,7 @@ class AgentLoop:
                 latency_ms=int((time.monotonic() - started) * 1000),
                 request_messages=[_trace_message(m) for m in messages],
                 error_message=error,
+                config=self._config,
             )
         )
 
@@ -320,6 +418,44 @@ class _ModelCallFailedError(Exception):
     def __init__(self, trace: LlmTraceEntry) -> None:
         super().__init__(trace.error_message)
         self.trace = trace
+
+
+def _numbered_context(item: dict[str, Any], warning_line: object) -> dict[str, Any]:
+    """Một bản ghi CODE_CONTEXT thành các dòng có số, đánh dấu dòng bị cảnh báo.
+
+    Đánh số theo ``start_line`` của bản ghi: snippet đã lưu bắt đầu đúng từ dòng đó. Dòng ghi chú
+    cắt bớt mà core-backend thêm vào cuối (``// … (đã cắt bớt``) không mang số dòng.
+    """
+    start = item.get("start_line")
+    lines: list[dict[str, Any]] = []
+    number = start if isinstance(start, int) else None
+    for text in str(item["snippet"]).split("\n"):
+        if text.startswith("// … (đã cắt bớt"):
+            lines.append({"number": "", "marked": False, "text": text})
+            continue
+        lines.append(
+            {
+                "number": number if number is not None else "",
+                "marked": number is not None and number == warning_line,
+                "text": text,
+            }
+        )
+        if number is not None:
+            number += 1
+    return {"short_id": item.get("short_id"), "file_path": item.get("file_path"), "lines": lines}
+
+
+def _warning_view(result: dict[str, Any], focus_short_id: str) -> dict[str, Any]:
+    """Các trường của ``get_warning`` mà đề bài dùng — đặt tên lại cho template dễ đọc."""
+    return {
+        "short_id": result.get("short_id") or focus_short_id,
+        "tool": result.get("tool"),
+        "rule_id": result.get("rule_id"),
+        "severity": result.get("severity_raw") or result.get("severity_normalized"),
+        "file_path": result.get("file_path"),
+        "start_line": result.get("start_line"),
+        "summary": result.get("summary"),
+    }
 
 
 def _trace_message(message: Message) -> dict[str, Any]:

@@ -155,13 +155,21 @@ async def analyze(request: AnalyzeRequest, http_request: Request) -> StreamingRe
                 )
             )
             return
-        loop = AgentLoop(provider, state.tool_client, state.settings)
-        async for event in loop.run(
-            analysis_run_id=str(request.analysis_run_id),
-            question=request.question,
-            focus_short_id=request.focus_short_id,
-            history=[turn.model_dump() for turn in request.history],
-        ):
+        loop = AgentLoop(provider, state.tool_client, state.settings, config=request.config)
+        if request.config is not None and request.focus_short_id is not None:
+            # Một ô của thực nghiệm 3 cấu hình: câu hỏi chuẩn, không lịch sử (docs/thuc-nghiem.md).
+            events = loop.run_experiment(
+                analysis_run_id=str(request.analysis_run_id),
+                focus_short_id=request.focus_short_id,
+            )
+        else:
+            events = loop.run(
+                analysis_run_id=str(request.analysis_run_id),
+                question=request.question,
+                focus_short_id=request.focus_short_id,
+                history=[turn.model_dump() for turn in request.history],
+            )
+        async for event in events:
             yield _sse(event)
 
     # Bọc bằng stop_on_disconnect: core-backend đóng kết nối khi người dùng bấm "Dừng" hoặc rời

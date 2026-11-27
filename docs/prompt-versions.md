@@ -67,3 +67,19 @@ Cảnh báo EV-0052 (MD5 băm nội dung tệp, nhãn đúng = false positive), 
   tự hiển thị, quá giống ca `ColorPicker` (EV-01B0) của vulnshop. Ví dụ đã đổi sang lĩnh vực khác
   (quyền tệp tạm) và các số liệu ở bảng trên đều đo SAU khi đổi.
 - **Chưa đo:** Claude Sonnet 5 trên v2 (tốn tiền thật), và các cảnh báo khác ngoài 4 ca đã thử.
+
+## Prompt của thực nghiệm 3 cấu hình (thêm 27/11/2026, vẫn `v2`)
+
+Ba template mới cho thực nghiệm (giao thức ở [thuc-nghiem.md](thuc-nghiem.md)). **Không tăng
+`PROMPT_VERSION`**: prompt của Evidence-Agent (`system.jinja2`, `_SUBMIT_NOW`, `_BUDGET_EXHAUSTED`)
+không đổi, và số liệu của từng cấu hình đã tách được nhờ trường `config` trong trace và cột `config`
+của bảng `experiment_result`.
+
+| Template | Dùng cho | Nội dung |
+|---|---|---|
+| `experiment_question.jinja2` | Evidence-Agent, LLM-Static | Câu hỏi chuẩn, giống hệt nhau mọi ô và mọi lần lặp |
+| `baseline_system.jinja2` | LLM-Code, LLM-Static | Định nghĩa ba kết luận và cách viết câu trả lời, giữ sát `system.jinja2` nhưng bỏ mọi chỗ nhắc tool. LLM-Static thêm phần "công cụ phát hiện đúng chưa phải lỗi thật" và "mức nghiêm trọng không phải bằng chứng" |
+| `baseline_user.jinja2` | LLM-Code, LLM-Static | Đề bài: đoạn mã đánh số dòng, dòng bị cảnh báo đánh dấu `>>`, kèm Evidence ID của đoạn mã. LLM-Static thêm khối cảnh báo (công cụ, quy tắc, mức nghiêm trọng, thông điệp) kèm Evidence ID của cảnh báo. LLM-Code KHÔNG thấy gì về cảnh báo, câu hỏi là "Dòng N có lỗi thật không?" |
+
+Đổi một trong ba template này trong lúc thực nghiệm đang chạy dở là trộn hai phiên bản đề bài vào cùng
+một bảng số liệu: phải xoá các ô đã chạy của cấu hình đó rồi chạy lại.
